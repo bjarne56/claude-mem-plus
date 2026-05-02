@@ -253,6 +253,8 @@ export const messagesZh: Record<string, string> = {
   'trash.deleteProjectPerm': '永久删除整个项目',
   'trash.deleteProjectPermConfirm': '永久删除项目「{name}」的全部 {n} 条数据?该操作无法恢复',
   'trash.projectsEmpty': '回收站里没有项目数据',
+  'sync.loginRequiredHint': '请填写 Server URL / 用户名 / 密码 / 机器名(必填)',
+  'sync.machineNameRequired': '机器名必填(用于跨机器识别本机)',
   'trash.restoreOnlyVia': '叶子节点不能单独恢复(没有父会话会破坏外键)。请到「项目」或「会话」tab 整批恢复',
   'trash.restoreSessionAlsoChildren': '恢复会话会同时把它下面的 trash observations / summaries 一并带回',
 

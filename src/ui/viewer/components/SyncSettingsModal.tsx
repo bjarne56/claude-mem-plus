@@ -52,13 +52,23 @@ export function SyncSettingsModal({ isOpen, onClose }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  // login form
+  // login form — machine_name 给个默认值,从浏览器 platform 推
+  // navigator.platform 已 deprecated 但还能用,fallback 'this-machine'
+  const defaultMachineName = (() => {
+    if (typeof navigator === 'undefined') return 'this-machine';
+    const p = (navigator.platform || '').toLowerCase();
+    const ua = (navigator.userAgent || '').toLowerCase();
+    if (p.includes('mac') || ua.includes('mac os x')) return 'my-mac';
+    if (p.includes('win') || ua.includes('windows')) return 'my-windows';
+    if (p.includes('linux')) return 'my-linux';
+    return 'this-machine';
+  })();
   const [showLoginForm, setShowLoginForm] = useState(false);
   const [loginForm, setLoginForm] = useState({
     server_url: '',
     username: '',
     password: '',
-    machine_name: '',
+    machine_name: defaultMachineName,  // 默认填,避免 zod min(1) 校验失败
     machine_description: '',
   });
 
@@ -124,6 +134,11 @@ export function SyncSettingsModal({ isOpen, onClose }: Props) {
   );
 
   const handleLogin = useCallback(async (): Promise<void> => {
+    // 前端校验必填字段(避免 zod 400 ValidationError)
+    if (!loginForm.server_url.trim() || !loginForm.username.trim() || !loginForm.password || !loginForm.machine_name.trim()) {
+      setError(t('sync.loginRequiredHint'));
+      return;
+    }
     try {
       await callAction('/api/sync/login', loginForm);
       setShowLoginForm(false);
@@ -132,7 +147,7 @@ export function SyncSettingsModal({ isOpen, onClose }: Props) {
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     }
-  }, [callAction, loginForm, fetchStatus]);
+  }, [callAction, loginForm, fetchStatus, t]);
 
   const handleLogout = useCallback(async (): Promise<void> => {
     try {
@@ -279,6 +294,10 @@ export function SyncSettingsModal({ isOpen, onClose }: Props) {
                           placeholder={t('sync.machineNamePlaceholder')}
                           value={loginForm.machine_name}
                           onChange={(e) => setLoginForm({ ...loginForm, machine_name: e.target.value })}
+                          required
+                          aria-required="true"
+                          style={{ borderColor: loginForm.machine_name.trim() ? undefined : '#d29922' }}
+                          title={t('sync.machineNameRequired')}
                         />
                         <input
                           type="text"
