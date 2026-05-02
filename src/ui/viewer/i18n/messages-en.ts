@@ -244,4 +244,13 @@ export const messagesEn: Record<string, string> = {
   'trash.colTime': 'Deleted',
   'trash.colReason': 'Reason',
   'trash.colActions': 'Actions',
+  // Project tab
+  'trash.tab.projects': 'Projects ({n})',
+  'trash.colCounts': 'Contents',
+  'trash.counts': '{obs} obs · {sess} sessions · {sum} summaries',
+  'trash.restoreProject': 'Restore entire project',
+  'trash.restoreProjectConfirm': 'Restore all {n} rows for project "{name}"? Cannot be undone after restore.',
+  'trash.deleteProjectPerm': 'Permanently delete entire project',
+  'trash.deleteProjectPermConfirm': 'Permanently delete all {n} rows for project "{name}"? This cannot be undone.',
+  'trash.projectsEmpty': 'No project-level trash data',
 };

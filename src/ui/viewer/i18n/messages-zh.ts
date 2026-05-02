@@ -244,4 +244,13 @@ export const messagesZh: Record<string, string> = {
   'trash.colTime': '删除时间',
   'trash.colReason': '原因',
   'trash.colActions': '操作',
+  // 项目 tab
+  'trash.tab.projects': '项目 ({n})',
+  'trash.colCounts': '内容',
+  'trash.counts': '{obs} 条 obs · {sess} 个会话 · {sum} 份摘要',
+  'trash.restoreProject': '恢复整个项目',
+  'trash.restoreProjectConfirm': '确定恢复项目「{name}」的全部 {n} 条数据?恢复后不可撤销',
+  'trash.deleteProjectPerm': '永久删除整个项目',
+  'trash.deleteProjectPermConfirm': '永久删除项目「{name}」的全部 {n} 条数据?该操作无法恢复',
+  'trash.projectsEmpty': '回收站里没有项目数据',
 };

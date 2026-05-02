@@ -69,11 +69,15 @@ export class DeleteRoutes extends BaseRouteHandler {
     app.delete('/api/observations/:id', requireLocalhost, this.wrapHandler(this.handleDeleteObservation));
     app.delete('/api/sessions/:id', requireLocalhost, this.wrapHandler(this.handleDeleteSession));
     app.delete('/api/projects/:name', requireLocalhost, this.wrapHandler(this.handleDeleteProject));
-    // 回收站 CRUD
+    // 回收站 CRUD —— 单行
     app.get('/api/trash', requireLocalhost, this.wrapHandler(this.handleListTrash));
     app.post('/api/trash/:type/:trashId/restore', requireLocalhost, this.wrapHandler(this.handleRestore));
     app.delete('/api/trash/:type/:trashId', requireLocalhost, this.wrapHandler(this.handleTrashPermanentDelete));
     app.delete('/api/trash', requireLocalhost, this.wrapHandler(this.handleTrashClearAll));
+    // 回收站按项目维度 —— 聚合视图 + 整批恢复 / 永久删
+    app.get('/api/trash/projects', requireLocalhost, this.wrapHandler(this.handleListTrashProjects));
+    app.post('/api/trash/projects/:name/restore', requireLocalhost, this.wrapHandler(this.handleRestoreProject));
+    app.delete('/api/trash/projects/:name', requireLocalhost, this.wrapHandler(this.handleProjectPermanentDelete));
     logger.info('SYSTEM', 'DeleteRoutes registered', {
       routes: [
         'DELETE /api/observations/:id',
@@ -83,6 +87,9 @@ export class DeleteRoutes extends BaseRouteHandler {
         'POST /api/trash/:type/:trashId/restore',
         'DELETE /api/trash/:type/:trashId',
         'DELETE /api/trash',
+        'GET /api/trash/projects',
+        'POST /api/trash/projects/:name/restore',
+        'DELETE /api/trash/projects/:name',
       ],
     });
   }
@@ -505,5 +512,166 @@ export class DeleteRoutes extends BaseRouteHandler {
     tx();
     logger.info('SYSTEM', 'Trash cleared (all)', { totalRows: totalCleared });
     res.json({ ok: true, cleared: totalCleared });
+  };
+
+  // ═══════════════════════════════════════════════════════════
+  // 回收站按项目聚合视图 + 整批操作
+  // ═══════════════════════════════════════════════════════════
+
+  // GET /api/trash/projects → [{ project, observations, sessions, summaries, lastDeletedAt }]
+  private handleListTrashProjects = async (_req: Request, res: Response): Promise<void> => {
+    this.ensureTrashTables();
+    const db = this.dbManager.getDatabase();
+
+    // 按 project 聚合三类 trash + 取最近删除时间
+    const sql = `
+      SELECT project,
+             SUM(observations) AS observations,
+             SUM(sessions)     AS sessions,
+             SUM(summaries)    AS summaries,
+             MAX(last_deleted) AS last_deleted_at
+      FROM (
+        SELECT project, COUNT(*) AS observations, 0 AS sessions, 0 AS summaries,
+               MAX(deleted_at_epoch) AS last_deleted
+          FROM trash_observations WHERE project IS NOT NULL GROUP BY project
+        UNION ALL
+        SELECT project, 0, COUNT(*), 0, MAX(deleted_at_epoch)
+          FROM trash_sessions WHERE project IS NOT NULL GROUP BY project
+        UNION ALL
+        SELECT project, 0, 0, COUNT(*), MAX(deleted_at_epoch)
+          FROM trash_summaries WHERE project IS NOT NULL GROUP BY project
+      )
+      GROUP BY project
+      ORDER BY last_deleted_at DESC
+    `;
+    const rows = db.query(sql).all() as Array<{
+      project: string;
+      observations: number;
+      sessions: number;
+      summaries: number;
+      last_deleted_at: number;
+    }>;
+
+    res.json({
+      ok: true,
+      projects: rows.map(r => ({
+        project: r.project,
+        observations: Number(r.observations) || 0,
+        sessions: Number(r.sessions) || 0,
+        summaries: Number(r.summaries) || 0,
+        lastDeletedAt: Number(r.last_deleted_at) || 0,
+      })),
+    });
+  };
+
+  // POST /api/trash/projects/:name/restore → 整批恢复某项目所有 trash 行
+  private handleRestoreProject = async (req: Request, res: Response): Promise<void> => {
+    this.ensureTrashTables();
+    const project = req.params.name;
+    if (!project) {
+      this.badRequest(res, 'Missing project name');
+      return;
+    }
+
+    const db = this.dbManager.getDatabase();
+    const trashSessions = db.query('SELECT * FROM trash_sessions WHERE project = ?').all(project) as TrashRow[];
+    const trashObs = db.query('SELECT * FROM trash_observations WHERE project = ?').all(project) as TrashRow[];
+    const trashSums = db.query('SELECT * FROM trash_summaries WHERE project = ?').all(project) as TrashRow[];
+
+    if (trashSessions.length + trashObs.length + trashSums.length === 0) {
+      this.notFound(res, `No trash for project "${project}"`);
+      return;
+    }
+
+    let restored = { observations: 0, sessions: 0, summaries: 0 };
+    const errors: string[] = [];
+
+    try {
+      const tx = db.transaction(() => {
+        // 关 FK 直到事务结束(SQLite 在 commit 时再校验,允许临时不一致)
+        // 必要:obs/sum 引用 sdk_sessions(memory_session_id),不延迟会因顺序问题 FK 失败
+        db.run('PRAGMA defer_foreign_keys = ON');
+
+        // 1. 先恢复 sessions(父表)
+        for (const row of trashSessions) {
+          const payload = JSON.parse(row.payload) as Record<string, unknown>;
+          const cols = Object.keys(payload);
+          const colNames = cols.map(c => `"${c}"`).join(',');
+          const placeholders = cols.map(() => '?').join(',');
+          db.prepare(`INSERT INTO sdk_sessions (${colNames}) VALUES (${placeholders})`).run(
+            ...cols.map(c => payload[c] as string | number | null)
+          );
+          db.prepare('DELETE FROM trash_sessions WHERE trash_id = ?').run(row.trash_id);
+          restored.sessions += 1;
+        }
+
+        // 2. 再恢复 observations
+        for (const row of trashObs) {
+          const payload = JSON.parse(row.payload) as Record<string, unknown>;
+          const cols = Object.keys(payload);
+          const colNames = cols.map(c => `"${c}"`).join(',');
+          const placeholders = cols.map(() => '?').join(',');
+          db.prepare(`INSERT INTO observations (${colNames}) VALUES (${placeholders})`).run(
+            ...cols.map(c => payload[c] as string | number | null)
+          );
+          db.prepare('DELETE FROM trash_observations WHERE trash_id = ?').run(row.trash_id);
+          restored.observations += 1;
+        }
+
+        // 3. 最后恢复 summaries
+        for (const row of trashSums) {
+          const payload = JSON.parse(row.payload) as Record<string, unknown>;
+          const cols = Object.keys(payload);
+          const colNames = cols.map(c => `"${c}"`).join(',');
+          const placeholders = cols.map(() => '?').join(',');
+          db.prepare(`INSERT INTO session_summaries (${colNames}) VALUES (${placeholders})`).run(
+            ...cols.map(c => payload[c] as string | number | null)
+          );
+          db.prepare('DELETE FROM trash_summaries WHERE trash_id = ?').run(row.trash_id);
+          restored.summaries += 1;
+        }
+      });
+      tx();
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      logger.error('SYSTEM', 'Project restore failed', { project }, error as Error);
+      res.status(500).json({
+        error: `Project restore failed: ${msg}`,
+        hint: 'Likely an id collision (the original ids were re-used by new data). Inspect /api/trash for affected rows.',
+      });
+      return;
+    }
+
+    this.rebroadcastProjects();
+    logger.info('SYSTEM', 'Project trash restored', { project, ...restored });
+    res.json({ ok: true, restored });
+  };
+
+  // DELETE /api/trash/projects/:name → 整批永久删项目所有 trash 行
+  private handleProjectPermanentDelete = async (req: Request, res: Response): Promise<void> => {
+    this.ensureTrashTables();
+    const project = req.params.name;
+    if (!project) {
+      this.badRequest(res, 'Missing project name');
+      return;
+    }
+
+    const db = this.dbManager.getDatabase();
+    let total = 0;
+    const tx = db.transaction(() => {
+      for (const t of TRASH_TYPES) {
+        const result = db.prepare(`DELETE FROM ${TRASH_TABLE[t]} WHERE project = ?`).run(project);
+        total += result.changes;
+      }
+    });
+    tx();
+
+    if (total === 0) {
+      this.notFound(res, `No trash for project "${project}"`);
+      return;
+    }
+
+    logger.info('SYSTEM', 'Project trash permanently deleted', { project, totalRows: total });
+    res.json({ ok: true, deleted: total });
   };
 }
