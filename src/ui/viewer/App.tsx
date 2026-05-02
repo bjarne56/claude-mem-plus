@@ -4,6 +4,7 @@ import { Feed } from './components/Feed';
 import { ContextSettingsModal } from './components/ContextSettingsModal';
 import { LogsDrawer } from './components/LogsModal';
 import { TrashModal } from './components/TrashModal';
+import { SyncSettingsModal } from './components/SyncSettingsModal';
 import { useSSE } from './hooks/useSSE';
 import { useSettings } from './hooks/useSettings';
 import { useStats } from './hooks/useStats';
@@ -20,6 +21,7 @@ export function App() {
   const [contextPreviewOpen, setContextPreviewOpen] = useState(false);
   const [logsModalOpen, setLogsModalOpen] = useState(false);
   const [trashModalOpen, setTrashModalOpen] = useState(false);
+  const [syncModalOpen, setSyncModalOpen] = useState(false);
   const [paginatedObservations, setPaginatedObservations] = useState<Observation[]>([]);
   const [paginatedSummaries, setPaginatedSummaries] = useState<Summary[]>([]);
   const [paginatedPrompts, setPaginatedPrompts] = useState<UserPrompt[]>([]);
@@ -71,6 +73,11 @@ export function App() {
   // Toggle trash modal
   const toggleTrashModal = useCallback(() => {
     setTrashModalOpen(prev => !prev);
+  }, []);
+
+  // Toggle sync modal
+  const toggleSyncModal = useCallback(() => {
+    setSyncModalOpen(prev => !prev);
   }, []);
 
   // Handle loading more data
@@ -222,6 +229,23 @@ export function App() {
           refreshStats();
         }}
       />
+
+      {/* Sync 浮动按钮 + Modal — cmem-sync client */}
+      <button
+        className="console-toggle-btn"
+        style={{ bottom: 64 }}
+        onClick={toggleSyncModal}
+        title={t('sync.title')}
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <polyline points="23 4 23 10 17 10"></polyline>
+          <polyline points="1 20 1 14 7 14"></polyline>
+          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10"></path>
+          <path d="M20.49 15a9 9 0 0 1-14.85 3.36L1 14"></path>
+        </svg>
+      </button>
+
+      <SyncSettingsModal isOpen={syncModalOpen} onClose={toggleSyncModal} />
     </>
   );
 }
