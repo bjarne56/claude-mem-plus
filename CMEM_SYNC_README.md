@@ -19,7 +19,13 @@
 curl -sSL https://raw.githubusercontent.com/<your>/claude-mem/zh-fork/install-client.sh | bash
 
 # 或装完自动连 cmem-server
-curl -sSL .../install-client.sh | bash -s -- --server https://cmem.example.com
+curl -sSL .../install-client.sh | bash -s install --server https://cmem.example.com
+
+# 装完验证健康度
+bash install-client.sh check
+
+# 卸载
+bash install-client.sh uninstall      # 交互问要不要清数据
 ```
 
 脚本会:
@@ -30,6 +36,8 @@ curl -sSL .../install-client.sh | bash -s -- --server https://cmem.example.com
 5. 启动 worker daemon
 6. 检测系统语言写入 `~/.claude-mem/settings.json` 的 `CLAUDE_MEM_MODE`
 7. 可选 `claude-mem sync login --server <URL>`
+
+完整安装路径(各 OS / tarball / git / Docker)见 [docs/INSTALL.md](docs/INSTALL.md)。
 
 ### 二、(服务器侧)装 cmem-server
 
@@ -182,6 +190,14 @@ Header 右上从左到右:
 
 ## 故障排查
 
+最快诊断:
+
+```bash
+bash install-client.sh check     # 一键检查 node / bun / claude-mem / worker / hooks
+```
+
+常见症状:
+
 | 症状 | 修 |
 |---|---|
 | `claude-mem sync` 提示 `Unknown command: sync` | 全局装的是 upstream,运行 `cd /path/to/fork && npm link`(开发) 或 `npm install -g <fork-tarball>`(生产) |
@@ -191,8 +207,9 @@ Header 右上从左到右:
 | viewer Sync 表单登录 400 ValidationError | 必填 4 个字段 全填上(server_url / username / password / machine_name) |
 | worker 启动失败 "Database not initialized" | 升 fork(SyncRoutes 注册时序问题修过了) |
 | viewer 空白 / blank | 浏览器 console 看 JS error,可能 React 加载失败,硬刷新 |
+| viewer 注册页"注册已关闭" | server admin 在 `/admin/settings` 切回 open / invite_only |
 
-更多见 [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)。
+完整故障速查表见 [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)。
 
 ## 文档目录
 
@@ -200,11 +217,13 @@ Header 右上从左到右:
 |---|---|
 | [README.md](README.md) | upstream claude-mem 原文 |
 | **CMEM_SYNC_README.md**(本文件) | fork 改动 + sync 集成总览 |
-| [docs/INSTALL.md](docs/INSTALL.md) | 详细安装(服务端 + 客户端 + Docker) |
-| [docs/USAGE.md](docs/USAGE.md) | 完整使用教程 |
-| [docs/SHARING.md](docs/SHARING.md) | 三种 mode 行为 + 8 个不变量 |
-| [docs/I18N.md](docs/I18N.md) | 31 语言扩展 + 翻译流程 |
-| [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | 故障排查 |
+| [docs/INSTALL.md](docs/INSTALL.md) | ✅ 详细安装(各 OS / npm / tarball / git / docker) |
+| [docs/USAGE.md](docs/USAGE.md) | ✅ 完整使用教程(sync / 共享 / 回收站 / CLI) |
+| [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | ✅ 故障排查(按症状) |
+| [PUBLISHING.md](PUBLISHING.md) | ✅ 发布流程(npm / 内部分发) |
+| docs/SHARING.md | ⏳ 三种 mode 行为 + 8 个不变量(参见 [cmem-server/docs/PROJECT_SHARING.md](../cmem-server/docs/PROJECT_SHARING.md))|
+| docs/I18N.md | ⏳ 31 语言扩展(参见 src/ui/viewer/i18n/ 源码 + scripts/translate-i18n.ts) |
+| docs/CONTRIBUTING.md | ⏳ 待补 — 现阶段:fork → PR 到 zh-fork 分支 |
 
 ## License
 

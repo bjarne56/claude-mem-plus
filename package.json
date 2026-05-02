@@ -66,6 +66,8 @@
     "sync-marketplace:force": "node scripts/sync-marketplace.cjs --force",
     "build:binaries": "node scripts/build-worker-binary.js",
     "build:cli-binary": "bun build --compile --minify ./src/services/worker-service.ts --outfile plugin/scripts/claude-mem",
+    "pack:release": "bash scripts/pack-release.sh",
+    "pack:release:dry": "bash scripts/pack-release.sh --dry-run",
     "worker:logs": "tail -n 50 ~/.claude-mem/logs/worker-$(date +%Y-%m-%d).log",
     "worker:tail": "tail -f 50 ~/.claude-mem/logs/worker-$(date +%Y-%m-%d).log",
     "changelog:generate": "node scripts/generate-changelog.js",
