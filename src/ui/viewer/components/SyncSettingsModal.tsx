@@ -64,12 +64,19 @@ export function SyncSettingsModal({ isOpen, onClose }: Props) {
     return 'this-machine';
   })();
   const [showLoginForm, setShowLoginForm] = useState(false);
+  /** auth 表单模式:'login' 已有账号 / 'register' 新用户(用 invite code) */
+  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
   const [loginForm, setLoginForm] = useState({
     server_url: '',
     username: '',
     password: '',
     machine_name: defaultMachineName,  // 默认填,避免 zod min(1) 校验失败
     machine_description: '',
+  });
+  /** 注册专用字段 — 邮箱可选 + 邀请码(server require_invite=true 时必填) */
+  const [registerExtras, setRegisterExtras] = useState({
+    email: '',
+    invite_code: '',
   });
 
   const fetchStatus = useCallback(async (): Promise<void> => {
@@ -148,6 +155,37 @@ export function SyncSettingsModal({ isOpen, onClose }: Props) {
       setError(e instanceof Error ? e.message : String(e));
     }
   }, [callAction, loginForm, fetchStatus, t]);
+
+  /** 注册流程:先 register,成功后自动 login */
+  const handleRegister = useCallback(async (): Promise<void> => {
+    if (!loginForm.server_url.trim() || !loginForm.username.trim() || !loginForm.password) {
+      setError(t('sync.registerRequiredHint'));
+      return;
+    }
+    if (loginForm.password.length < 8) {
+      setError(t('sync.registerPasswordTooShort'));
+      return;
+    }
+    try {
+      await callAction('/api/sync/register', {
+        server_url: loginForm.server_url,
+        username: loginForm.username,
+        password: loginForm.password,
+        email: registerExtras.email.trim() || undefined,
+        invite_code: registerExtras.invite_code.trim() || undefined,
+      });
+      // 注册成功 → 自动 login(同 password,补 machine_name)
+      await callAction('/api/sync/login', loginForm);
+      setError(t('sync.registerSuccess', { username: loginForm.username }));
+      setShowLoginForm(false);
+      setAuthMode('login');
+      setLoginForm(prev => ({ ...prev, password: '' }));
+      setRegisterExtras({ email: '', invite_code: '' });
+      await fetchStatus();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    }
+  }, [callAction, loginForm, registerExtras, fetchStatus, t]);
 
   const handleLogout = useCallback(async (): Promise<void> => {
     try {
@@ -341,12 +379,66 @@ export function SyncSettingsModal({ isOpen, onClose }: Props) {
                 ) : (
                   <>
                     {!showLoginForm && (
-                      <button onClick={() => setShowLoginForm(true)} disabled={busy}>
-                        {t('sync.login')}
-                      </button>
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <button onClick={() => { setAuthMode('login'); setShowLoginForm(true); }} disabled={busy}>
+                          {t('sync.login')}
+                        </button>
+                        <button onClick={() => { setAuthMode('register'); setShowLoginForm(true); }} disabled={busy}
+                                style={{ background: 'transparent', border: '1px solid #3fb950', color: '#3fb950' }}>
+                          {t('sync.register')}
+                        </button>
+                      </div>
                     )}
                     {showLoginForm && (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}>
+                        {/* tab 切 login / register */}
+                        <div style={{ display: 'flex', gap: 4, marginBottom: 4 }}>
+                          <button
+                            type="button"
+                            onClick={() => setAuthMode('login')}
+                            style={{
+                              padding: '4px 12px',
+                              background: authMode === 'login' ? 'var(--color-accent-primary, #58a6ff)' : 'transparent',
+                              color: authMode === 'login' ? '#fff' : 'var(--color-text-primary)',
+                              border: '1px solid var(--color-border-primary)',
+                              borderRadius: 3,
+                              cursor: 'pointer',
+                              fontSize: 12,
+                            }}
+                          >
+                            {t('sync.tab.login')}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setAuthMode('register')}
+                            style={{
+                              padding: '4px 12px',
+                              background: authMode === 'register' ? '#3fb950' : 'transparent',
+                              color: authMode === 'register' ? '#fff' : 'var(--color-text-primary)',
+                              border: '1px solid var(--color-border-primary)',
+                              borderRadius: 3,
+                              cursor: 'pointer',
+                              fontSize: 12,
+                            }}
+                          >
+                            {t('sync.tab.register')}
+                          </button>
+                        </div>
+
+                        {authMode === 'register' && (
+                          <div style={{
+                            padding: '8px 12px',
+                            background: 'rgba(63, 185, 80, 0.08)',
+                            border: '1px dashed #3fb950',
+                            borderRadius: 4,
+                            fontSize: 12,
+                            color: 'var(--color-text-secondary)',
+                            marginBottom: 4,
+                          }}>
+                            {t('sync.registerHint')}
+                          </div>
+                        )}
+
                         <input
                           type="text"
                           placeholder={t('sync.serverUrlPlaceholder')}
@@ -361,10 +453,27 @@ export function SyncSettingsModal({ isOpen, onClose }: Props) {
                         />
                         <input
                           type="password"
-                          placeholder={t('sync.passwordPlaceholder')}
+                          placeholder={authMode === 'register' ? t('sync.passwordPlaceholderRegister') : t('sync.passwordPlaceholder')}
                           value={loginForm.password}
                           onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
                         />
+                        {authMode === 'register' && (
+                          <>
+                            <input
+                              type="email"
+                              placeholder={t('sync.emailPlaceholder')}
+                              value={registerExtras.email}
+                              onChange={(e) => setRegisterExtras({ ...registerExtras, email: e.target.value })}
+                            />
+                            <input
+                              type="text"
+                              placeholder={t('sync.inviteCodePlaceholder')}
+                              value={registerExtras.invite_code}
+                              onChange={(e) => setRegisterExtras({ ...registerExtras, invite_code: e.target.value })}
+                              style={{ fontFamily: 'monospace', fontSize: 12 }}
+                            />
+                          </>
+                        )}
                         <input
                           type="text"
                           placeholder={t('sync.machineNamePlaceholder')}
@@ -382,7 +491,14 @@ export function SyncSettingsModal({ isOpen, onClose }: Props) {
                           onChange={(e) => setLoginForm({ ...loginForm, machine_description: e.target.value })}
                         />
                         <div style={{ display: 'flex', gap: 8 }}>
-                          <button onClick={handleLogin} disabled={busy}>{t('sync.confirmLogin')}</button>
+                          {authMode === 'login' ? (
+                            <button onClick={handleLogin} disabled={busy}>{t('sync.confirmLogin')}</button>
+                          ) : (
+                            <button onClick={handleRegister} disabled={busy}
+                                    style={{ background: '#3fb950', color: '#fff', border: 'none' }}>
+                              {t('sync.confirmRegister')}
+                            </button>
+                          )}
                           <button onClick={() => setShowLoginForm(false)} disabled={busy}>{t('common.cancel')}</button>
                         </div>
                       </div>
