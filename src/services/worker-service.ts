@@ -84,6 +84,7 @@ import { MemoryRoutes } from './worker/http/routes/MemoryRoutes.js';
 import { CorpusRoutes } from './worker/http/routes/CorpusRoutes.js';
 import { ChromaRoutes } from './worker/http/routes/ChromaRoutes.js';
 import { DeleteRoutes } from './worker/http/routes/DeleteRoutes.js';
+import { SyncRoutes } from './worker/http/routes/SyncRoutes.js';
 
 import { CorpusStore } from './worker/knowledge/CorpusStore.js';
 import { CorpusBuilder } from './worker/knowledge/CorpusBuilder.js';
@@ -288,6 +289,8 @@ export class WorkerService implements WorkerRef {
     this.server.registerRoutes(new MemoryRoutes(this.dbManager, 'claude-mem'));
     // 软删除路由(项目/会话/单条 observation) + 回收站 CRUD,软删到 trash_* 影子表
     this.server.registerRoutes(new DeleteRoutes(this.dbManager, this.sseBroadcaster));
+    // cmem-sync client 路由(/api/sync/*)— localhost-only,token 在主库 sync_state 表
+    this.server.registerRoutes(new SyncRoutes(this.dbManager.getConnection()));
   }
 
   async start(): Promise<void> {

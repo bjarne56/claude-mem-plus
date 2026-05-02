@@ -41,6 +41,14 @@ ${pc.bold('Runtime Commands')} (requires Bun, delegates to installed plugin):
   ${pc.cyan('npx claude-mem cleanup [--dry-run]')}    Run one-time v12.4.3 pollution cleanup (or preview counts)
   ${pc.cyan('npx claude-mem transcript watch')}     Start transcript watcher
 
+${pc.bold('Sync (cmem-sync client)')}:
+  ${pc.cyan('npx claude-mem sync login --server <url>')}        Login + register this machine
+  ${pc.cyan('npx claude-mem sync push')}                          Push pending observations
+  ${pc.cyan('npx claude-mem sync pull')}                          Pull own + shared observations
+  ${pc.cyan('npx claude-mem sync status')}                        Show sync state
+  ${pc.cyan('npx claude-mem sync share-project <name> --with <user> --mode <mode>')}
+  ${pc.cyan('npx claude-mem sync --help')}                        Full sync help
+
 ${pc.bold('IDE Identifiers')}:
   claude-code, cursor, gemini-cli, opencode, openclaw,
   windsurf, codex-cli, copilot-cli, antigravity, goose,
@@ -157,6 +165,14 @@ async function main(): Promise<void> {
       break;
     }
 
+    // -- Sync (cmem-sync client) -------------------------------------------
+    case 'sync': {
+      const { runSyncCommand } = await import('./commands/sync.js');
+      await runSyncCommand(args.slice(1));
+      break;
+    }
+
+    // -- Transcript --------------------------------------------------------
     case 'transcript': {
       const subCommand = args[1]?.toLowerCase();
       if (subCommand === 'watch') {
