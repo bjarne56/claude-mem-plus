@@ -30,9 +30,13 @@ interface ObservationRow {
 }
 
 export class DeleteRoutes extends BaseRouteHandler {
+  private trashTablesEnsured = false;
+
   constructor(private dbManager: DatabaseManager) {
     super();
-    this.ensureTrashTables();
+    // 注意:不在构造时建表 —— worker-service 的 registerRoutes() 在 dbManager.initialize()
+    // 之前调用,此时 getDatabase() 会抛 "Database not initialized"
+    // 改成 lazy,首次 DELETE 请求时建表(此时 init 已完成,有 /api/* guard middleware 保证)
   }
 
   setupRoutes(app: express.Application): void {
@@ -44,8 +48,9 @@ export class DeleteRoutes extends BaseRouteHandler {
     });
   }
 
-  // ── 影子表初始化 ─────────────────────────────────────────────
+  // ── 影子表 lazy 初始化(首次请求时调一次)──────────────────────
   private ensureTrashTables(): void {
+    if (this.trashTablesEnsured) return;
     const db = this.dbManager.getDatabase();
     db.run(`
       CREATE TABLE IF NOT EXISTS trash_observations (
@@ -88,10 +93,13 @@ export class DeleteRoutes extends BaseRouteHandler {
     `);
     db.run('CREATE INDEX IF NOT EXISTS idx_trash_sum_deleted ON trash_summaries(deleted_at_epoch DESC)');
     db.run('CREATE INDEX IF NOT EXISTS idx_trash_sum_project ON trash_summaries(project)');
+    this.trashTablesEnsured = true;
+    logger.info('DB', 'trash_observations / trash_sessions / trash_summaries ensured');
   }
 
   // ── DELETE /api/observations/:id ─────────────────────────────
   private handleDeleteObservation = async (req: Request, res: Response): Promise<void> => {
+    this.ensureTrashTables();
     const id = this.parseIntParam(req, res, 'id');
     if (id === null) return;
 
@@ -133,6 +141,7 @@ export class DeleteRoutes extends BaseRouteHandler {
   // ── DELETE /api/sessions/:id ─────────────────────────────────
   // :id = memory_session_id (前端 SummaryCard 用 summary.session_id 传过来)
   private handleDeleteSession = async (req: Request, res: Response): Promise<void> => {
+    this.ensureTrashTables();
     const memorySessionId = req.params.id;
     if (!memorySessionId) {
       this.badRequest(res, 'Missing session id');
@@ -172,6 +181,7 @@ export class DeleteRoutes extends BaseRouteHandler {
 
   // ── DELETE /api/projects/:name ───────────────────────────────
   private handleDeleteProject = async (req: Request, res: Response): Promise<void> => {
+    this.ensureTrashTables();
     const project = req.params.name;
     if (!project) {
       this.badRequest(res, 'Missing project name');
