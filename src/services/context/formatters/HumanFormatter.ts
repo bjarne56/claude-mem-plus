@@ -24,7 +24,7 @@ function formatHeaderDateTime(): string {
 export function renderHumanHeader(project: string): string[] {
   return [
     '',
-    `${colors.bright}${colors.cyan}[${project}] recent context, ${formatHeaderDateTime()}${colors.reset}`,
+    `${colors.bright}${colors.cyan}[${project}] 最近上下文, ${formatHeaderDateTime()}${colors.reset}`,
     `${colors.gray}${'─'.repeat(60)}${colors.reset}`,
     ''
   ];
@@ -35,28 +35,28 @@ export function renderHumanLegend(): string[] {
   const typeLegendItems = mode.observation_types.map(t => `${t.emoji} ${t.id}`).join(' | ');
 
   return [
-    `${colors.dim}Legend: session-request | ${typeLegendItems}${colors.reset}`,
+    `${colors.dim}图例: 会话请求 | ${typeLegendItems}${colors.reset}`,
     ''
   ];
 }
 
 export function renderHumanColumnKey(): string[] {
   return [
-    `${colors.bright}Column Key${colors.reset}`,
-    `${colors.dim}  Read: Tokens to read this observation (cost to learn it now)${colors.reset}`,
-    `${colors.dim}  Work: Tokens spent on work that produced this record ( research, building, deciding)${colors.reset}`,
+    `${colors.bright}列说明${colors.reset}`,
+    `${colors.dim}  Read: 阅读这条 observation 的词元数(现在学的成本)${colors.reset}`,
+    `${colors.dim}  Work: 产出这条记录花的工作词元(调研 / 构建 / 决策)${colors.reset}`,
     ''
   ];
 }
 
 export function renderHumanContextIndex(): string[] {
   return [
-    `${colors.dim}Context Index: This semantic index (titles, types, files, tokens) is usually sufficient to understand past work.${colors.reset}`,
+    `${colors.dim}上下文索引: 这份语义索引(标题 / 类型 / 文件 / 词元)通常足以理解过往工作。${colors.reset}`,
     '',
-    `${colors.dim}When you need implementation details, rationale, or debugging context:${colors.reset}`,
-    `${colors.dim}  - Fetch by ID: get_observations([IDs]) for observations visible in this index${colors.reset}`,
-    `${colors.dim}  - Search history: Use the mem-search skill for past decisions, bugs, and deeper research${colors.reset}`,
-    `${colors.dim}  - Trust this index over re-reading code for past decisions and learnings${colors.reset}`,
+    `${colors.dim}当你需要实现细节、原因或调试上下文时:${colors.reset}`,
+    `${colors.dim}  - 按 ID 取: get_observations([IDs]) 拉取本索引可见的 observation${colors.reset}`,
+    `${colors.dim}  - 搜历史: 用 mem-search skill 查过往决策、bug 与深度调研${colors.reset}`,
+    `${colors.dim}  - 信任本索引,不必为查过往决策和学到的内容重新读代码${colors.reset}`,
     ''
   ];
 }
@@ -67,18 +67,18 @@ export function renderHumanContextEconomics(
 ): string[] {
   const output: string[] = [];
 
-  output.push(`${colors.bright}${colors.cyan}Context Economics${colors.reset}`);
-  output.push(`${colors.dim}  Loading: ${economics.totalObservations} observations (${economics.totalReadTokens.toLocaleString()} tokens to read)${colors.reset}`);
-  output.push(`${colors.dim}  Work investment: ${economics.totalDiscoveryTokens.toLocaleString()} tokens spent on research, building, and decisions${colors.reset}`);
+  output.push(`${colors.bright}${colors.cyan}上下文经济${colors.reset}`);
+  output.push(`${colors.dim}  载入: ${economics.totalObservations} 条 observation (${economics.totalReadTokens.toLocaleString()} 词元待读)${colors.reset}`);
+  output.push(`${colors.dim}  工作投入: ${economics.totalDiscoveryTokens.toLocaleString()} 词元用于调研、构建与决策${colors.reset}`);
 
   if (economics.totalDiscoveryTokens > 0 && (config.showSavingsAmount || config.showSavingsPercent)) {
-    let savingsLine = '  Your savings: ';
+    let savingsLine = '  你节省: ';
     if (config.showSavingsAmount && config.showSavingsPercent) {
-      savingsLine += `${economics.savings.toLocaleString()} tokens (${economics.savingsPercent}% reduction from reuse)`;
+      savingsLine += `${economics.savings.toLocaleString()} 词元(复用减少 ${economics.savingsPercent}%)`;
     } else if (config.showSavingsAmount) {
-      savingsLine += `${economics.savings.toLocaleString()} tokens`;
+      savingsLine += `${economics.savings.toLocaleString()} 词元`;
     } else {
-      savingsLine += `${economics.savingsPercent}% reduction from reuse`;
+      savingsLine += `复用减少 ${economics.savingsPercent}%`;
     }
     output.push(`${colors.green}${savingsLine}${colors.reset}`);
   }
@@ -106,7 +106,7 @@ export function renderHumanTableRow(
   showTime: boolean,
   config: ContextConfig
 ): string {
-  const title = obs.title || 'Untitled';
+  const title = obs.title || '未命名';
   const icon = ModeManager.getInstance().getTypeIcon(obs.type);
   const { readTokens, discoveryTokens, workEmoji } = formatObservationTokenDisplay(obs, config);
 
@@ -125,7 +125,7 @@ export function renderHumanFullObservation(
   config: ContextConfig
 ): string[] {
   const output: string[] = [];
-  const title = obs.title || 'Untitled';
+  const title = obs.title || '未命名';
   const icon = ModeManager.getInstance().getTypeIcon(obs.type);
   const { readTokens, discoveryTokens, workEmoji } = formatObservationTokenDisplay(obs, config);
 
@@ -149,7 +149,7 @@ export function renderHumanSummaryItem(
   summary: { id: number; request: string | null },
   formattedTime: string
 ): string[] {
-  const summaryTitle = `${summary.request || 'Session started'} (${formattedTime})`;
+  const summaryTitle = `${summary.request || '会话开始'} (${formattedTime})`;
   return [
     `${colors.yellow}#S${summary.id}${colors.reset} ${summaryTitle}`,
     ''
@@ -168,7 +168,7 @@ export function renderHumanPreviouslySection(priorMessages: PriorMessages): stri
     '',
     '---',
     '',
-    `${colors.bright}${colors.magenta}Previously${colors.reset}`,
+    `${colors.bright}${colors.magenta}之前${colors.reset}`,
     '',
     `${colors.dim}A: ${priorMessages.assistantMessage}${colors.reset}`,
     ''
@@ -179,10 +179,10 @@ export function renderHumanFooter(totalDiscoveryTokens: number, totalReadTokens:
   const workTokensK = Math.round(totalDiscoveryTokens / 1000);
   return [
     '',
-    `${colors.dim}Access ${workTokensK}k tokens of past research & decisions for just ${totalReadTokens.toLocaleString()}t. Use the claude-mem skill to access memories by ID.${colors.reset}`
+    `${colors.dim}用 ${totalReadTokens.toLocaleString()}t 词元访问过往 ${workTokensK}k 词元的调研与决策。用 claude-mem skill 按 ID 取记忆。${colors.reset}`
   ];
 }
 
 export function renderHumanEmptyState(project: string): string {
-  return `\n${colors.bright}${colors.cyan}[${project}] recent context, ${formatHeaderDateTime()}${colors.reset}\n${colors.gray}${'─'.repeat(60)}${colors.reset}\n\n${colors.dim}No previous sessions found for this project yet.${colors.reset}\n`;
+  return `\n${colors.bright}${colors.cyan}[${project}] 最近上下文, ${formatHeaderDateTime()}${colors.reset}\n${colors.gray}${'─'.repeat(60)}${colors.reset}\n\n${colors.dim}本项目暂无过往会话。${colors.reset}\n`;
 }
