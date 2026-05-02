@@ -3,7 +3,7 @@ import { ThemeToggle } from './ThemeToggle';
 import { ThemePreference } from '../hooks/useTheme';
 import { GitHubStarsButton } from './GitHubStarsButton';
 import { useSpinningFavicon } from '../hooks/useSpinningFavicon';
-import { LanguageToggle } from './LanguageToggle';
+import { LanguageSelect } from './LanguageSelect';
 import { useI18n } from '../i18n';
 
 interface HeaderProps {
@@ -155,7 +155,7 @@ export function Header({
             </svg>
           </button>
         )}
-        <LanguageToggle />
+        <LanguageSelect />
         <ThemeToggle
           preference={themePreference}
           onThemeChange={onThemeChange}

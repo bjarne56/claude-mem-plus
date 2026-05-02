@@ -6,6 +6,7 @@ import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js'
 import { getWorkerPort, getWorkerHost } from '../shared/worker-utils.js';
 import { HOOK_TIMEOUTS } from '../shared/hook-constants.js';
 import { SettingsDefaultsManager } from '../shared/SettingsDefaultsManager.js';
+import { USER_SETTINGS_PATH } from '../shared/paths.js';
 import { getAuthMethodDescription } from '../shared/EnvManager.js';
 import { logger } from '../utils/logger.js';
 import { ChromaMcpManager } from './sync/ChromaMcpManager.js';
@@ -171,6 +172,22 @@ export class WorkerService implements WorkerRef {
 
     this.sessionManager.setOnPendingMutate(() => this.broadcastProcessingStatus());
 
+    // [zh-fork] HumanFormatter 默认语言:从 settings.CLAUDE_MEM_MODE 派生
+    // SessionStart hook 注入用 /api/context/inject,这条会用此默认值;
+    // viewer /api/context/preview 在 handler 入口会再设一次(支持 ?lang= override)
+    try {
+      const settings = SettingsDefaultsManager.loadFromFile(USER_SETTINGS_PATH);
+      const mode = settings.CLAUDE_MEM_MODE || 'code';
+      // 同步 import 避免启动时的 promise 链
+      const { setHumanFormatterLang } = require('./context/formatters/HumanFormatter.js');
+      setHumanFormatterLang(mode.includes('zh') ? 'zh' : 'en');
+    } catch (e) {
+      // 启动期 settings 不可用,默认中文(跟 install.sh 默认一致)
+    }
+
+
+    // Initialize MCP client
+    // Empty capabilities object: this client only calls tools, doesn't expose any
     this.mcpClient = new Client({
       name: 'worker-search-proxy',
       version: packageVersion

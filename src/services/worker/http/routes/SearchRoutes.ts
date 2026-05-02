@@ -317,6 +317,27 @@ export class SearchRoutes extends BaseRouteHandler {
       return;
     }
 
+    // ── 多语言:?lang=xxx 优先,否则从 settings.CLAUDE_MEM_MODE 派生 ──
+    // viewer 在 useContextPreview 里把当前 lang 传过来,这样切换语言立刻生效
+    const { setHumanFormatterLang } = await import('../../../context/formatters/HumanFormatter.js');
+    const reqLang = (req.query.lang as string | undefined) || null;
+    if (reqLang) {
+      setHumanFormatterLang(reqLang);
+    } else {
+      // 从 settings 读 CLAUDE_MEM_MODE → 派生:'code--zh'/'code--zh-tw' → zh,其他 → en
+      try {
+        const { SettingsDefaultsManager } = await import('../../../../shared/SettingsDefaultsManager.js');
+        const { USER_SETTINGS_PATH } = await import('../../../../shared/paths.js');
+        const settings = SettingsDefaultsManager.loadFromFile(USER_SETTINGS_PATH);
+        const mode = settings.CLAUDE_MEM_MODE || 'code';
+        // 简化映射:含 'zh' 的 mode → zh,其他 → en
+        setHumanFormatterLang(mode.includes('zh') ? 'zh' : 'en');
+      } catch {
+        setHumanFormatterLang('en');
+      }
+    }
+
+    // Import context generator (runs in worker, has access to database)
     const { generateContext } = await import('../../../context-generator.js');
 
     const cwd = `/preview/${projectName}`;
