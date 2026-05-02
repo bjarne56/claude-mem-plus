@@ -911,4 +911,34 @@ export class ChromaSync {
   async close(): Promise<void> {
     logger.info('CHROMA_SYNC', 'ChromaSync closed', { project: this.project });
   }
+
+  /**
+   * Public:按 observation ID 批量从 Chroma collection 删向量。
+   * DeleteRoutes 软删后调它清向量;失败不抛(只 log warn),因为 SQLite trash 已是真相源
+   */
+  async deleteByObservationIds(observationIds: number[]): Promise<void> {
+    if (observationIds.length === 0) return;
+    try {
+      await this.ensureCollectionExists();
+      const chromaMcp = ChromaMcpManager.getInstance();
+      // 分批,避免一次塞太多 ID
+      for (let i = 0; i < observationIds.length; i += this.BATCH_SIZE) {
+        const batch = observationIds.slice(i, i + this.BATCH_SIZE).map(String);
+        await chromaMcp.callTool('chroma_delete_documents', {
+          collection_name: this.collectionName,
+          ids: batch,
+        });
+      }
+      logger.info('CHROMA_SYNC', 'Deleted observation vectors from Chroma', {
+        project: this.project,
+        count: observationIds.length,
+      });
+    } catch (error) {
+      logger.warn('CHROMA_SYNC', 'Chroma delete failed (SQLite trash still authoritative)', {
+        project: this.project,
+        count: observationIds.length,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
 }

@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { useI18n } from '../i18n';
 
 interface ScrollToTopProps {
   targetRef: React.RefObject<HTMLDivElement>;
 }
 
 export function ScrollToTop({ targetRef }: ScrollToTopProps) {
+  const { t } = useI18n();
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
@@ -20,7 +22,7 @@ export function ScrollToTop({ targetRef }: ScrollToTopProps) {
       target.addEventListener('scroll', handleScroll);
       return () => target.removeEventListener('scroll', handleScroll);
     }
-  }, []); 
+  }, []);
 
   const scrollToTop = () => {
     const target = targetRef.current;
@@ -38,7 +40,8 @@ export function ScrollToTop({ targetRef }: ScrollToTopProps) {
     <button
       onClick={scrollToTop}
       className="scroll-to-top"
-      aria-label="Scroll to top"
+      aria-label={t('feed.scrollToTop')}
+      title={t('feed.scrollToTop')}
     >
       <svg
         width="20"

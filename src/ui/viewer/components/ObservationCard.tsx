@@ -1,31 +1,31 @@
 import React, { useState } from 'react';
 import { Observation } from '../types';
 import { formatDate } from '../utils/formatters';
+import { useI18n } from '../i18n';
 
 interface ObservationCardProps {
   observation: Observation;
+  onDelete?: (id: number) => void;
 }
 
 function stripProjectRoot(filePath: string): string {
   const markers = ['/Scripts/', '/src/', '/plugin/', '/docs/'];
-
   for (const marker of markers) {
     const index = filePath.indexOf(marker);
     if (index !== -1) {
       return filePath.substring(index + 1);
     }
   }
-
   const projectIndex = filePath.indexOf('claude-mem/');
   if (projectIndex !== -1) {
     return filePath.substring(projectIndex + 'claude-mem/'.length);
   }
-
   const parts = filePath.split('/');
   return parts.length > 3 ? parts.slice(-3).join('/') : filePath;
 }
 
-export function ObservationCard({ observation }: ObservationCardProps) {
+export function ObservationCard({ observation, onDelete }: ObservationCardProps) {
+  const { t } = useI18n();
   const [showFacts, setShowFacts] = useState(false);
   const [showNarrative, setShowNarrative] = useState(false);
   const date = formatDate(observation.created_at_epoch);
@@ -39,7 +39,6 @@ export function ObservationCard({ observation }: ObservationCardProps) {
 
   return (
     <div className="card">
-      {/* Header with toggle buttons in top right */}
       <div className="card-header">
         <div className="card-header-left">
           <span className={`card-type type-${observation.type}`}>
@@ -50,8 +49,8 @@ export function ObservationCard({ observation }: ObservationCardProps) {
           </span>
           <span className="card-project">{observation.project}</span>
           {observation.merged_into_project && (
-            <span className="card-merged-badge" title={`Merged into ${observation.merged_into_project}`}>
-              merged → {observation.merged_into_project}
+            <span className="card-merged-badge" title={t('card.mergedTitle', { target: observation.merged_into_project })}>
+              {t('card.merged', { target: observation.merged_into_project })}
             </span>
           )}
         </div>
@@ -61,14 +60,14 @@ export function ObservationCard({ observation }: ObservationCardProps) {
               className={`view-mode-toggle ${showFacts ? 'active' : ''}`}
               onClick={() => {
                 setShowFacts(!showFacts);
-                if (!showFacts) setShowNarrative(false); 
+                if (!showFacts) setShowNarrative(false);
               }}
             >
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="9 11 12 14 22 4"></polyline>
                 <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
               </svg>
-              <span>facts</span>
+              <span>{t('card.facts')}</span>
             </button>
           )}
           {observation.narrative && (
@@ -76,7 +75,7 @@ export function ObservationCard({ observation }: ObservationCardProps) {
               className={`view-mode-toggle ${showNarrative ? 'active' : ''}`}
               onClick={() => {
                 setShowNarrative(!showNarrative);
-                if (!showNarrative) setShowFacts(false); 
+                if (!showNarrative) setShowFacts(false);
               }}
             >
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -85,16 +84,27 @@ export function ObservationCard({ observation }: ObservationCardProps) {
                 <line x1="16" y1="13" x2="8" y2="13"></line>
                 <line x1="16" y1="17" x2="8" y2="17"></line>
               </svg>
-              <span>narrative</span>
+              <span>{t('card.narrative')}</span>
+            </button>
+          )}
+          {onDelete && (
+            <button
+              className="card-delete-btn"
+              onClick={() => onDelete(observation.id)}
+              title={t('card.deleteThis')}
+              aria-label={t('card.deleteThis')}
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"></path>
+              </svg>
             </button>
           )}
         </div>
       </div>
 
-      {/* Title */}
-      <div className="card-title">{observation.title || 'Untitled'}</div>
+      <div className="card-title">{observation.title || t('common.untitled')}</div>
 
-      {/* Content based on toggle state */}
       <div className="view-mode-content">
         {!showFacts && !showNarrative && observation.subtitle && (
           <div className="card-subtitle">{observation.subtitle}</div>
@@ -113,7 +123,6 @@ export function ObservationCard({ observation }: ObservationCardProps) {
         )}
       </div>
 
-      {/* Metadata footer - id, date, and conditionally concepts/files when facts toggle is on */}
       <div className="card-meta">
         <span className="meta-date">#{observation.id} • {date}</span>
         {showFacts && (concepts.length > 0 || filesRead.length > 0 || filesModified.length > 0) && (
@@ -132,12 +141,12 @@ export function ObservationCard({ observation }: ObservationCardProps) {
             ))}
             {filesRead.length > 0 && (
               <span className="meta-files">
-                <span className="file-label">read:</span> {filesRead.join(', ')}
+                <span className="file-label">{t('card.filesRead')}</span> {filesRead.join(', ')}
               </span>
             )}
             {filesModified.length > 0 && (
               <span className="meta-files">
-                <span className="file-label">modified:</span> {filesModified.join(', ')}
+                <span className="file-label">{t('card.filesModified')}</span> {filesModified.join(', ')}
               </span>
             )}
           </div>

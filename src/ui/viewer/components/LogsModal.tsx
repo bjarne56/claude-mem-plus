@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { authFetch } from '../utils/api';
+import { useI18n } from '../i18n';
 
 type LogLevel = 'DEBUG' | 'INFO' | 'WARN' | 'ERROR';
 type LogComponent = 'HOOK' | 'WORKER' | 'SDK' | 'PARSER' | 'DB' | 'SYSTEM' | 'HTTP' | 'SESSION' | 'CHROMA';
@@ -14,23 +15,42 @@ interface ParsedLogLine {
   isSpecial?: 'dataIn' | 'dataOut' | 'success' | 'failure' | 'timing' | 'happyPath';
 }
 
-const LOG_LEVELS: { key: LogLevel; label: string; icon: string; color: string }[] = [
-  { key: 'DEBUG', label: 'Debug', icon: '🔍', color: '#8b8b8b' },
-  { key: 'INFO', label: 'Info', icon: 'ℹ️', color: '#58a6ff' },
-  { key: 'WARN', label: 'Warn', icon: '⚠️', color: '#d29922' },
-  { key: 'ERROR', label: 'Error', icon: '❌', color: '#f85149' },
+const LEVEL_LABEL_KEYS: Record<LogLevel, string> = {
+  DEBUG: 'logs.level.debug',
+  INFO: 'logs.level.info',
+  WARN: 'logs.level.warn',
+  ERROR: 'logs.level.error',
+};
+
+const COMPONENT_LABEL_KEYS: Record<LogComponent, string> = {
+  HOOK: 'logs.component.hook',
+  WORKER: 'logs.component.worker',
+  SDK: 'logs.component.sdk',
+  PARSER: 'logs.component.parser',
+  DB: 'logs.component.db',
+  SYSTEM: 'logs.component.system',
+  HTTP: 'logs.component.http',
+  SESSION: 'logs.component.session',
+  CHROMA: 'logs.component.chroma',
+};
+
+const LOG_LEVELS: { key: LogLevel; icon: string; color: string }[] = [
+  { key: 'DEBUG', icon: '🔍', color: '#8b8b8b' },
+  { key: 'INFO',  icon: 'ℹ️', color: '#58a6ff' },
+  { key: 'WARN',  icon: '⚠️', color: '#d29922' },
+  { key: 'ERROR', icon: '❌', color: '#f85149' },
 ];
 
-const LOG_COMPONENTS: { key: LogComponent; label: string; icon: string; color: string }[] = [
-  { key: 'HOOK', label: 'Hook', icon: '🪝', color: '#a371f7' },
-  { key: 'WORKER', label: 'Worker', icon: '⚙️', color: '#58a6ff' },
-  { key: 'SDK', label: 'SDK', icon: '📦', color: '#3fb950' },
-  { key: 'PARSER', label: 'Parser', icon: '📄', color: '#79c0ff' },
-  { key: 'DB', label: 'DB', icon: '🗄️', color: '#f0883e' },
-  { key: 'SYSTEM', label: 'System', icon: '💻', color: '#8b949e' },
-  { key: 'HTTP', label: 'HTTP', icon: '🌐', color: '#39d353' },
-  { key: 'SESSION', label: 'Session', icon: '📋', color: '#db61a2' },
-  { key: 'CHROMA', label: 'Chroma', icon: '🔮', color: '#a855f7' },
+const LOG_COMPONENTS: { key: LogComponent; icon: string; color: string }[] = [
+  { key: 'HOOK',    icon: '🪝', color: '#a371f7' },
+  { key: 'WORKER',  icon: '⚙️', color: '#58a6ff' },
+  { key: 'SDK',     icon: '📦', color: '#3fb950' },
+  { key: 'PARSER',  icon: '📄', color: '#79c0ff' },
+  { key: 'DB',      icon: '🗄️', color: '#f0883e' },
+  { key: 'SYSTEM',  icon: '💻', color: '#8b949e' },
+  { key: 'HTTP',    icon: '🌐', color: '#39d353' },
+  { key: 'SESSION', icon: '📋', color: '#db61a2' },
+  { key: 'CHROMA',  icon: '🔮', color: '#a855f7' },
 ];
 
 function parseLogLine(line: string): ParsedLogLine {
@@ -68,6 +88,7 @@ interface LogsDrawerProps {
 }
 
 export function LogsDrawer({ isOpen, onClose }: LogsDrawerProps) {
+  const { t } = useI18n();
   const [logs, setLogs] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -122,23 +143,23 @@ export function LogsDrawer({ isOpen, onClose }: LogsDrawerProps) {
     try {
       const response = await authFetch('/api/logs');
       if (!response.ok) {
-        throw new Error(`Failed to fetch logs: ${response.statusText}`);
+        throw new Error(t('logs.fetchFail', { msg: response.statusText }));
       }
       const data = await response.json();
       setLogs(data.logs || '');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error');
+      setError(err instanceof Error ? err.message : t('logs.unknownError'));
     } finally {
       setIsLoading(false);
     }
-  }, [checkIfAtBottom]);
+  }, [checkIfAtBottom, t]);
 
   useEffect(() => {
     scrollToBottom();
   }, [logs, scrollToBottom]);
 
   const handleClearLogs = useCallback(async () => {
-    if (!confirm('Are you sure you want to clear all logs?')) {
+    if (!confirm(t('logs.clearConfirm'))) {
       return;
     }
     setIsLoading(true);
@@ -146,15 +167,15 @@ export function LogsDrawer({ isOpen, onClose }: LogsDrawerProps) {
     try {
       const response = await authFetch('/api/logs/clear', { method: 'POST' });
       if (!response.ok) {
-        throw new Error(`Failed to clear logs: ${response.statusText}`);
+        throw new Error(t('logs.clearFail', { msg: response.statusText }));
       }
       setLogs('');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error');
+      setError(err instanceof Error ? err.message : t('logs.unknownError'));
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [t]);
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
@@ -187,7 +208,7 @@ export function LogsDrawer({ isOpen, onClose }: LogsDrawerProps) {
 
   useEffect(() => {
     if (isOpen) {
-      wasAtBottomRef.current = true; 
+      wasAtBottomRef.current = true;
       fetchLogs();
     }
   }, [isOpen, fetchLogs]);
@@ -196,7 +217,6 @@ export function LogsDrawer({ isOpen, onClose }: LogsDrawerProps) {
     if (!isOpen || !autoRefresh) {
       return;
     }
-
     const interval = setInterval(fetchLogs, 2000);
     return () => clearInterval(interval);
   }, [isOpen, autoRefresh, fetchLogs]);
@@ -204,11 +224,7 @@ export function LogsDrawer({ isOpen, onClose }: LogsDrawerProps) {
   const toggleLevel = useCallback((level: LogLevel) => {
     setActiveLevels(prev => {
       const next = new Set(prev);
-      if (next.has(level)) {
-        next.delete(level);
-      } else {
-        next.add(level);
-      }
+      if (next.has(level)) next.delete(level); else next.add(level);
       return next;
     });
   }, []);
@@ -216,29 +232,19 @@ export function LogsDrawer({ isOpen, onClose }: LogsDrawerProps) {
   const toggleComponent = useCallback((component: LogComponent) => {
     setActiveComponents(prev => {
       const next = new Set(prev);
-      if (next.has(component)) {
-        next.delete(component);
-      } else {
-        next.add(component);
-      }
+      if (next.has(component)) next.delete(component); else next.add(component);
       return next;
     });
   }, []);
 
   const setAllLevels = useCallback((enabled: boolean) => {
-    if (enabled) {
-      setActiveLevels(new Set(['DEBUG', 'INFO', 'WARN', 'ERROR']));
-    } else {
-      setActiveLevels(new Set());
-    }
+    setActiveLevels(enabled ? new Set(['DEBUG', 'INFO', 'WARN', 'ERROR']) : new Set());
   }, []);
 
   const setAllComponents = useCallback((enabled: boolean) => {
-    if (enabled) {
-      setActiveComponents(new Set(['HOOK', 'WORKER', 'SDK', 'PARSER', 'DB', 'SYSTEM', 'HTTP', 'SESSION', 'CHROMA']));
-    } else {
-      setActiveComponents(new Set());
-    }
+    setActiveComponents(enabled
+      ? new Set(['HOOK', 'WORKER', 'SDK', 'PARSER', 'DB', 'SYSTEM', 'HTTP', 'SESSION', 'CHROMA'])
+      : new Set());
   }, []);
 
   if (!isOpen) {
@@ -247,10 +253,8 @@ export function LogsDrawer({ isOpen, onClose }: LogsDrawerProps) {
 
   const getLineStyle = (line: ParsedLogLine): React.CSSProperties => {
     const levelConfig = LOG_LEVELS.find(l => l.key === line.level);
-    const componentConfig = LOG_COMPONENTS.find(c => c.key === line.component);
 
     let color = 'var(--color-text-primary)';
-    let fontWeight = 'normal';
     let backgroundColor = 'transparent';
 
     if (line.level === 'ERROR') {
@@ -269,7 +273,7 @@ export function LogsDrawer({ isOpen, onClose }: LogsDrawerProps) {
       color = levelConfig.color;
     }
 
-    return { color, fontWeight, backgroundColor, padding: '1px 0', borderRadius: '2px' };
+    return { color, fontWeight: 'normal', backgroundColor, padding: '1px 0', borderRadius: '2px' };
   };
 
   const renderLogLine = (line: ParsedLogLine, index: number) => {
@@ -283,16 +287,18 @@ export function LogsDrawer({ isOpen, onClose }: LogsDrawerProps) {
 
     const levelConfig = LOG_LEVELS.find(l => l.key === line.level);
     const componentConfig = LOG_COMPONENTS.find(c => c.key === line.component);
+    const levelLabel = line.level ? t(LEVEL_LABEL_KEYS[line.level]) : '';
+    const compLabel = line.component ? t(COMPONENT_LABEL_KEYS[line.component]) : '';
 
     return (
       <div key={index} className="log-line" style={getLineStyle(line)}>
         <span className="log-timestamp">[{line.timestamp}]</span>
         {' '}
-        <span className="log-level" style={{ color: levelConfig?.color }} title={line.level}>
+        <span className="log-level" style={{ color: levelConfig?.color }} title={levelLabel}>
           [{levelConfig?.icon || ''} {line.level?.padEnd(5)}]
         </span>
         {' '}
-        <span className="log-component" style={{ color: componentConfig?.color }} title={line.component}>
+        <span className="log-component" style={{ color: componentConfig?.color }} title={compLabel}>
           [{componentConfig?.icon || ''} {line.component?.padEnd(7)}]
         </span>
         {' '}
@@ -309,16 +315,13 @@ export function LogsDrawer({ isOpen, onClose }: LogsDrawerProps) {
 
   return (
     <div className="console-drawer" style={{ height: `${height}px` }}>
-      <div
-        className="console-resize-handle"
-        onMouseDown={handleMouseDown}
-      >
+      <div className="console-resize-handle" onMouseDown={handleMouseDown}>
         <div className="console-resize-bar" />
       </div>
 
       <div className="console-header">
         <div className="console-tabs">
-          <div className="console-tab active">Console</div>
+          <div className="console-tab active">{t('logs.tab.console')}</div>
         </div>
         <div className="console-controls">
           <label className="console-auto-refresh">
@@ -327,106 +330,80 @@ export function LogsDrawer({ isOpen, onClose }: LogsDrawerProps) {
               checked={autoRefresh}
               onChange={(e) => setAutoRefresh(e.target.checked)}
             />
-            Auto-refresh
+            {t('logs.autoRefresh')}
           </label>
+          <button className="console-control-btn" onClick={fetchLogs} disabled={isLoading} title={t('logs.refresh')}>↻</button>
           <button
             className="console-control-btn"
-            onClick={fetchLogs}
-            disabled={isLoading}
-            title="Refresh logs"
-          >
-            ↻
-          </button>
-          <button
-            className="console-control-btn"
-            onClick={() => {
-              wasAtBottomRef.current = true;
-              scrollToBottom();
-            }}
-            title="Scroll to bottom"
-          >
-            ⬇
-          </button>
-          <button
-            className="console-control-btn console-clear-btn"
-            onClick={handleClearLogs}
-            disabled={isLoading}
-            title="Clear logs"
-          >
-            🗑
-          </button>
-          <button
-            className="console-control-btn"
-            onClick={onClose}
-            title="Close console"
-          >
-            ✕
-          </button>
+            onClick={() => { wasAtBottomRef.current = true; scrollToBottom(); }}
+            title={t('logs.scrollBottom')}
+          >⬇</button>
+          <button className="console-control-btn console-clear-btn" onClick={handleClearLogs} disabled={isLoading} title={t('logs.clearLogs')}>🗑</button>
+          <button className="console-control-btn" onClick={onClose} title={t('logs.closeConsole')}>✕</button>
         </div>
       </div>
 
-      {/* Filter Bar */}
       <div className="console-filters">
         <div className="console-filter-section">
-          <span className="console-filter-label">Quick:</span>
+          <span className="console-filter-label">{t('logs.filter.quick')}</span>
           <div className="console-filter-chips">
             <button
               className={`console-filter-chip ${alignmentOnly ? 'active' : ''}`}
               onClick={() => setAlignmentOnly(!alignmentOnly)}
-              style={{
-                '--chip-color': '#f0883e',
-              } as React.CSSProperties}
-              title="Show only session alignment logs"
+              style={{ '--chip-color': '#f0883e' } as React.CSSProperties}
+              title={t('logs.filter.alignmentTitle')}
             >
-              🔗 Alignment
+              {t('logs.filter.alignment')}
             </button>
           </div>
         </div>
         <div className="console-filter-section">
-          <span className="console-filter-label">Levels:</span>
+          <span className="console-filter-label">{t('logs.filter.levels')}</span>
           <div className="console-filter-chips">
-            {LOG_LEVELS.map(level => (
-              <button
-                key={level.key}
-                className={`console-filter-chip ${activeLevels.has(level.key) ? 'active' : ''}`}
-                onClick={() => toggleLevel(level.key)}
-                style={{
-                  '--chip-color': level.color,
-                } as React.CSSProperties}
-                title={level.label}
-              >
-                {level.icon} {level.label}
-              </button>
-            ))}
+            {LOG_LEVELS.map(level => {
+              const label = t(LEVEL_LABEL_KEYS[level.key]);
+              return (
+                <button
+                  key={level.key}
+                  className={`console-filter-chip ${activeLevels.has(level.key) ? 'active' : ''}`}
+                  onClick={() => toggleLevel(level.key)}
+                  style={{ '--chip-color': level.color } as React.CSSProperties}
+                  title={label}
+                >
+                  {level.icon} {label}
+                </button>
+              );
+            })}
             <button
               className="console-filter-action"
               onClick={() => setAllLevels(activeLevels.size === 0)}
-              title={activeLevels.size === LOG_LEVELS.length ? 'Select none' : 'Select all'}
+              title={activeLevels.size === LOG_LEVELS.length ? t('logs.filter.selectNone') : t('logs.filter.selectAll')}
             >
               {activeLevels.size === LOG_LEVELS.length ? '○' : '●'}
             </button>
           </div>
         </div>
         <div className="console-filter-section">
-          <span className="console-filter-label">Components:</span>
+          <span className="console-filter-label">{t('logs.filter.components')}</span>
           <div className="console-filter-chips">
-            {LOG_COMPONENTS.map(comp => (
-              <button
-                key={comp.key}
-                className={`console-filter-chip ${activeComponents.has(comp.key) ? 'active' : ''}`}
-                onClick={() => toggleComponent(comp.key)}
-                style={{
-                  '--chip-color': comp.color,
-                } as React.CSSProperties}
-                title={comp.label}
-              >
-                {comp.icon} {comp.label}
-              </button>
-            ))}
+            {LOG_COMPONENTS.map(comp => {
+              const label = t(COMPONENT_LABEL_KEYS[comp.key]);
+              return (
+                <button
+                  key={comp.key}
+                  className={`console-filter-chip ${activeComponents.has(comp.key) ? 'active' : ''}`}
+                  onClick={() => toggleComponent(comp.key)}
+                  style={{ '--chip-color': comp.color } as React.CSSProperties}
+                  title={label}
+                >
+                  {comp.icon} {label}
+                </button>
+              );
+            })}
             <button
               className="console-filter-action"
               onClick={() => setAllComponents(activeComponents.size === 0)}
-              title={activeComponents.size === LOG_COMPONENTS.length ? 'Select none' : 'Select all'}
+              title={activeComponents.size === LOG_COMPONENTS.length ? t('logs.filter.selectNone') : t('logs.filter.selectAll')}
             >
               {activeComponents.size === LOG_COMPONENTS.length ? '○' : '●'}
             </button>
@@ -436,14 +413,14 @@ export function LogsDrawer({ isOpen, onClose }: LogsDrawerProps) {
 
       {error && (
         <div className="console-error">
-          ⚠ {error}
+          {t('logs.warning', { msg: error })}
         </div>
       )}
 
       <div className="console-content" ref={contentRef}>
         <div className="console-logs">
           {filteredLines.length === 0 ? (
-            <div className="log-line log-line-empty">No logs available</div>
+            <div className="log-line log-line-empty">{t('logs.empty')}</div>
           ) : (
             filteredLines.map((line, index) => renderLogLine(line, index))
           )}

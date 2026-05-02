@@ -65,6 +65,20 @@ export class DatabaseManager {
     return this.chromaSync;
   }
 
+  /**
+   * Expose underlying bun:sqlite Database for routes that need direct SQL
+   * (used by DeleteRoutes for soft-delete to trash tables).
+   */
+  getDatabase(): Database {
+    if (!this.db) {
+      throw new Error('Database not initialized');
+    }
+    return this.db;
+  }
+
+  /**
+   * Get session by ID (throws if not found)
+   */
   getSessionById(sessionDbId: number): {
     id: number;
     content_session_id: string;

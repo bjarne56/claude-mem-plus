@@ -5,6 +5,7 @@ import { SummaryCard } from './SummaryCard';
 import { PromptCard } from './PromptCard';
 import { ScrollToTop } from './ScrollToTop';
 import { UI } from '../constants/ui';
+import { useI18n } from '../i18n';
 
 interface FeedProps {
   observations: Observation[];
@@ -13,9 +14,21 @@ interface FeedProps {
   onLoadMore: () => void;
   isLoading: boolean;
   hasMore: boolean;
+  onDeleteObservation?: (id: number) => void;
+  onDeleteSession?: (sessionId: string) => void;
 }
 
-export function Feed({ observations, summaries, prompts, onLoadMore, isLoading, hasMore }: FeedProps) {
+export function Feed({
+  observations,
+  summaries,
+  prompts,
+  onLoadMore,
+  isLoading,
+  hasMore,
+  onDeleteObservation,
+  onDeleteSession,
+}: FeedProps) {
+  const { t } = useI18n();
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const feedRef = useRef<HTMLDivElement>(null);
   const onLoadMoreRef = useRef(onLoadMore);
@@ -54,7 +67,6 @@ export function Feed({ observations, summaries, prompts, onLoadMore, isLoading, 
       ...summaries.map(s => ({ ...s, itemType: 'summary' as const })),
       ...prompts.map(p => ({ ...p, itemType: 'prompt' as const }))
     ];
-
     return combined.sort((a, b) => b.created_at_epoch - a.created_at_epoch);
   }, [observations, summaries, prompts]);
 
@@ -65,22 +77,22 @@ export function Feed({ observations, summaries, prompts, onLoadMore, isLoading, 
         {items.map(item => {
           const key = `${item.itemType}-${item.id}`;
           if (item.itemType === 'observation') {
-            return <ObservationCard key={key} observation={item} />;
+            return <ObservationCard key={key} observation={item} onDelete={onDeleteObservation} />;
           } else if (item.itemType === 'summary') {
-            return <SummaryCard key={key} summary={item} />;
+            return <SummaryCard key={key} summary={item} onDeleteSession={onDeleteSession} />;
           } else {
             return <PromptCard key={key} prompt={item} />;
           }
         })}
         {items.length === 0 && !isLoading && (
           <div style={{ textAlign: 'center', padding: '40px', color: '#8b949e' }}>
-            No items to display
+            {t('feed.empty')}
           </div>
         )}
         {isLoading && (
           <div style={{ textAlign: 'center', padding: '20px', color: '#8b949e' }}>
             <div className="spinner" style={{ display: 'inline-block', marginRight: '10px' }}></div>
-            Loading more...
+            {t('feed.loadingMore')}
           </div>
         )}
         {hasMore && !isLoading && items.length > 0 && (
@@ -88,7 +100,7 @@ export function Feed({ observations, summaries, prompts, onLoadMore, isLoading, 
         )}
         {!hasMore && items.length > 0 && (
           <div style={{ textAlign: 'center', padding: '20px', color: '#8b949e', fontSize: '14px' }}>
-            No more items to load
+            {t('feed.noMore')}
           </div>
         )}
       </div>

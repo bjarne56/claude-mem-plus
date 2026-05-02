@@ -11,8 +11,11 @@ import { usePagination } from './hooks/usePagination';
 import { useTheme } from './hooks/useTheme';
 import { Observation, Summary, UserPrompt } from './types';
 import { mergeAndDeduplicateByProject } from './utils/data';
+import { useI18n } from './i18n';
+import { authFetch } from './utils/api';
 
 export function App() {
+  const { t } = useI18n();
   const [currentFilter, setCurrentFilter] = useState('');
   const [contextPreviewOpen, setContextPreviewOpen] = useState(false);
   const [logsModalOpen, setLogsModalOpen] = useState(false);
@@ -20,6 +23,8 @@ export function App() {
   const [paginatedObservations, setPaginatedObservations] = useState<Observation[]>([]);
   const [paginatedSummaries, setPaginatedSummaries] = useState<Summary[]>([]);
   const [paginatedPrompts, setPaginatedPrompts] = useState<UserPrompt[]>([]);
+  // 删除按钮的 nonce —— 改值会触发 Feed 重新加载第一页(用 SSE 没法立刻反映 trash)
+  const [deleteNonce, setDeleteNonce] = useState(0);
 
   const { observations, summaries, prompts, projects, isProcessing, queueDepth, isConnected } = useSSE();
   const { settings, saveSettings, isSaving, saveStatus } = useSettings();
@@ -91,12 +96,60 @@ export function App() {
     setPaginatedPrompts([]);
     handleLoadMore();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentFilter]);
+  }, [currentFilter, currentSource, deleteNonce]);
 
-  useEffect(() => {
-    refreshStats();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [observations.length]);
+  // 删除回调:走 DELETE API,成功后从本地 state 移除该项 + 刷新 stats + bump nonce 触发分页重载
+  const handleDeleteObservation = useCallback(async (id: number) => {
+    if (!window.confirm(t('delete.confirmObservation'))) return;
+    try {
+      const res = await authFetch(`/api/observations/${id}`, { method: 'DELETE' });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || res.statusText);
+      }
+      setPaginatedObservations(prev => prev.filter(o => o.id !== id));
+      refreshStats();
+    } catch (err) {
+      window.alert(t('delete.failed', { msg: err instanceof Error ? err.message : String(err) }));
+    }
+  }, [t, refreshStats]);
+
+  const handleDeleteSession = useCallback(async (sessionId: string) => {
+    if (!window.confirm(t('delete.confirmSession'))) return;
+    try {
+      const res = await authFetch(`/api/sessions/${encodeURIComponent(sessionId)}`, { method: 'DELETE' });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || res.statusText);
+      }
+      setPaginatedSummaries(prev => prev.filter(s => s.session_id !== sessionId));
+      setPaginatedObservations(prev => prev.filter(o => o.memory_session_id !== sessionId));
+      setDeleteNonce(n => n + 1);
+      refreshStats();
+    } catch (err) {
+      window.alert(t('delete.failed', { msg: err instanceof Error ? err.message : String(err) }));
+    }
+  }, [t, refreshStats]);
+
+  const handleDeleteProject = useCallback(async (project: string) => {
+    const total = allObservations.length + allSummaries.length;
+    if (!window.confirm(t('delete.confirmProject', { name: project, n: total }))) return;
+    try {
+      const res = await authFetch(`/api/projects/${encodeURIComponent(project)}`, { method: 'DELETE' });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || res.statusText);
+      }
+      setPaginatedObservations([]);
+      setPaginatedSummaries([]);
+      setPaginatedPrompts([]);
+      setCurrentFilter('');
+      setDeleteNonce(n => n + 1);
+      refreshStats();
+    } catch (err) {
+      window.alert(t('delete.failed', { msg: err instanceof Error ? err.message : String(err) }));
+    }
+  }, [t, refreshStats, allObservations.length, allSummaries.length]);
 
   return (
     <>
@@ -110,10 +163,7 @@ export function App() {
         themePreference={preference}
         onThemeChange={setThemePreference}
         onContextPreviewToggle={toggleContextPreview}
-        onShowHelp={() => {
-          setStoredWelcomeDismissed(false);
-          setWelcomeDismissed(false);
-        }}
+        onDeleteProject={handleDeleteProject}
       />
 
       <Feed
@@ -123,6 +173,8 @@ export function App() {
         onLoadMore={handleLoadMore}
         isLoading={pagination.observations.isLoading || pagination.summaries.isLoading || pagination.prompts.isLoading}
         hasMore={pagination.observations.hasMore || pagination.summaries.hasMore || pagination.prompts.hasMore}
+        onDeleteObservation={handleDeleteObservation}
+        onDeleteSession={handleDeleteSession}
       />
 
       {!welcomeDismissed && (
@@ -141,7 +193,7 @@ export function App() {
       <button
         className="console-toggle-btn"
         onClick={toggleLogsModal}
-        title="Toggle Console"
+        title={t('logs.toggleConsole')}
       >
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <polyline points="4 17 10 11 4 5"></polyline>
