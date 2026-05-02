@@ -268,10 +268,9 @@ export class ApiClient {
   }
 
   // ===== sync =====
-  /** push 用 ndjson 更高效;签名按规范第 7.5 节 */
+  /** push 用 JSON `{observations:[...]}`(对齐 cmem-server M5 PushRequest schema) */
   push(observations: PushObservationPayload[]): Promise<PushResponse> {
-    const ndjson = observations.map(o => JSON.stringify(o)).join('\n');
-    return this.request<PushResponse>('POST', '/api/sync/push', ndjson, { raw: true });
+    return this.request<PushResponse>('POST', '/api/sync/push', { observations });
   }
 
   pull(opts: {
