@@ -109,6 +109,19 @@ export function SyncSettingsModal({ isOpen, onClose }: Props) {
   });
   const [autoSavedHint, setAutoSavedHint] = useState<string | null>(null);
   const [nowSec, setNowSec] = useState(Math.floor(Date.now() / 1000));
+
+  // share UI 状态 — 内联 share form,支持批量
+  const [sharingProject, setSharingProject] = useState<string | null>(null);
+  const [shareForm, setShareForm] = useState<{
+    target_type: 'user' | 'public' | 'link';
+    usernames: string;
+    mode: 'read-only' | 'fork-allowed' | 'auto-copy';
+    expires_days: string;
+  }>({ target_type: 'user', usernames: '', mode: 'fork-allowed', expires_days: '7' });
+  /** "3/5" — 批量进度;null = idle */
+  const [shareProgress, setShareProgress] = useState<string | null>(null);
+  /** link 模式下,server 返回的 share_url(显示 + 复制) */
+  const [shareLinkResult, setShareLinkResult] = useState<string | null>(null);
   useEffect(() => {
     const id = setInterval(() => setNowSec(Math.floor(Date.now() / 1000)), 1000);
     return () => clearInterval(id);
@@ -263,70 +276,119 @@ export function SyncSettingsModal({ isOpen, onClose }: Props) {
     }
   }, [callAction, fetchStatus, t]);
 
-  /** 共享某项目 — 三步 prompt:target_type → 详细字段 → mode */
-  const handleShareProject = useCallback(async (projectName: string): Promise<void> => {
-    // 步骤 1:选 target_type
-    const targetTypeRaw = window.prompt(t('sync.promptShareType', { project: projectName }), 'user');
-    if (!targetTypeRaw) return;
-    const targetType = targetTypeRaw.trim().toLowerCase();
-    if (!['user', 'public', 'link'].includes(targetType)) {
-      window.alert(t('sync.shareInvalidType', { type: targetType }));
-      return;
-    }
+  /**
+   * Share UX 重构:不再用 window.prompt 链,改成项目卡内联 share panel。
+   * 点击"共享"按钮 → setSharingProject(name) → 在项目表上方滑出表单 → 用户填完一次提交。
+   * 关键能力:target_type=user 时支持多用户名(逗号 / 分号 / 换行 / 空格分隔),
+   *          逐个调 share-project API,聚合成功 / 失败结果。
+   */
+  const handleShareProject = useCallback((projectName: string): void => {
+    // 重置表单状态后打开
+    setShareForm({
+      target_type: 'user',
+      usernames: '',
+      mode: 'fork-allowed',
+      expires_days: '7',
+    });
+    setShareProgress(null);
+    setShareLinkResult(null);
+    setSharingProject(projectName);
+  }, []);
 
-    // 步骤 2:按 type 收集额外字段
-    const body: Record<string, unknown> = {
-      project_name: projectName,
-      target_type: targetType,
-    };
-    let displayTarget = '';
+  /** parseUsernames:把 textarea 内容拆成 unique username 列表 */
+  const parseUsernames = (raw: string): string[] => {
+    return Array.from(
+      new Set(
+        raw
+          .split(/[\s,;]+/)
+          .map(s => s.trim())
+          .filter(s => s.length > 0)
+      )
+    );
+  };
 
-    if (targetType === 'user') {
-      const username = window.prompt(t('sync.promptShareTargetUser'));
-      if (!username || !username.trim()) return;
-      body.target_username = username.trim();
-      displayTarget = `@${username.trim()}`;
-    } else if (targetType === 'link') {
-      const days = window.prompt(t('sync.promptShareLinkExpires'), '7');
-      if (days === null) return;
-      const n = parseInt(days.trim(), 10);
-      if (!isNaN(n) && n > 0) {
-        body.expires_in_secs = n * 86400;
+  /** 提交 share 表单 — target=user 时多次调用,聚合结果 */
+  const submitShare = useCallback(async (): Promise<void> => {
+    if (!sharingProject) return;
+    const projectName = sharingProject;
+
+    // 校验
+    if (shareForm.target_type === 'user') {
+      const us = parseUsernames(shareForm.usernames);
+      if (us.length === 0) {
+        setError(t('sync.shareNoUsernames'));
+        return;
       }
-      displayTarget = t('sync.shareLinkAnonymous', { days: n > 0 ? String(n) : 'no expiry' });
-    } else {
-      // public:无额外字段
-      displayTarget = t('sync.shareAllUsers');
-    }
-
-    // 步骤 3:选 mode(link 强制 read-only,server 端也会强制)
-    const modeDefault = targetType === 'link' ? 'read-only' : 'fork-allowed';
-    const modeRaw = window.prompt(t('sync.promptShareMode'), modeDefault);
-    if (!modeRaw) return;
-    const mode = modeRaw.trim();
-    if (!['read-only', 'fork-allowed', 'auto-copy'].includes(mode)) {
-      window.alert(t('sync.shareInvalidMode', { mode }));
-      return;
-    }
-    body.share_mode = mode;
-
-    try {
-      const result = (await callAction('/api/sync/share-project', body)) as { share_url?: string; share_token?: string } | null;
-      let msg = t('sync.shareSuccess', { project: projectName, target: displayTarget, mode });
-      if (targetType === 'link' && result && (result.share_url || result.share_token)) {
-        const url = result.share_url || `<token: ${result.share_token}>`;
-        msg += `\n\n${t('sync.shareLinkCreated')}: ${url}`;
-        // 自动复制到剪贴板(if 浏览器支持)
-        if (navigator.clipboard && result.share_url) {
-          navigator.clipboard.writeText(result.share_url).catch(() => { /* ignore */ });
+      // 逐个调用,聚合结果
+      const ok: string[] = [];
+      const fail: Array<{ user: string; err: string }> = [];
+      for (let i = 0; i < us.length; i++) {
+        setShareProgress(`${i + 1}/${us.length}`);
+        try {
+          await callAction('/api/sync/share-project', {
+            project_name: projectName,
+            target_type: 'user',
+            target_username: us[i],
+            share_mode: shareForm.mode,
+          });
+          ok.push(us[i]);
+        } catch (e) {
+          fail.push({ user: us[i], err: e instanceof Error ? e.message : String(e) });
         }
       }
-      window.alert(msg);
+      setShareProgress(null);
+      const summary = t('sync.shareBatchResult', {
+        project: projectName,
+        ok: ok.length,
+        fail: fail.length,
+        mode: shareForm.mode,
+      });
+      const detail = fail.length > 0
+        ? '\n\n' + fail.map(f => `× @${f.user}: ${f.err}`).join('\n')
+        : '';
+      // 全成功 → 自动关闭;有失败 → 保持打开,让用户看错误
+      if (fail.length === 0) {
+        setSharingProject(null);
+        setError(summary);
+      } else {
+        setError(summary + detail);
+      }
+      await fetchStatus();
+      return;
+    }
+
+    // public 或 link — 单次调用
+    const body: Record<string, unknown> = {
+      project_name: projectName,
+      target_type: shareForm.target_type,
+      share_mode: shareForm.target_type === 'link' ? 'read-only' : shareForm.mode,
+    };
+    if (shareForm.target_type === 'link') {
+      const n = parseInt(shareForm.expires_days.trim(), 10);
+      if (!isNaN(n) && n > 0) body.expires_in_secs = n * 86400;
+    }
+    try {
+      const result = (await callAction('/api/sync/share-project', body)) as
+        { share_url?: string; share_token?: string } | null;
+      if (shareForm.target_type === 'link' && result?.share_url) {
+        setShareLinkResult(result.share_url);
+        if (navigator.clipboard) {
+          navigator.clipboard.writeText(result.share_url).catch(() => { /* ignore */ });
+        }
+        // link 模式保持 form 打开,让用户看到链接 + 复制
+      } else {
+        setSharingProject(null);
+        setError(t('sync.shareSuccess', {
+          project: projectName,
+          target: shareForm.target_type === 'public' ? t('sync.shareAllUsers') : '',
+          mode: body.share_mode as string,
+        }));
+      }
       await fetchStatus();
     } catch (e) {
       setError(t('sync.shareFailed', { msg: e instanceof Error ? e.message : String(e) }));
     }
-  }, [callAction, fetchStatus, t]);
+  }, [callAction, fetchStatus, t, sharingProject, shareForm]);
 
   const handleUnshareProject = useCallback(async (projectName: string): Promise<void> => {
     if (!window.confirm(t('sync.unshareConfirm', { project: projectName }))) return;
@@ -729,6 +791,176 @@ export function SyncSettingsModal({ isOpen, onClose }: Props) {
                     />
                   )}
                 </div>
+
+                {/* === Share 表单面板 — sharingProject != null 时滑入 === */}
+                {sharingProject && (
+                  <div style={{
+                    flexShrink: 0,
+                    padding: 12, margin: '8px 12px',
+                    background: 'rgba(63, 185, 80, 0.06)',
+                    border: '1px solid #3fb950',
+                    borderRadius: 6,
+                    display: 'flex', flexDirection: 'column', gap: 8, fontSize: 13,
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <strong>
+                        {t('sync.shareFormTitle', { project: sharingProject })}
+                      </strong>
+                      <button
+                        type="button"
+                        onClick={() => { setSharingProject(null); setShareLinkResult(null); }}
+                        style={C.smallBtn}
+                        disabled={busy}
+                      >
+                        ✕
+                      </button>
+                    </div>
+
+                    {/* target_type 单选 */}
+                    <div style={{ display: 'flex', gap: 12, fontSize: 12 }}>
+                      {(['user', 'public', 'link'] as const).map(tt => (
+                        <label key={tt} style={{ display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}>
+                          <input
+                            type="radio"
+                            name="share_target_type"
+                            checked={shareForm.target_type === tt}
+                            onChange={() => setShareForm(f => ({
+                              ...f,
+                              target_type: tt,
+                              // link 强制 read-only
+                              mode: tt === 'link' ? 'read-only' : f.mode,
+                            }))}
+                            disabled={busy}
+                          />
+                          <span>{t(`sync.shareTargetType.${tt}`)}</span>
+                        </label>
+                      ))}
+                    </div>
+
+                    {/* 按 type 显示不同字段 */}
+                    {shareForm.target_type === 'user' && (
+                      <div>
+                        <div style={C.rowLabel}>{t('sync.shareUsernamesLabel')}</div>
+                        <textarea
+                          value={shareForm.usernames}
+                          onChange={e => setShareForm(f => ({ ...f, usernames: e.target.value }))}
+                          placeholder={t('sync.shareUsernamesPlaceholder')}
+                          rows={3}
+                          style={{
+                            width: '100%', padding: '6px 8px', fontSize: 12,
+                            fontFamily: 'monospace',
+                            border: '1px solid var(--color-border-primary)', borderRadius: 3,
+                            background: 'var(--color-bg-tertiary, #181818)',
+                            color: 'var(--color-text-primary)',
+                            resize: 'vertical',
+                          }}
+                          disabled={busy}
+                        />
+                        <div style={{ fontSize: 11, color: '#999', marginTop: 2 }}>
+                          {t('sync.shareUsernamesHint')}
+                          {parseUsernames(shareForm.usernames).length > 0 && (
+                            <span style={{ marginLeft: 8, color: '#3fb950' }}>
+                              ({parseUsernames(shareForm.usernames).length})
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {shareForm.target_type === 'link' && (
+                      <div>
+                        <div style={C.rowLabel}>{t('sync.shareLinkExpiresLabel')}</div>
+                        <input
+                          type="number"
+                          min="0"
+                          value={shareForm.expires_days}
+                          onChange={e => setShareForm(f => ({ ...f, expires_days: e.target.value }))}
+                          placeholder={t('sync.shareLinkExpiresPlaceholder')}
+                          style={{ width: 120, padding: '4px 8px', fontSize: 12 }}
+                          disabled={busy}
+                        />
+                        <span style={{ fontSize: 11, color: '#999', marginLeft: 8 }}>
+                          {t('sync.shareLinkExpiresHint')}
+                        </span>
+                      </div>
+                    )}
+
+                    {/* mode 单选 — link 强制 read-only,UI 锁住其他选项 */}
+                    <div>
+                      <div style={C.rowLabel}>{t('sync.shareModeLabel')}</div>
+                      <div style={{ display: 'flex', gap: 12, fontSize: 12 }}>
+                        {(['read-only', 'fork-allowed', 'auto-copy'] as const).map(m => {
+                          const disabled = busy || (shareForm.target_type === 'link' && m !== 'read-only');
+                          return (
+                            <label key={m} style={{
+                              display: 'flex', alignItems: 'center', gap: 4,
+                              cursor: disabled ? 'not-allowed' : 'pointer',
+                              color: disabled && shareForm.target_type === 'link' ? '#666' : undefined,
+                            }}>
+                              <input
+                                type="radio"
+                                name="share_mode"
+                                checked={shareForm.mode === m}
+                                onChange={() => setShareForm(f => ({ ...f, mode: m }))}
+                                disabled={disabled}
+                              />
+                              <span>{m}</span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* link 成功:显示 url + 复制按钮 */}
+                    {shareLinkResult && (
+                      <div style={{
+                        padding: 8, background: 'var(--color-bg-tertiary, #181818)',
+                        borderRadius: 3, fontSize: 11, fontFamily: 'monospace',
+                        wordBreak: 'break-all',
+                      }}>
+                        <div style={{ color: '#3fb950', marginBottom: 4 }}>
+                          ✓ {t('sync.shareLinkCreated')}{' '}
+                          <button
+                            type="button"
+                            onClick={() => { void navigator.clipboard?.writeText(shareLinkResult); }}
+                            style={{ ...C.smallBtn, fontSize: 11 }}
+                          >
+                            {t('sync.copyLink')}
+                          </button>
+                        </div>
+                        <div>{shareLinkResult}</div>
+                      </div>
+                    )}
+
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center', justifyContent: 'flex-end' }}>
+                      {shareProgress && (
+                        <span style={{ marginRight: 'auto', fontSize: 12, color: '#d29922' }}>
+                          {t('sync.shareProgress', { p: shareProgress })}
+                        </span>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => { setSharingProject(null); setShareLinkResult(null); }}
+                        style={C.smallBtn}
+                        disabled={busy}
+                      >
+                        {t('common.cancel')}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={submitShare}
+                        disabled={busy || (shareForm.target_type === 'user' && parseUsernames(shareForm.usernames).length === 0)}
+                        style={{
+                          padding: '4px 14px', background: '#3fb950',
+                          color: '#fff', border: 'none', borderRadius: 3,
+                          cursor: 'pointer', fontSize: 12, fontWeight: 500,
+                        }}
+                      >
+                        {t('sync.shareSubmit')}
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 {/* 项目表格区 — flex:1 撑满,table 内 sticky head 自滚 */}
                 <div style={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
