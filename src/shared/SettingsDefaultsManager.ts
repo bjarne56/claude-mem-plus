@@ -95,7 +95,10 @@ export class SettingsDefaultsManager {
     CLAUDE_MEM_CONTEXT_SHOW_WORK_TOKENS: 'false',
     CLAUDE_MEM_CONTEXT_SHOW_SAVINGS_AMOUNT: 'false',
     CLAUDE_MEM_CONTEXT_SHOW_SAVINGS_PERCENT: 'true',
-    CLAUDE_MEM_CONTEXT_FULL_COUNT: '0',
+    // Display Configuration
+    // [zh-fork] 默认从 0 → 5:0 = 全部只显示标题(省 token 但 Claude 不知细节)
+    // 5 = 最近 5 条 observation 展开完整 narrative,平衡细节与 token,新手即可用
+    CLAUDE_MEM_CONTEXT_FULL_COUNT: '5',
     CLAUDE_MEM_CONTEXT_FULL_FIELD: 'narrative',
     CLAUDE_MEM_CONTEXT_SESSION_COUNT: '10',
     CLAUDE_MEM_CONTEXT_SHOW_LAST_SUMMARY: 'true',
