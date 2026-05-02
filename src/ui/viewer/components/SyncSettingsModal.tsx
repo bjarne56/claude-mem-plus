@@ -82,7 +82,6 @@ export function SyncSettingsModal({ isOpen, onClose }: Props) {
     if (p.includes('linux')) return 'my-linux';
     return 'this-machine';
   })();
-  const [showLoginForm, setShowLoginForm] = useState(false);
   /** auth 表单模式:'login' 已有账号 / 'register' 新用户(用 invite code) */
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
   const [loginForm, setLoginForm] = useState({
@@ -194,7 +193,6 @@ export function SyncSettingsModal({ isOpen, onClose }: Props) {
     }
     try {
       await callAction('/api/sync/login', loginForm);
-      setShowLoginForm(false);
       setLoginForm(prev => ({ ...prev, password: '' }));
       await fetchStatus();
     } catch (e) {
@@ -223,7 +221,6 @@ export function SyncSettingsModal({ isOpen, onClose }: Props) {
       // 注册成功 → 自动 login(同 password,补 machine_name)
       await callAction('/api/sync/login', loginForm);
       setError(t('sync.registerSuccess', { username: loginForm.username }));
-      setShowLoginForm(false);
       setAuthMode('login');
       setLoginForm(prev => ({ ...prev, password: '' }));
       setRegisterExtras({ email: '', invite_code: '' });
@@ -366,18 +363,34 @@ export function SyncSettingsModal({ isOpen, onClose }: Props) {
 
   if (!isOpen) return null;
 
-  // chip 通用样式 — 状态摘要折叠形态
-  const chipStyle: React.CSSProperties = {
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: 4,
-    padding: '2px 8px',
-    background: 'var(--color-bg-tertiary, rgba(255,255,255,0.04))',
-    border: '1px solid var(--color-border-primary, #2a2a2a)',
-    borderRadius: 12,
-    fontSize: 12,
-    color: 'var(--color-text-secondary)',
-    whiteSpace: 'nowrap',
+  // 通用样式 token
+  const C = {
+    chip: {
+      display: 'inline-flex', alignItems: 'center', gap: 4,
+      padding: '2px 8px',
+      background: 'var(--color-bg-tertiary, rgba(255,255,255,0.04))',
+      border: '1px solid var(--color-border-primary, #2a2a2a)',
+      borderRadius: 12, fontSize: 12,
+      color: 'var(--color-text-secondary)', whiteSpace: 'nowrap',
+    } as React.CSSProperties,
+    card: {
+      padding: 14, marginBottom: 12,
+      background: 'var(--color-bg-secondary, rgba(255,255,255,0.02))',
+      border: '1px solid var(--color-border-primary, #2a2a2a)',
+      borderRadius: 6,
+    } as React.CSSProperties,
+    cardTitle: {
+      margin: 0, fontSize: 13, fontWeight: 600,
+      color: 'var(--color-text-secondary)', textTransform: 'uppercase' as const, letterSpacing: 0.5,
+    } as React.CSSProperties,
+    rowLabel: {
+      fontSize: 11, color: '#999', marginBottom: 4,
+    } as React.CSSProperties,
+    smallBtn: {
+      padding: '4px 10px', fontSize: 12, background: 'transparent',
+      border: '1px solid var(--color-border-primary)', borderRadius: 3, cursor: 'pointer',
+      color: 'var(--color-text-secondary)',
+    } as React.CSSProperties,
   };
 
   return (
@@ -385,7 +398,7 @@ export function SyncSettingsModal({ isOpen, onClose }: Props) {
       <div
         className="context-settings-modal"
         onClick={(e) => e.stopPropagation()}
-        style={{ maxWidth: 880, width: '95vw', maxHeight: '88vh', display: 'flex', flexDirection: 'column' }}
+        style={{ maxWidth: 900, width: '95vw', maxHeight: '88vh', display: 'flex', flexDirection: 'column' }}
       >
         <div className="modal-header" style={{ flexShrink: 0 }}>
           <h2>{t('sync.title')}</h2>
@@ -397,319 +410,315 @@ export function SyncSettingsModal({ isOpen, onClose }: Props) {
           </button>
         </div>
 
-        <div className="modal-body" style={{ padding: 20, overflow: 'auto', flex: 1, minHeight: 0 }}>
+        <div className="modal-body" style={{ padding: 18, overflow: 'auto', flex: 1, minHeight: 0 }}>
           {error && (
-            <div style={{ color: '#ff6b6b', marginBottom: 12, padding: 8, background: '#2a0808', borderRadius: 4 }}>
+            <div style={{
+              color: '#ff6b6b', marginBottom: 12, padding: 8,
+              background: '#2a0808', borderRadius: 4, fontSize: 13,
+            }}>
               {error}
             </div>
           )}
 
           {loading && !status && <div>{t('common.loading')}</div>}
 
-          {status && (
+          {/* ========== 未登录态:居中认证卡 ========== */}
+          {status && !status.loggedIn && (
+            <div style={{
+              maxWidth: 460, margin: '24px auto',
+              padding: 24, borderRadius: 8,
+              background: 'var(--color-bg-secondary, rgba(255,255,255,0.02))',
+              border: '1px solid var(--color-border-primary, #2a2a2a)',
+            }}>
+              <div style={{ textAlign: 'center', marginBottom: 16 }}>
+                <div style={{ fontSize: 36, lineHeight: 1, marginBottom: 4 }}>☁</div>
+                <h3 style={{ margin: 0, fontSize: 16 }}>{t('sync.welcomeTitle')}</h3>
+                <p style={{ margin: '4px 0 0', fontSize: 12, color: '#999' }}>
+                  {t('sync.welcomeHint')}
+                </p>
+              </div>
+
+              {/* tab */}
+              <div style={{ display: 'flex', gap: 0, marginBottom: 12, borderBottom: '1px solid var(--color-border-primary)' }}>
+                {(['login', 'register'] as const).map(m => (
+                  <button
+                    key={m}
+                    type="button"
+                    onClick={() => setAuthMode(m)}
+                    style={{
+                      flex: 1, padding: '8px 0', background: 'transparent',
+                      border: 'none',
+                      borderBottom: `2px solid ${authMode === m ? (m === 'register' ? '#3fb950' : 'var(--color-accent-primary, #58a6ff)') : 'transparent'}`,
+                      color: authMode === m ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
+                      cursor: 'pointer', fontSize: 13, fontWeight: authMode === m ? 600 : 400,
+                    }}
+                  >
+                    {t(m === 'login' ? 'sync.tab.login' : 'sync.tab.register')}
+                  </button>
+                ))}
+              </div>
+
+              {authMode === 'register' && (
+                <div style={{
+                  padding: '6px 10px', marginBottom: 10,
+                  background: 'rgba(63, 185, 80, 0.08)',
+                  border: '1px dashed #3fb950', borderRadius: 4,
+                  fontSize: 11, color: 'var(--color-text-secondary)',
+                }}>
+                  {t('sync.registerHint')}
+                </div>
+              )}
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <input
+                  type="text"
+                  placeholder={t('sync.serverUrlPlaceholder')}
+                  value={loginForm.server_url}
+                  onChange={(e) => setLoginForm({ ...loginForm, server_url: e.target.value })}
+                />
+                <input
+                  type="text"
+                  placeholder={t('sync.usernamePlaceholder')}
+                  value={loginForm.username}
+                  onChange={(e) => setLoginForm({ ...loginForm, username: e.target.value })}
+                />
+                <input
+                  type="password"
+                  placeholder={authMode === 'register' ? t('sync.passwordPlaceholderRegister') : t('sync.passwordPlaceholder')}
+                  value={loginForm.password}
+                  onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
+                />
+                {authMode === 'register' && (
+                  <>
+                    <input
+                      type="email"
+                      placeholder={t('sync.emailPlaceholder')}
+                      value={registerExtras.email}
+                      onChange={(e) => setRegisterExtras({ ...registerExtras, email: e.target.value })}
+                    />
+                    <input
+                      type="text"
+                      placeholder={t('sync.inviteCodePlaceholder')}
+                      value={registerExtras.invite_code}
+                      onChange={(e) => setRegisterExtras({ ...registerExtras, invite_code: e.target.value })}
+                      style={{ fontFamily: 'monospace', fontSize: 12 }}
+                    />
+                  </>
+                )}
+                {/* 机器名 / 描述折叠到一行 grid,减少视觉行数 */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                  <input
+                    type="text"
+                    placeholder={t('sync.machineNamePlaceholder')}
+                    value={loginForm.machine_name}
+                    onChange={(e) => setLoginForm({ ...loginForm, machine_name: e.target.value })}
+                    required
+                    aria-required="true"
+                    style={{ borderColor: loginForm.machine_name.trim() ? undefined : '#d29922' }}
+                    title={t('sync.machineNameRequired')}
+                  />
+                  <input
+                    type="text"
+                    placeholder={t('sync.machineDescriptionPlaceholder')}
+                    value={loginForm.machine_description}
+                    onChange={(e) => setLoginForm({ ...loginForm, machine_description: e.target.value })}
+                  />
+                </div>
+
+                {authMode === 'login' ? (
+                  <button onClick={handleLogin} disabled={busy} style={{ marginTop: 4 }}>
+                    {t('sync.confirmLogin')}
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleRegister}
+                    disabled={busy}
+                    style={{ marginTop: 4, background: '#3fb950', color: '#fff', border: 'none' }}
+                  >
+                    {t('sync.confirmRegister')}
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ========== 已登录态 ========== */}
+          {status && status.loggedIn && (
             <>
-              {/* 状态摘要 — 默认 chips,展开看完整表 */}
-              <section style={{ marginBottom: 16 }}>
+              {/* 顶部状态栏:身份 + Logout */}
+              <div style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                padding: '8px 12px', marginBottom: 12,
+                background: 'var(--color-bg-secondary, rgba(255,255,255,0.02))',
+                border: '1px solid var(--color-border-primary, #2a2a2a)',
+                borderRadius: 6, gap: 8, flexWrap: 'wrap',
+              }}>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>
+                  <span style={{ ...C.chip, color: '#3fb950', borderColor: '#3fb950' }}>
+                    ● {status.username}{status.machineName ? `@${status.machineName}` : ''}
+                  </span>
+                  {status.serverUrl && (
+                    <span style={C.chip} title={status.serverUrl}>
+                      {status.serverUrl.replace(/^https?:\/\//, '')}
+                    </span>
+                  )}
+                </div>
+                <button onClick={handleLogout} disabled={busy} style={C.smallBtn}>
+                  {t('sync.logout')}
+                </button>
+              </div>
+
+              {/* 同步面板:立即操作 + 待同步 chips + 自动同步 全合并 */}
+              <div style={C.card}>
                 <div style={{
                   display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                  marginBottom: 8, gap: 8, flexWrap: 'wrap',
+                  marginBottom: 10, gap: 12, flexWrap: 'wrap',
                 }}>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>
-                    <span style={{ ...chipStyle, color: status.loggedIn ? '#3fb950' : '#d29922' }}>
-                      {status.loggedIn ? '● ' + (status.username ?? '?') : '○ ' + t('sync.notConfigured')}
-                    </span>
-                    {status.serverUrl && (
-                      <span style={chipStyle} title={status.serverUrl}>
-                        {status.serverUrl.replace(/^https?:\/\//, '')}
-                      </span>
-                    )}
-                    {status.machineName && <span style={chipStyle}>{status.machineName}</span>}
+                  <h3 style={C.cardTitle}>{t('sync.title')}</h3>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                     {status.pendingPush > 0 && (
-                      <span style={{ ...chipStyle, color: '#d29922', borderColor: '#d29922' }}>
+                      <span style={{ ...C.chip, color: '#d29922', borderColor: '#d29922' }}
+                            title={t('sync.pendingPush')}>
                         ⇧ {status.pendingPush}
                       </span>
                     )}
                     {status.pendingDowngrades > 0 && (
-                      <span style={{ ...chipStyle, color: '#f85149', borderColor: '#f85149' }}>
+                      <span style={{ ...C.chip, color: '#f85149', borderColor: '#f85149' }}
+                            title={t('sync.pendingDowngrades')}>
                         ⚠ {status.pendingDowngrades}
                       </span>
                     )}
+                    {status.pendingPush === 0 && status.pendingDowngrades === 0 && (
+                      <span style={{ ...C.chip, color: '#3fb950', borderColor: '#3fb95044' }}>
+                        ✓ {t('sync.upToDate')}
+                      </span>
+                    )}
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => setStatusExpanded(v => !v)}
-                    style={{
-                      padding: '2px 8px', fontSize: 11, background: 'transparent',
-                      border: '1px solid var(--color-border-primary)', borderRadius: 3, cursor: 'pointer',
-                      color: 'var(--color-text-secondary)',
-                    }}
-                  >
+                </div>
+
+                {/* 立即同步按钮组 */}
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
+                  <button onClick={handlePush} disabled={busy}>⇧ {t('sync.pushNow')}</button>
+                  <button onClick={handlePull} disabled={busy}>⇩ {t('sync.pullNow')}</button>
+                  <button onClick={fetchStatus} disabled={busy} style={C.smallBtn}>
+                    ↻ {t('common.retry')}
+                  </button>
+                  <button onClick={() => setStatusExpanded(v => !v)} style={C.smallBtn}>
                     {statusExpanded ? t('sync.collapseDetails') : t('sync.expandDetails')}
                   </button>
                 </div>
+
                 {statusExpanded && (
-                  <table style={{ width: '100%', fontSize: 13, marginTop: 4 }}>
-                    <tbody>
-                      <tr>
-                        <td style={{ padding: '3px 8px', color: '#999', width: 140 }}>{t('sync.lastPulledSeq')}</td>
-                        <td>{status.lastPulledSeq}</td>
-                      </tr>
-                      <tr>
-                        <td style={{ padding: '3px 8px', color: '#999' }}>{t('sync.lastPush')}</td>
-                        <td>{fmtEpoch(status.lastPushedAt)}</td>
-                      </tr>
-                      <tr>
-                        <td style={{ padding: '3px 8px', color: '#999' }}>{t('sync.lastPull')}</td>
-                        <td>{fmtEpoch(status.lastPulledAt)}</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                )}
-              </section>
-
-              {/* Auth */}
-              <section style={{ marginBottom: 24 }}>
-                <h3>{t('sync.auth')}</h3>
-                {status.loggedIn ? (
-                  <button onClick={handleLogout} disabled={busy}>{t('sync.logout')}</button>
-                ) : (
-                  <>
-                    {!showLoginForm && (
-                      <div style={{ display: 'flex', gap: 8 }}>
-                        <button onClick={() => { setAuthMode('login'); setShowLoginForm(true); }} disabled={busy}>
-                          {t('sync.login')}
-                        </button>
-                        <button onClick={() => { setAuthMode('register'); setShowLoginForm(true); }} disabled={busy}
-                                style={{ background: 'transparent', border: '1px solid #3fb950', color: '#3fb950' }}>
-                          {t('sync.register')}
-                        </button>
-                      </div>
-                    )}
-                    {showLoginForm && (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}>
-                        {/* tab 切 login / register */}
-                        <div style={{ display: 'flex', gap: 4, marginBottom: 4 }}>
-                          <button
-                            type="button"
-                            onClick={() => setAuthMode('login')}
-                            style={{
-                              padding: '4px 12px',
-                              background: authMode === 'login' ? 'var(--color-accent-primary, #58a6ff)' : 'transparent',
-                              color: authMode === 'login' ? '#fff' : 'var(--color-text-primary)',
-                              border: '1px solid var(--color-border-primary)',
-                              borderRadius: 3,
-                              cursor: 'pointer',
-                              fontSize: 12,
-                            }}
-                          >
-                            {t('sync.tab.login')}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setAuthMode('register')}
-                            style={{
-                              padding: '4px 12px',
-                              background: authMode === 'register' ? '#3fb950' : 'transparent',
-                              color: authMode === 'register' ? '#fff' : 'var(--color-text-primary)',
-                              border: '1px solid var(--color-border-primary)',
-                              borderRadius: 3,
-                              cursor: 'pointer',
-                              fontSize: 12,
-                            }}
-                          >
-                            {t('sync.tab.register')}
-                          </button>
-                        </div>
-
-                        {authMode === 'register' && (
-                          <div style={{
-                            padding: '8px 12px',
-                            background: 'rgba(63, 185, 80, 0.08)',
-                            border: '1px dashed #3fb950',
-                            borderRadius: 4,
-                            fontSize: 12,
-                            color: 'var(--color-text-secondary)',
-                            marginBottom: 4,
-                          }}>
-                            {t('sync.registerHint')}
-                          </div>
-                        )}
-
-                        <input
-                          type="text"
-                          placeholder={t('sync.serverUrlPlaceholder')}
-                          value={loginForm.server_url}
-                          onChange={(e) => setLoginForm({ ...loginForm, server_url: e.target.value })}
-                        />
-                        <input
-                          type="text"
-                          placeholder={t('sync.usernamePlaceholder')}
-                          value={loginForm.username}
-                          onChange={(e) => setLoginForm({ ...loginForm, username: e.target.value })}
-                        />
-                        <input
-                          type="password"
-                          placeholder={authMode === 'register' ? t('sync.passwordPlaceholderRegister') : t('sync.passwordPlaceholder')}
-                          value={loginForm.password}
-                          onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
-                        />
-                        {authMode === 'register' && (
-                          <>
-                            <input
-                              type="email"
-                              placeholder={t('sync.emailPlaceholder')}
-                              value={registerExtras.email}
-                              onChange={(e) => setRegisterExtras({ ...registerExtras, email: e.target.value })}
-                            />
-                            <input
-                              type="text"
-                              placeholder={t('sync.inviteCodePlaceholder')}
-                              value={registerExtras.invite_code}
-                              onChange={(e) => setRegisterExtras({ ...registerExtras, invite_code: e.target.value })}
-                              style={{ fontFamily: 'monospace', fontSize: 12 }}
-                            />
-                          </>
-                        )}
-                        <input
-                          type="text"
-                          placeholder={t('sync.machineNamePlaceholder')}
-                          value={loginForm.machine_name}
-                          onChange={(e) => setLoginForm({ ...loginForm, machine_name: e.target.value })}
-                          required
-                          aria-required="true"
-                          style={{ borderColor: loginForm.machine_name.trim() ? undefined : '#d29922' }}
-                          title={t('sync.machineNameRequired')}
-                        />
-                        <input
-                          type="text"
-                          placeholder={t('sync.machineDescriptionPlaceholder')}
-                          value={loginForm.machine_description}
-                          onChange={(e) => setLoginForm({ ...loginForm, machine_description: e.target.value })}
-                        />
-                        <div style={{ display: 'flex', gap: 8 }}>
-                          {authMode === 'login' ? (
-                            <button onClick={handleLogin} disabled={busy}>{t('sync.confirmLogin')}</button>
-                          ) : (
-                            <button onClick={handleRegister} disabled={busy}
-                                    style={{ background: '#3fb950', color: '#fff', border: 'none' }}>
-                              {t('sync.confirmRegister')}
-                            </button>
-                          )}
-                          <button onClick={() => setShowLoginForm(false)} disabled={busy}>{t('common.cancel')}</button>
-                        </div>
-                      </div>
-                    )}
-                  </>
-                )}
-              </section>
-
-              {/* 同步操作 + 自动同步 */}
-              {status.loggedIn && (
-                <>
-                  <section style={{ marginBottom: 16 }}>
-                    <h3 style={{ marginBottom: 8 }}>{t('sync.actions')}</h3>
-                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                      <button onClick={handlePush} disabled={busy}>{t('sync.pushNow')}</button>
-                      <button onClick={handlePull} disabled={busy}>{t('sync.pullNow')}</button>
-                      <button onClick={fetchStatus} disabled={busy}>{t('common.retry')}</button>
-                    </div>
-                  </section>
-
-                  {/* 自动同步面板 */}
-                  <section style={{
-                    marginBottom: 16, padding: 12,
-                    background: 'rgba(88, 166, 255, 0.04)',
-                    border: '1px solid var(--color-border-primary, #2a2a2a)',
-                    borderRadius: 6,
+                  <div style={{
+                    display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8,
+                    fontSize: 12, padding: '8px 0', marginBottom: 12,
+                    borderTop: '1px solid var(--color-border-primary, #2a2a2a)',
+                    borderBottom: '1px solid var(--color-border-primary, #2a2a2a)',
                   }}>
-                    <div style={{
-                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                      marginBottom: autoSync?.enabled ? 12 : 0,
-                    }}>
-                      <h3 style={{ margin: 0, fontSize: 14 }}>{t('sync.autoSync')}</h3>
-                      <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 13 }}>
-                        <input
-                          type="checkbox"
-                          checked={autoSync?.enabled ?? false}
-                          onChange={e => void saveAutoSync({ enabled: e.target.checked })}
-                          disabled={busy}
-                        />
-                        <span>{t('sync.autoSyncEnabled')}</span>
-                      </label>
+                    <div>
+                      <div style={C.rowLabel}>{t('sync.lastPush')}</div>
+                      <div>{fmtEpoch(status.lastPushedAt)}</div>
                     </div>
-                    {autoSync?.enabled && (
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, fontSize: 13 }}>
-                        <div>
-                          <label style={{ display: 'block', color: '#999', fontSize: 11, marginBottom: 4 }}>
-                            {t('sync.autoSyncInterval')}
-                          </label>
-                          <select
-                            value={autoSyncDraft.interval_minutes}
-                            onChange={e => {
-                              const v = parseInt(e.target.value, 10);
-                              setAutoSyncDraft(d => ({ ...d, interval_minutes: v }));
-                              void saveAutoSync({ interval_minutes: v });
-                            }}
-                            disabled={busy}
-                            style={{ width: '100%' }}
-                          >
-                            <option value={5}>5 min</option>
-                            <option value={10}>10 min</option>
-                            <option value={15}>15 min</option>
-                            <option value={30}>30 min</option>
-                            <option value={60}>1 h</option>
-                            <option value={180}>3 h</option>
-                            <option value={360}>6 h</option>
-                            <option value={720}>12 h</option>
-                            <option value={1440}>24 h</option>
-                          </select>
-                        </div>
-                        <div>
-                          <label style={{ display: 'block', color: '#999', fontSize: 11, marginBottom: 4 }}>
-                            {t('sync.autoSyncDirection')}
-                          </label>
-                          <select
-                            value={autoSyncDraft.direction}
-                            onChange={e => {
-                              const v = e.target.value as 'push' | 'pull' | 'both';
-                              setAutoSyncDraft(d => ({ ...d, direction: v }));
-                              void saveAutoSync({ direction: v });
-                            }}
-                            disabled={busy}
-                            style={{ width: '100%' }}
-                          >
-                            <option value="both">{t('sync.autoSyncDirectionBoth')}</option>
-                            <option value="push">{t('sync.autoSyncDirectionPush')}</option>
-                            <option value="pull">{t('sync.autoSyncDirectionPull')}</option>
-                          </select>
-                        </div>
-                        <div>
-                          <label style={{ display: 'block', color: '#999', fontSize: 11, marginBottom: 4 }}>
-                            {t('sync.autoSyncNextRun')}
-                          </label>
-                          <div style={{ padding: '4px 0', color: '#3fb950', fontFamily: 'monospace' }}>
-                            {autoSync.next_run_at
-                              ? fmtCountdown(autoSync.next_run_at - nowSec)
-                              : '-'}
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                    {autoSavedHint && (
-                      <div style={{ marginTop: 8, color: '#3fb950', fontSize: 11 }}>{autoSavedHint}</div>
-                    )}
-                  </section>
-                </>
-              )}
+                    <div>
+                      <div style={C.rowLabel}>{t('sync.lastPull')}</div>
+                      <div>{fmtEpoch(status.lastPulledAt)}</div>
+                    </div>
+                    <div>
+                      <div style={C.rowLabel}>{t('sync.lastPulledSeq')}</div>
+                      <div>{status.lastPulledSeq}</div>
+                    </div>
+                  </div>
+                )}
 
-              {/* 项目列表 — 未登录时显示引导,登录后但项目空显示 hint */}
-              <section>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, gap: 8 }}>
-                  <h3 style={{ margin: 0 }}>
+                {/* 自动同步 — 一行布局,关时只占一行 */}
+                <div style={{
+                  display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 12,
+                  paddingTop: 10,
+                  borderTop: '1px solid var(--color-border-primary, #2a2a2a)',
+                }}>
+                  <label style={{
+                    display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer',
+                    fontSize: 13, fontWeight: 500,
+                  }}>
+                    <input
+                      type="checkbox"
+                      checked={autoSync?.enabled ?? false}
+                      onChange={e => void saveAutoSync({ enabled: e.target.checked })}
+                      disabled={busy}
+                    />
+                    <span>⏱ {t('sync.autoSync')}</span>
+                  </label>
+
+                  {autoSync?.enabled && (
+                    <>
+                      <span style={{ fontSize: 12, color: '#999' }}>{t('sync.autoSyncInterval')}:</span>
+                      <select
+                        value={autoSyncDraft.interval_minutes}
+                        onChange={e => {
+                          const v = parseInt(e.target.value, 10);
+                          setAutoSyncDraft(d => ({ ...d, interval_minutes: v }));
+                          void saveAutoSync({ interval_minutes: v });
+                        }}
+                        disabled={busy}
+                        style={{ fontSize: 12, padding: '2px 4px' }}
+                      >
+                        <option value={5}>5 min</option>
+                        <option value={10}>10 min</option>
+                        <option value={15}>15 min</option>
+                        <option value={30}>30 min</option>
+                        <option value={60}>1 h</option>
+                        <option value={180}>3 h</option>
+                        <option value={360}>6 h</option>
+                        <option value={720}>12 h</option>
+                        <option value={1440}>24 h</option>
+                      </select>
+
+                      <span style={{ fontSize: 12, color: '#999' }}>{t('sync.autoSyncDirection')}:</span>
+                      <select
+                        value={autoSyncDraft.direction}
+                        onChange={e => {
+                          const v = e.target.value as 'push' | 'pull' | 'both';
+                          setAutoSyncDraft(d => ({ ...d, direction: v }));
+                          void saveAutoSync({ direction: v });
+                        }}
+                        disabled={busy}
+                        style={{ fontSize: 12, padding: '2px 4px' }}
+                      >
+                        <option value="both">{t('sync.autoSyncDirectionBoth')}</option>
+                        <option value="push">{t('sync.autoSyncDirectionPush')}</option>
+                        <option value="pull">{t('sync.autoSyncDirectionPull')}</option>
+                      </select>
+
+                      <span style={{
+                        marginLeft: 'auto', fontSize: 12, fontFamily: 'monospace',
+                        color: '#3fb950',
+                      }}>
+                        {t('sync.autoSyncNextRun')}: {autoSync.next_run_at
+                          ? fmtCountdown(autoSync.next_run_at - nowSec)
+                          : '-'}
+                      </span>
+                    </>
+                  )}
+                  {autoSavedHint && (
+                    <span style={{ fontSize: 11, color: '#3fb950' }}>{autoSavedHint}</span>
+                  )}
+                </div>
+              </div>
+
+              {/* 项目卡 */}
+              <div style={C.card}>
+                <div style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  marginBottom: 10, gap: 8, flexWrap: 'wrap',
+                }}>
+                  <h3 style={C.cardTitle}>
                     {t('sync.projects')}
                     {projects.length > 0 && (
-                      <span style={{ marginLeft: 8, fontSize: 12, color: '#999', fontWeight: 'normal' }}>
-                        ({filteredProjects.length}/{projects.length})
+                      <span style={{
+                        marginLeft: 6, fontSize: 11, color: '#999',
+                        fontWeight: 'normal', textTransform: 'none', letterSpacing: 0,
+                      }}>
+                        {filteredProjects.length}/{projects.length}
                       </span>
                     )}
                   </h3>
@@ -723,120 +732,101 @@ export function SyncSettingsModal({ isOpen, onClose }: Props) {
                     />
                   )}
                 </div>
-                {!status.loggedIn ? (
-                  <div
-                    style={{
-                      padding: '16px',
-                      background: 'rgba(88, 166, 255, 0.05)',
-                      border: '1px dashed var(--color-border-primary, #2a2a2a)',
-                      borderRadius: '6px',
-                      color: 'var(--color-text-secondary)',
-                      fontSize: '13px',
-                      textAlign: 'center',
-                    }}
-                  >
-                    {t('sync.noLoginYet')}
-                  </div>
-                ) : projects.length === 0 ? (
-                  <div
-                    style={{
-                      padding: '16px',
-                      background: 'rgba(63, 185, 80, 0.05)',
-                      border: '1px dashed var(--color-border-primary, #2a2a2a)',
-                      borderRadius: '6px',
-                      color: 'var(--color-text-secondary)',
-                      fontSize: '13px',
-                      textAlign: 'center',
-                    }}
-                  >
+
+                {projects.length === 0 ? (
+                  <div style={{
+                    padding: 20, textAlign: 'center',
+                    background: 'rgba(63, 185, 80, 0.05)',
+                    border: '1px dashed var(--color-border-primary, #2a2a2a)',
+                    borderRadius: 6, color: 'var(--color-text-secondary)', fontSize: 13,
+                  }}>
                     {t('sync.noProjectsYet')}
                   </div>
                 ) : filteredProjects.length === 0 ? (
                   <div style={{
-                    padding: '16px', textAlign: 'center', color: '#999', fontSize: 13,
+                    padding: 16, textAlign: 'center', color: '#999', fontSize: 13,
                     border: '1px dashed var(--color-border-primary, #2a2a2a)', borderRadius: 6,
                   }}>
                     {t('sync.noMatch', { q: search })}
                   </div>
                 ) : (
                   <div style={{
-                    maxHeight: 320,
-                    overflow: 'auto',
+                    maxHeight: 320, overflow: 'auto',
                     border: '1px solid var(--color-border-primary, #2a2a2a)',
                     borderRadius: 4,
                   }}>
-                  <table style={{ width: '100%', fontSize: 13, borderCollapse: 'collapse' }}>
-                    <thead style={{
-                      position: 'sticky', top: 0, zIndex: 1,
-                      background: 'var(--color-bg-secondary, #1a1a1a)',
-                    }}>
-                      <tr style={{ fontSize: 11, textTransform: 'uppercase', color: '#999' }}>
-                        <th style={{ textAlign: 'left', padding: '6px 8px' }}>{t('sync.colName')}</th>
-                        <th style={{ textAlign: 'right', padding: '6px 8px' }}>{t('sync.colObsCount')}</th>
-                        <th style={{ textAlign: 'left', padding: '6px 8px' }}>{t('sync.colShare')}</th>
-                        <th style={{ textAlign: 'left', padding: '6px 8px' }}>{t('sync.colFlags')}</th>
-                        <th style={{ textAlign: 'right', padding: '6px 8px' }}>{t('sync.colActions')}</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filteredProjects.map(p => {
-                        const isShared = p.share_state && p.share_state !== '-' && p.share_state !== 'private';
-                        return (
-                          <tr key={p.name} style={{ borderTop: '1px solid var(--color-border-primary, #2a2a2a)' }}>
-                            <td>{p.name}</td>
-                            <td style={{ textAlign: 'right' }}>{p.observation_count}</td>
-                            <td>{p.share_state ?? '-'}</td>
-                            <td>
-                              {p.is_excluded && <span style={{ color: '#999' }}>excl</span>}{' '}
-                              {p.is_forked && <span style={{ color: '#9cf' }}>fork</span>}
-                            </td>
-                            <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
-                              <button
-                                type="button"
-                                onClick={() => handleShareProject(p.name)}
-                                disabled={busy || p.is_forked}
-                                title={p.is_forked ? t('sync.cantShareFork') : t('sync.share')}
-                                style={{
-                                  padding: '3px 8px',
-                                  marginRight: 4,
-                                  background: 'transparent',
-                                  color: p.is_forked ? '#999' : '#3fb950',
-                                  border: `1px solid ${p.is_forked ? '#444' : '#3fb950'}`,
-                                  borderRadius: 3,
-                                  cursor: p.is_forked ? 'not-allowed' : 'pointer',
-                                  fontSize: 11,
-                                }}
-                              >
-                                {t('sync.share')}
-                              </button>
-                              {isShared && (
+                    <table style={{ width: '100%', fontSize: 13, borderCollapse: 'collapse' }}>
+                      <thead style={{
+                        position: 'sticky', top: 0, zIndex: 1,
+                        background: 'var(--color-bg-tertiary, #181818)',
+                      }}>
+                        <tr style={{ fontSize: 11, textTransform: 'uppercase', color: '#999' }}>
+                          <th style={{ textAlign: 'left', padding: '6px 10px' }}>{t('sync.colName')}</th>
+                          <th style={{ textAlign: 'right', padding: '6px 10px' }}>{t('sync.colObsCount')}</th>
+                          <th style={{ textAlign: 'left', padding: '6px 10px' }}>{t('sync.colShare')}</th>
+                          <th style={{ textAlign: 'left', padding: '6px 10px' }}>{t('sync.colFlags')}</th>
+                          <th style={{ textAlign: 'right', padding: '6px 10px' }}>{t('sync.colActions')}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredProjects.map(p => {
+                          const isShared = p.share_state && p.share_state !== '-' && p.share_state !== 'private';
+                          return (
+                            <tr key={p.name} style={{ borderTop: '1px solid var(--color-border-primary, #2a2a2a)' }}>
+                              <td style={{ padding: '6px 10px' }}>{p.name}</td>
+                              <td style={{ padding: '6px 10px', textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                                {p.observation_count}
+                              </td>
+                              <td style={{ padding: '6px 10px', color: isShared ? '#3fb950' : '#999' }}>
+                                {p.share_state ?? '-'}
+                              </td>
+                              <td style={{ padding: '6px 10px', fontSize: 11 }}>
+                                {p.is_excluded && <span style={{ color: '#999' }}>excl </span>}
+                                {p.is_forked && <span style={{ color: '#9cf' }}>fork</span>}
+                              </td>
+                              <td style={{ padding: '6px 10px', textAlign: 'right', whiteSpace: 'nowrap' }}>
                                 <button
                                   type="button"
-                                  onClick={() => handleUnshareProject(p.name)}
-                                  disabled={busy}
-                                  title={t('sync.unshare')}
+                                  onClick={() => handleShareProject(p.name)}
+                                  disabled={busy || p.is_forked}
+                                  title={p.is_forked ? t('sync.cantShareFork') : t('sync.share')}
                                   style={{
-                                    padding: '3px 8px',
+                                    padding: '3px 8px', marginRight: 4,
                                     background: 'transparent',
-                                    color: '#f85149',
-                                    border: '1px solid #f85149',
+                                    color: p.is_forked ? '#666' : '#3fb950',
+                                    border: `1px solid ${p.is_forked ? '#333' : '#3fb950'}`,
                                     borderRadius: 3,
-                                    cursor: 'pointer',
+                                    cursor: p.is_forked ? 'not-allowed' : 'pointer',
                                     fontSize: 11,
                                   }}
                                 >
-                                  {t('sync.unshare')}
+                                  {t('sync.share')}
                                 </button>
-                              )}
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+                                {isShared && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleUnshareProject(p.name)}
+                                    disabled={busy}
+                                    title={t('sync.unshare')}
+                                    style={{
+                                      padding: '3px 8px',
+                                      background: 'transparent', color: '#f85149',
+                                      border: '1px solid #f85149',
+                                      borderRadius: 3, cursor: 'pointer', fontSize: 11,
+                                    }}
+                                  >
+                                    {t('sync.unshare')}
+                                  </button>
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
                   </div>
                 )}
-              </section>
+              </div>
             </>
           )}
         </div>

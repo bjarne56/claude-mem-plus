@@ -302,6 +302,9 @@ export const messagesZh: Record<string, string> = {
   'sync.autoSyncDirectionPull': '仅拉取',
   'sync.autoSyncNextRun': '下次执行',
   'sync.autoSyncSavedHint': '已保存,定时器已重置 ✓',
+  'sync.welcomeTitle': '连接到 cmem-sync 服务器',
+  'sync.welcomeHint': '注册或登录以跨机器同步、共享 observations',
+  'sync.upToDate': '已同步',
   'trash.restoreOnlyVia': '叶子节点不能单独恢复(没有父会话会破坏外键)。请到「项目」或「会话」tab 整批恢复',
   'trash.restoreSessionAlsoChildren': '恢复会话会同时把它下面的 trash observations / summaries 一并带回',
 
