@@ -255,6 +255,11 @@ export const messagesEn: Record<string, string> = {
   'trash.projectsEmpty': 'No project-level trash data',
   'sync.loginRequiredHint': 'Please fill in Server URL / Username / Password / Machine name (required)',
   'sync.machineNameRequired': 'Machine name is required (used to identify this device across machines)',
+  'feed.emptyAction.docs': 'View docs',
+  'feed.emptyAction.github': 'GitHub',
+  'header.noProjectsYet': 'No projects yet',
+  'sync.noProjectsYet': 'Synced projects will appear here after login + push',
+  'sync.noLoginYet': 'Not logged in to cmem-server. Click "Login" above to configure server URL and account.',
   'trash.restoreOnlyVia': 'Leaf rows cannot be restored individually (would break foreign keys). Use the Project or Session tab to restore in batch.',
   'trash.restoreSessionAlsoChildren': 'Restoring a session also restores its trashed observations and summaries.',
 

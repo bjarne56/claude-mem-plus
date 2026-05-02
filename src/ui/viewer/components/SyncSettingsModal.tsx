@@ -327,11 +327,37 @@ export function SyncSettingsModal({ isOpen, onClose }: Props) {
                 </section>
               )}
 
-              {/* 项目列表 */}
+              {/* 项目列表 — 未登录时显示引导,登录后但项目空显示 hint */}
               <section>
                 <h3>{t('sync.projects')}</h3>
-                {projects.length === 0 ? (
-                  <div style={{ color: '#999' }}>{t('sync.noProjects')}</div>
+                {!status.loggedIn ? (
+                  <div
+                    style={{
+                      padding: '16px',
+                      background: 'rgba(88, 166, 255, 0.05)',
+                      border: '1px dashed var(--color-border-primary, #2a2a2a)',
+                      borderRadius: '6px',
+                      color: 'var(--color-text-secondary)',
+                      fontSize: '13px',
+                      textAlign: 'center',
+                    }}
+                  >
+                    {t('sync.noLoginYet')}
+                  </div>
+                ) : projects.length === 0 ? (
+                  <div
+                    style={{
+                      padding: '16px',
+                      background: 'rgba(63, 185, 80, 0.05)',
+                      border: '1px dashed var(--color-border-primary, #2a2a2a)',
+                      borderRadius: '6px',
+                      color: 'var(--color-text-secondary)',
+                      fontSize: '13px',
+                      textAlign: 'center',
+                    }}
+                  >
+                    {t('sync.noProjectsYet')}
+                  </div>
                 ) : (
                   <table style={{ width: '100%', fontSize: 14 }}>
                     <thead>

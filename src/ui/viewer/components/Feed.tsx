@@ -85,8 +85,74 @@ export function Feed({
           }
         })}
         {items.length === 0 && !isLoading && (
-          <div style={{ textAlign: 'center', padding: '40px', color: '#8b949e' }}>
-            {t('feed.empty')}
+          <div
+            style={{
+              maxWidth: '560px',
+              margin: '60px auto',
+              padding: '32px 28px',
+              background: 'var(--color-bg-card, #1a1a1a)',
+              border: '1px solid var(--color-border-primary, #2a2a2a)',
+              borderRadius: '10px',
+              textAlign: 'center',
+            }}
+          >
+            <div style={{ fontSize: '40px', marginBottom: '12px' }}>📭</div>
+            <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', color: 'var(--color-text-primary)' }}>
+              {t('feed.empty')}
+            </h3>
+            <p style={{ margin: '0 0 20px 0', color: 'var(--color-text-secondary)', fontSize: '14px', lineHeight: 1.6 }}>
+              {t('feed.emptyHint')}
+            </p>
+            <div
+              style={{
+                background: 'var(--color-bg-input, #0d0d0d)',
+                border: '1px solid var(--color-border-primary, #2a2a2a)',
+                borderRadius: '6px',
+                padding: '12px 16px',
+                fontFamily: 'var(--font-terminal, monospace)',
+                fontSize: '12px',
+                color: 'var(--color-text-secondary)',
+                textAlign: 'left',
+                marginBottom: '16px',
+              }}
+            >
+              <div style={{ color: 'var(--color-accent-primary, #58a6ff)', marginBottom: '4px' }}>$ cd ~/your-project</div>
+              <div style={{ color: 'var(--color-accent-primary, #58a6ff)', marginBottom: '4px' }}>$ claude</div>
+              <div style={{ color: '#8b949e' }}># 任意 prompt → observation 实时入库 → 这里出现</div>
+            </div>
+            <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' }}>
+              <a
+                href="https://docs.claude-mem.ai"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  padding: '6px 14px',
+                  background: 'var(--color-accent-primary, #58a6ff)',
+                  color: '#fff',
+                  borderRadius: '4px',
+                  textDecoration: 'none',
+                  fontSize: '13px',
+                }}
+              >
+                {t('feed.emptyAction.docs')}
+              </a>
+              <a
+                href="https://github.com/thedotmack/claude-mem"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  padding: '6px 14px',
+                  background: 'transparent',
+                  color: 'var(--color-text-primary)',
+                  border: '1px solid var(--color-border-primary, #2a2a2a)',
+                  borderRadius: '4px',
+                  textDecoration: 'none',
+                  fontSize: '13px',
+                }}
+              >
+                {t('feed.emptyAction.github')}
+              </a>
+            </div>
           </div>
         )}
         {isLoading && (
