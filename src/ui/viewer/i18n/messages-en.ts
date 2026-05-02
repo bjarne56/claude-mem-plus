@@ -305,6 +305,7 @@ export const messagesEn: Record<string, string> = {
   'sync.welcomeTitle': 'Connect to a cmem-sync server',
   'sync.welcomeHint': 'Register or sign in to sync and share observations across machines',
   'sync.upToDate': 'Up to date',
+  'sync.autoSyncOffHint': 'Off — manual only',
   'trash.restoreOnlyVia': 'Leaf rows cannot be restored individually (would break foreign keys). Use the Project or Session tab to restore in batch.',
   'trash.restoreSessionAlsoChildren': 'Restoring a session also restores its trashed observations and summaries.',
 

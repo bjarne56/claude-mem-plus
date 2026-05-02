@@ -410,25 +410,36 @@ export function SyncSettingsModal({ isOpen, onClose }: Props) {
           </button>
         </div>
 
-        <div className="modal-body" style={{ padding: 18, overflow: 'auto', flex: 1, minHeight: 0 }}>
+        {/*
+          注意:不要套 .modal-body 类 — 全局 CSS 把它设成 grid 70/30,
+          会把我们的 children 强制塞成左右两列。这里直接 inline 单列 flex。
+        */}
+        <div style={{
+          padding: 16, flex: 1, minHeight: 0,
+          display: 'flex', flexDirection: 'column', gap: 10,
+          overflow: 'hidden',
+        }}>
           {error && (
             <div style={{
-              color: '#ff6b6b', marginBottom: 12, padding: 8,
+              flexShrink: 0,
+              color: '#ff6b6b', padding: 8,
               background: '#2a0808', borderRadius: 4, fontSize: 13,
             }}>
               {error}
             </div>
           )}
 
-          {loading && !status && <div>{t('common.loading')}</div>}
+          {loading && !status && <div style={{ flexShrink: 0 }}>{t('common.loading')}</div>}
 
           {/* ========== 未登录态:居中认证卡 ========== */}
           {status && !status.loggedIn && (
             <div style={{
+              flexShrink: 0,
               maxWidth: 460, margin: '24px auto',
               padding: 24, borderRadius: 8,
               background: 'var(--color-bg-secondary, rgba(255,255,255,0.02))',
               border: '1px solid var(--color-border-primary, #2a2a2a)',
+              overflow: 'auto',
             }}>
               <div style={{ textAlign: 'center', marginBottom: 16 }}>
                 <div style={{ fontSize: 36, lineHeight: 1, marginBottom: 4 }}>☁</div>
@@ -542,18 +553,22 @@ export function SyncSettingsModal({ isOpen, onClose }: Props) {
             </div>
           )}
 
-          {/* ========== 已登录态 ========== */}
+          {/* ========== 已登录态:紧凑顶栏 + 项目区 flex:1 占满剩余 ========== */}
           {status && status.loggedIn && (
             <>
-              {/* 顶部状态栏:身份 + Logout */}
+              {/* === 顶部紧凑栏 — 不超过 2 行,flexShrink: 0 不被项目区挤压 === */}
               <div style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                padding: '8px 12px', marginBottom: 12,
+                flexShrink: 0,
+                padding: '8px 10px',
                 background: 'var(--color-bg-secondary, rgba(255,255,255,0.02))',
                 border: '1px solid var(--color-border-primary, #2a2a2a)',
-                borderRadius: 6, gap: 8, flexWrap: 'wrap',
+                borderRadius: 6,
+                display: 'flex', flexDirection: 'column', gap: 6,
               }}>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>
+                {/* 第 1 行:身份 + 同步操作 + Logout */}
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap',
+                }}>
                   <span style={{ ...C.chip, color: '#3fb950', borderColor: '#3fb950' }}>
                     ● {status.username}{status.machineName ? `@${status.machineName}` : ''}
                   </span>
@@ -562,84 +577,50 @@ export function SyncSettingsModal({ isOpen, onClose }: Props) {
                       {status.serverUrl.replace(/^https?:\/\//, '')}
                     </span>
                   )}
-                </div>
-                <button onClick={handleLogout} disabled={busy} style={C.smallBtn}>
-                  {t('sync.logout')}
-                </button>
-              </div>
+                  {status.pendingPush > 0 && (
+                    <span style={{ ...C.chip, color: '#d29922', borderColor: '#d29922' }}
+                          title={t('sync.pendingPush')}>
+                      ⇧ {status.pendingPush}
+                    </span>
+                  )}
+                  {status.pendingDowngrades > 0 && (
+                    <span style={{ ...C.chip, color: '#f85149', borderColor: '#f85149' }}
+                          title={t('sync.pendingDowngrades')}>
+                      ⚠ {status.pendingDowngrades}
+                    </span>
+                  )}
+                  {status.pendingPush === 0 && status.pendingDowngrades === 0 && (
+                    <span style={{ ...C.chip, color: '#3fb950', borderColor: '#3fb95044' }}>
+                      ✓ {t('sync.upToDate')}
+                    </span>
+                  )}
 
-              {/* 同步面板:立即操作 + 待同步 chips + 自动同步 全合并 */}
-              <div style={C.card}>
-                <div style={{
-                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                  marginBottom: 10, gap: 12, flexWrap: 'wrap',
-                }}>
-                  <h3 style={C.cardTitle}>{t('sync.title')}</h3>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                    {status.pendingPush > 0 && (
-                      <span style={{ ...C.chip, color: '#d29922', borderColor: '#d29922' }}
-                            title={t('sync.pendingPush')}>
-                        ⇧ {status.pendingPush}
-                      </span>
-                    )}
-                    {status.pendingDowngrades > 0 && (
-                      <span style={{ ...C.chip, color: '#f85149', borderColor: '#f85149' }}
-                            title={t('sync.pendingDowngrades')}>
-                        ⚠ {status.pendingDowngrades}
-                      </span>
-                    )}
-                    {status.pendingPush === 0 && status.pendingDowngrades === 0 && (
-                      <span style={{ ...C.chip, color: '#3fb950', borderColor: '#3fb95044' }}>
-                        ✓ {t('sync.upToDate')}
-                      </span>
-                    )}
+                  {/* 操作按钮 — 推到右侧 */}
+                  <div style={{ marginLeft: 'auto', display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+                    <button onClick={handlePush} disabled={busy} style={{ padding: '3px 10px', fontSize: 12 }}>
+                      ⇧ {t('sync.pushNow')}
+                    </button>
+                    <button onClick={handlePull} disabled={busy} style={{ padding: '3px 10px', fontSize: 12 }}>
+                      ⇩ {t('sync.pullNow')}
+                    </button>
+                    <button onClick={fetchStatus} disabled={busy} style={C.smallBtn} title={t('common.retry')}>↻</button>
+                    <button onClick={() => setStatusExpanded(v => !v)} style={C.smallBtn}>
+                      {statusExpanded ? '▴' : '▾'}
+                    </button>
+                    <button onClick={handleLogout} disabled={busy} style={{ ...C.smallBtn, color: '#f85149', borderColor: '#f85149' }}>
+                      {t('sync.logout')}
+                    </button>
                   </div>
                 </div>
 
-                {/* 立即同步按钮组 */}
-                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
-                  <button onClick={handlePush} disabled={busy}>⇧ {t('sync.pushNow')}</button>
-                  <button onClick={handlePull} disabled={busy}>⇩ {t('sync.pullNow')}</button>
-                  <button onClick={fetchStatus} disabled={busy} style={C.smallBtn}>
-                    ↻ {t('common.retry')}
-                  </button>
-                  <button onClick={() => setStatusExpanded(v => !v)} style={C.smallBtn}>
-                    {statusExpanded ? t('sync.collapseDetails') : t('sync.expandDetails')}
-                  </button>
-                </div>
-
-                {statusExpanded && (
-                  <div style={{
-                    display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8,
-                    fontSize: 12, padding: '8px 0', marginBottom: 12,
-                    borderTop: '1px solid var(--color-border-primary, #2a2a2a)',
-                    borderBottom: '1px solid var(--color-border-primary, #2a2a2a)',
-                  }}>
-                    <div>
-                      <div style={C.rowLabel}>{t('sync.lastPush')}</div>
-                      <div>{fmtEpoch(status.lastPushedAt)}</div>
-                    </div>
-                    <div>
-                      <div style={C.rowLabel}>{t('sync.lastPull')}</div>
-                      <div>{fmtEpoch(status.lastPulledAt)}</div>
-                    </div>
-                    <div>
-                      <div style={C.rowLabel}>{t('sync.lastPulledSeq')}</div>
-                      <div>{status.lastPulledSeq}</div>
-                    </div>
-                  </div>
-                )}
-
-                {/* 自动同步 — 一行布局,关时只占一行 */}
+                {/* 第 2 行:自动同步内联(关时也只占一行) */}
                 <div style={{
-                  display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 12,
-                  paddingTop: 10,
-                  borderTop: '1px solid var(--color-border-primary, #2a2a2a)',
+                  display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap',
+                  fontSize: 12, color: 'var(--color-text-secondary)',
+                  paddingTop: 6,
+                  borderTop: '1px dashed var(--color-border-primary, #2a2a2a)',
                 }}>
-                  <label style={{
-                    display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer',
-                    fontSize: 13, fontWeight: 500,
-                  }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}>
                     <input
                       type="checkbox"
                       checked={autoSync?.enabled ?? false}
@@ -648,10 +629,8 @@ export function SyncSettingsModal({ isOpen, onClose }: Props) {
                     />
                     <span>⏱ {t('sync.autoSync')}</span>
                   </label>
-
-                  {autoSync?.enabled && (
+                  {autoSync?.enabled ? (
                     <>
-                      <span style={{ fontSize: 12, color: '#999' }}>{t('sync.autoSyncInterval')}:</span>
                       <select
                         value={autoSyncDraft.interval_minutes}
                         onChange={e => {
@@ -660,7 +639,7 @@ export function SyncSettingsModal({ isOpen, onClose }: Props) {
                           void saveAutoSync({ interval_minutes: v });
                         }}
                         disabled={busy}
-                        style={{ fontSize: 12, padding: '2px 4px' }}
+                        style={{ fontSize: 12, padding: '1px 4px' }}
                       >
                         <option value={5}>5 min</option>
                         <option value={10}>10 min</option>
@@ -672,8 +651,6 @@ export function SyncSettingsModal({ isOpen, onClose }: Props) {
                         <option value={720}>12 h</option>
                         <option value={1440}>24 h</option>
                       </select>
-
-                      <span style={{ fontSize: 12, color: '#999' }}>{t('sync.autoSyncDirection')}:</span>
                       <select
                         value={autoSyncDraft.direction}
                         onChange={e => {
@@ -682,34 +659,54 @@ export function SyncSettingsModal({ isOpen, onClose }: Props) {
                           void saveAutoSync({ direction: v });
                         }}
                         disabled={busy}
-                        style={{ fontSize: 12, padding: '2px 4px' }}
+                        style={{ fontSize: 12, padding: '1px 4px' }}
                       >
                         <option value="both">{t('sync.autoSyncDirectionBoth')}</option>
                         <option value="push">{t('sync.autoSyncDirectionPush')}</option>
                         <option value="pull">{t('sync.autoSyncDirectionPull')}</option>
                       </select>
-
-                      <span style={{
-                        marginLeft: 'auto', fontSize: 12, fontFamily: 'monospace',
-                        color: '#3fb950',
-                      }}>
-                        {t('sync.autoSyncNextRun')}: {autoSync.next_run_at
-                          ? fmtCountdown(autoSync.next_run_at - nowSec)
-                          : '-'}
+                      <span style={{ fontFamily: 'monospace', color: '#3fb950' }}>
+                        →&nbsp;{autoSync.next_run_at ? fmtCountdown(autoSync.next_run_at - nowSec) : '-'}
                       </span>
                     </>
+                  ) : (
+                    <span style={{ color: '#666', fontSize: 11 }}>{t('sync.autoSyncOffHint')}</span>
                   )}
                   {autoSavedHint && (
-                    <span style={{ fontSize: 11, color: '#3fb950' }}>{autoSavedHint}</span>
+                    <span style={{ marginLeft: 'auto', color: '#3fb950', fontSize: 11 }}>{autoSavedHint}</span>
                   )}
                 </div>
+
+                {/* 展开:最近 push/pull 时间戳 */}
+                {statusExpanded && (
+                  <div style={{
+                    display: 'flex', flexWrap: 'wrap', gap: 16,
+                    fontSize: 11, color: '#999',
+                    paddingTop: 6,
+                    borderTop: '1px dashed var(--color-border-primary, #2a2a2a)',
+                  }}>
+                    <span><span style={{ color: '#666' }}>{t('sync.lastPush')}:</span> {fmtEpoch(status.lastPushedAt)}</span>
+                    <span><span style={{ color: '#666' }}>{t('sync.lastPull')}:</span> {fmtEpoch(status.lastPulledAt)}</span>
+                    <span><span style={{ color: '#666' }}>{t('sync.lastPulledSeq')}:</span> {status.lastPulledSeq}</span>
+                  </div>
+                )}
               </div>
 
-              {/* 项目卡 */}
-              <div style={C.card}>
+              {/* === 项目共享 — flex: 1 占满剩余空间,内部表格滚动 === */}
+              <div style={{
+                flex: 1, minHeight: 0,
+                display: 'flex', flexDirection: 'column',
+                border: '1px solid var(--color-border-primary, #2a2a2a)',
+                borderRadius: 6,
+                background: 'var(--color-bg-secondary, rgba(255,255,255,0.02))',
+                overflow: 'hidden',
+              }}>
+                {/* 项目卡头部 */}
                 <div style={{
+                  flexShrink: 0,
                   display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                  marginBottom: 10, gap: 8, flexWrap: 'wrap',
+                  padding: '8px 12px', gap: 8, flexWrap: 'wrap',
+                  borderBottom: '1px solid var(--color-border-primary, #2a2a2a)',
                 }}>
                   <h3 style={C.cardTitle}>
                     {t('sync.projects')}
@@ -728,44 +725,41 @@ export function SyncSettingsModal({ isOpen, onClose }: Props) {
                       placeholder={t('sync.searchPlaceholder')}
                       value={search}
                       onChange={e => setSearch(e.target.value)}
-                      style={{ width: 200, padding: '4px 8px', fontSize: 12 }}
+                      style={{ width: 220, padding: '4px 8px', fontSize: 12 }}
                     />
                   )}
                 </div>
 
-                {projects.length === 0 ? (
-                  <div style={{
-                    padding: 20, textAlign: 'center',
-                    background: 'rgba(63, 185, 80, 0.05)',
-                    border: '1px dashed var(--color-border-primary, #2a2a2a)',
-                    borderRadius: 6, color: 'var(--color-text-secondary)', fontSize: 13,
-                  }}>
-                    {t('sync.noProjectsYet')}
-                  </div>
-                ) : filteredProjects.length === 0 ? (
-                  <div style={{
-                    padding: 16, textAlign: 'center', color: '#999', fontSize: 13,
-                    border: '1px dashed var(--color-border-primary, #2a2a2a)', borderRadius: 6,
-                  }}>
-                    {t('sync.noMatch', { q: search })}
-                  </div>
-                ) : (
-                  <div style={{
-                    maxHeight: 320, overflow: 'auto',
-                    border: '1px solid var(--color-border-primary, #2a2a2a)',
-                    borderRadius: 4,
-                  }}>
+                {/* 项目表格区 — flex:1 撑满,table 内 sticky head 自滚 */}
+                <div style={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
+                  {projects.length === 0 ? (
+                    <div style={{
+                      margin: 16, padding: 20, textAlign: 'center',
+                      background: 'rgba(63, 185, 80, 0.05)',
+                      border: '1px dashed var(--color-border-primary, #2a2a2a)',
+                      borderRadius: 6, color: 'var(--color-text-secondary)', fontSize: 13,
+                    }}>
+                      {t('sync.noProjectsYet')}
+                    </div>
+                  ) : filteredProjects.length === 0 ? (
+                    <div style={{
+                      margin: 16, padding: 16, textAlign: 'center', color: '#999', fontSize: 13,
+                      border: '1px dashed var(--color-border-primary, #2a2a2a)', borderRadius: 6,
+                    }}>
+                      {t('sync.noMatch', { q: search })}
+                    </div>
+                  ) : (
                     <table style={{ width: '100%', fontSize: 13, borderCollapse: 'collapse' }}>
                       <thead style={{
                         position: 'sticky', top: 0, zIndex: 1,
                         background: 'var(--color-bg-tertiary, #181818)',
                       }}>
                         <tr style={{ fontSize: 11, textTransform: 'uppercase', color: '#999' }}>
-                          <th style={{ textAlign: 'left', padding: '6px 10px' }}>{t('sync.colName')}</th>
-                          <th style={{ textAlign: 'right', padding: '6px 10px' }}>{t('sync.colObsCount')}</th>
-                          <th style={{ textAlign: 'left', padding: '6px 10px' }}>{t('sync.colShare')}</th>
-                          <th style={{ textAlign: 'left', padding: '6px 10px' }}>{t('sync.colFlags')}</th>
-                          <th style={{ textAlign: 'right', padding: '6px 10px' }}>{t('sync.colActions')}</th>
+                          <th style={{ textAlign: 'left', padding: '6px 12px' }}>{t('sync.colName')}</th>
+                          <th style={{ textAlign: 'right', padding: '6px 12px' }}>{t('sync.colObsCount')}</th>
+                          <th style={{ textAlign: 'left', padding: '6px 12px' }}>{t('sync.colShare')}</th>
+                          <th style={{ textAlign: 'left', padding: '6px 12px' }}>{t('sync.colFlags')}</th>
+                          <th style={{ textAlign: 'right', padding: '6px 12px' }}>{t('sync.colActions')}</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -773,18 +767,18 @@ export function SyncSettingsModal({ isOpen, onClose }: Props) {
                           const isShared = p.share_state && p.share_state !== '-' && p.share_state !== 'private';
                           return (
                             <tr key={p.name} style={{ borderTop: '1px solid var(--color-border-primary, #2a2a2a)' }}>
-                              <td style={{ padding: '6px 10px' }}>{p.name}</td>
-                              <td style={{ padding: '6px 10px', textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                              <td style={{ padding: '6px 12px' }}>{p.name}</td>
+                              <td style={{ padding: '6px 12px', textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
                                 {p.observation_count}
                               </td>
-                              <td style={{ padding: '6px 10px', color: isShared ? '#3fb950' : '#999' }}>
+                              <td style={{ padding: '6px 12px', color: isShared ? '#3fb950' : '#999' }}>
                                 {p.share_state ?? '-'}
                               </td>
-                              <td style={{ padding: '6px 10px', fontSize: 11 }}>
+                              <td style={{ padding: '6px 12px', fontSize: 11 }}>
                                 {p.is_excluded && <span style={{ color: '#999' }}>excl </span>}
                                 {p.is_forked && <span style={{ color: '#9cf' }}>fork</span>}
                               </td>
-                              <td style={{ padding: '6px 10px', textAlign: 'right', whiteSpace: 'nowrap' }}>
+                              <td style={{ padding: '6px 12px', textAlign: 'right', whiteSpace: 'nowrap' }}>
                                 <button
                                   type="button"
                                   onClick={() => handleShareProject(p.name)}
@@ -824,8 +818,8 @@ export function SyncSettingsModal({ isOpen, onClose }: Props) {
                         })}
                       </tbody>
                     </table>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             </>
           )}
