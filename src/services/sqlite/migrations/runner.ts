@@ -33,7 +33,7 @@ export class MigrationRunner {
     this.rebuildPendingMessagesForSelfHealingClaim();
     this.addObservationsUniqueContentHashIndex();
     this.addObservationsMetadataColumn();
-    this.dropDeadPendingMessagesColumns();
+    this.addCmemSyncTables();
   }
 
   private initializeSchema(): void {
@@ -978,28 +978,125 @@ export class MigrationRunner {
     this.db.prepare('INSERT OR IGNORE INTO schema_versions (version, applied_at) VALUES (?, ?)').run(30, new Date().toISOString());
   }
 
-  private dropDeadPendingMessagesColumns(): void {
-    const cols = this.db.query('PRAGMA table_info(pending_messages)').all() as TableColumnInfo[];
-    const colNames = new Set(cols.map(c => c.name));
-    const deadColumns = ['retry_count', 'failed_at_epoch', 'completed_at_epoch', 'worker_pid'];
-    const toDrop = deadColumns.filter(name => colNames.has(name));
+  /**
+   * cmem-sync client 集成 (migration 31).
+   *
+   * 客户端集成进 worker (Option A):server 是独立 Rust 部署,client 直接在主库
+   * observations 表加列,跨机器 UUID v7 由客户端生成。
+   *
+   * 新加列(observations 表):
+   *   - server_user_id        TEXT     拉到的 own/shared obs 的所有者
+   *   - server_machine_id     TEXT     来源机器
+   *   - server_seq            INTEGER  push 后 server 回填的入库顺序;NULL = 未 push
+   *   - derived_from          TEXT     fork 来源 observation 的 uuid_v7
+   *   - derivation_chain      TEXT     JSON,完整衍生链
+   *   - deleted_at            INTEGER  服务端软删时间(本地软删用 trash 表)
+   *   - uuid_v7               TEXT     本地 INT id ↔ 跨机器 UUID v7,UNIQUE
+   *
+   * 新加表:
+   *   - sync_state            单行,所有同步状态
+   *   - shared_view           别人共享给我的只读/可 fork 视图(不污染 observations)
+   *   - projects_sync         项目级同步元数据(server_project_id + share state)
+   *
+   * 全部 IF NOT EXISTS / 列存在性检查,可重入。
+   */
+  private addCmemSyncTables(): void {
+    const obsCols = this.db.query('PRAGMA table_info(observations)').all() as TableColumnInfo[];
+    const obsHas = (name: string) => obsCols.some(c => c.name === name);
 
-    if (toDrop.length === 0) {
-      this.db.prepare('INSERT OR IGNORE INTO schema_versions (version, applied_at) VALUES (?, ?)').run(31, new Date().toISOString());
-      return;
-    }
+    if (!obsHas('server_user_id'))    this.db.run('ALTER TABLE observations ADD COLUMN server_user_id TEXT');
+    if (!obsHas('server_machine_id')) this.db.run('ALTER TABLE observations ADD COLUMN server_machine_id TEXT');
+    if (!obsHas('server_seq'))        this.db.run('ALTER TABLE observations ADD COLUMN server_seq INTEGER');
+    if (!obsHas('derived_from'))      this.db.run('ALTER TABLE observations ADD COLUMN derived_from TEXT');
+    if (!obsHas('derivation_chain'))  this.db.run('ALTER TABLE observations ADD COLUMN derivation_chain TEXT');
+    if (!obsHas('deleted_at'))        this.db.run('ALTER TABLE observations ADD COLUMN deleted_at INTEGER');
+    if (!obsHas('uuid_v7'))           this.db.run('ALTER TABLE observations ADD COLUMN uuid_v7 TEXT');
 
-    this.db.run(`DELETE FROM pending_messages WHERE status NOT IN ('pending', 'processing')`);
+    // server_seq 索引:push pull cursor 用
+    this.db.run('CREATE INDEX IF NOT EXISTS idx_obs_server_seq ON observations(server_seq) WHERE server_seq IS NOT NULL');
+    // uuid_v7 唯一索引:跨机器 obs 去重
+    this.db.run('CREATE UNIQUE INDEX IF NOT EXISTS ux_obs_uuid_v7 ON observations(uuid_v7) WHERE uuid_v7 IS NOT NULL');
+    // pending push 扫描索引
+    this.db.run('CREATE INDEX IF NOT EXISTS idx_obs_pending_push ON observations(server_seq) WHERE server_seq IS NULL AND deleted_at IS NULL');
 
-    for (const colName of toDrop) {
-      try {
-        this.db.run(`ALTER TABLE pending_messages DROP COLUMN ${colName}`);
-        logger.debug('DB', `Dropped dead column ${colName} from pending_messages`);
-      } catch (error) {
-        logger.warn('DB', `Failed to drop column ${colName} from pending_messages`, {}, error instanceof Error ? error : new Error(String(error)));
-      }
-    }
+    // sync_state:单行(id=1),所有同步配置 + 游标
+    this.db.run(`
+      CREATE TABLE IF NOT EXISTS sync_state (
+        id                       INTEGER PRIMARY KEY CHECK (id = 1),
+        server_url               TEXT,
+        user_id                  TEXT,
+        username                 TEXT,
+        machine_id               TEXT,
+        machine_name             TEXT,
+        machine_token            TEXT,
+        access_token             TEXT,
+        access_token_expires_at  INTEGER,
+        refresh_token            TEXT,
+        last_pulled_seq          INTEGER NOT NULL DEFAULT 0,
+        last_pushed_at_epoch     INTEGER,
+        last_pulled_at_epoch     INTEGER,
+        updated_at_epoch         INTEGER NOT NULL
+      )
+    `);
+    // 确保单例行存在
+    this.db.run(`INSERT OR IGNORE INTO sync_state (id, last_pulled_seq, updated_at_epoch) VALUES (1, 0, unixepoch())`);
+
+    // shared_view:别人共享给我的项目内容(read-only / fork-allowed 时只在这里,不进 observations)
+    this.db.run(`
+      CREATE TABLE IF NOT EXISTS shared_view (
+        uuid_v7              TEXT PRIMARY KEY,
+        memory_session_id    TEXT,
+        project              TEXT NOT NULL,
+        sharer_user_id       TEXT NOT NULL,
+        sharer_username      TEXT NOT NULL,
+        share_mode           TEXT NOT NULL CHECK(share_mode IN ('read-only', 'fork-allowed', 'auto-copy')),
+        server_project_id    TEXT,
+        server_seq           INTEGER NOT NULL,
+        timestamp            INTEGER NOT NULL,
+        obs_type             TEXT,
+        content              TEXT NOT NULL,
+        metadata             TEXT,
+        derived_from         TEXT,
+        derivation_chain     TEXT,
+        deleted_at           INTEGER,
+        synced_at_epoch      INTEGER NOT NULL
+      )
+    `);
+    this.db.run('CREATE INDEX IF NOT EXISTS idx_shared_view_project ON shared_view(project)');
+    this.db.run('CREATE INDEX IF NOT EXISTS idx_shared_view_sharer ON shared_view(sharer_user_id)');
+    this.db.run('CREATE INDEX IF NOT EXISTS idx_shared_view_seq ON shared_view(server_seq)');
+
+    // projects_sync:项目级同步元数据 + 共享状态
+    this.db.run(`
+      CREATE TABLE IF NOT EXISTS projects_sync (
+        project_name         TEXT PRIMARY KEY,
+        server_project_id    TEXT,
+        marker_id            TEXT,
+        is_excluded          INTEGER NOT NULL DEFAULT 0,
+        is_forked            INTEGER NOT NULL DEFAULT 0,
+        forked_from          TEXT,
+        share_state          TEXT,
+        last_sync_at_epoch   INTEGER,
+        created_at_epoch     INTEGER NOT NULL
+      )
+    `);
+    this.db.run('CREATE INDEX IF NOT EXISTS idx_projects_sync_server ON projects_sync(server_project_id) WHERE server_project_id IS NOT NULL');
+
+    // pending_downgrades:server pull response 里下来的待 ack 通知
+    this.db.run(`
+      CREATE TABLE IF NOT EXISTS sync_pending_downgrades (
+        id                   INTEGER PRIMARY KEY AUTOINCREMENT,
+        server_id            INTEGER NOT NULL,
+        project_name         TEXT NOT NULL,
+        owner_username       TEXT NOT NULL,
+        old_mode             TEXT NOT NULL,
+        new_mode             TEXT NOT NULL,
+        created_at_server    INTEGER NOT NULL,
+        acked_at_epoch       INTEGER
+      )
+    `);
 
     this.db.prepare('INSERT OR IGNORE INTO schema_versions (version, applied_at) VALUES (?, ?)').run(31, new Date().toISOString());
+    logger.debug('DB', 'cmem-sync client tables installed (migration 31)');
   }
 }
