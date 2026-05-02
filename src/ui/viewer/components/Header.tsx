@@ -17,6 +17,7 @@ interface HeaderProps {
   onThemeChange: (theme: ThemePreference) => void;
   onContextPreviewToggle: () => void;
   onDeleteProject?: (project: string) => void;
+  onTrashOpen?: () => void;
 }
 
 function buildSourceTabs(sources: string[]): string[] {
@@ -35,6 +36,7 @@ export function Header({
   onThemeChange,
   onContextPreviewToggle,
   onDeleteProject,
+  onTrashOpen,
 }: HeaderProps) {
   useSpinningFavicon(isProcessing);
   const { t } = useI18n();
@@ -134,6 +136,24 @@ export function Header({
               <path d="M10 11v6"></path>
               <path d="M14 11v6"></path>
               <path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"></path>
+            </svg>
+          </button>
+        )}
+        {onTrashOpen && (
+          <button
+            type="button"
+            className="icon-link trash-open-btn"
+            onClick={onTrashOpen}
+            title={t('trash.open')}
+            aria-label={t('trash.open')}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3 6h18"></path>
+              <path d="M19 6l-2 14H7L5 6"></path>
+              <path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"></path>
+              <path d="M10 11v6"></path>
+              <path d="M14 11v6"></path>
+              <circle cx="18" cy="18" r="3" fill="currentColor" stroke="none" opacity="0.5"></circle>
             </svg>
           </button>
         )}

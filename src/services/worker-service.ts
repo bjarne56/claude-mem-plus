@@ -269,8 +269,8 @@ export class WorkerService implements WorkerRef {
     this.server.registerRoutes(new SettingsRoutes(this.settingsManager));
     this.server.registerRoutes(new LogsRoutes());
     this.server.registerRoutes(new MemoryRoutes(this.dbManager, 'claude-mem'));
-    // 软删除路由(项目/会话/单条 observation),软删到 trash_* 影子表
-    this.server.registerRoutes(new DeleteRoutes(this.dbManager));
+    // 软删除路由(项目/会话/单条 observation) + 回收站 CRUD,软删到 trash_* 影子表
+    this.server.registerRoutes(new DeleteRoutes(this.dbManager, this.sseBroadcaster));
   }
 
   async start(): Promise<void> {

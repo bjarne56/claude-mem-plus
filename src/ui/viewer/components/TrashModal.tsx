@@ -1,0 +1,360 @@
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useI18n } from '../i18n';
+import { authFetch } from '../utils/api';
+
+type TrashType = 'observations' | 'sessions' | 'summaries';
+
+interface TrashRow {
+  trash_id: number;
+  original_id: number;
+  memory_session_id: string | null;
+  project: string | null;
+  payload: string;  // JSON string
+  deleted_at_epoch: number;
+  reason: string;
+}
+
+interface TrashListResponse {
+  ok: boolean;
+  observations: TrashRow[];
+  sessions: TrashRow[];
+  summaries: TrashRow[];
+  totals: { observations: number; sessions: number; summaries: number };
+}
+
+interface TrashModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onChange?: () => void;  // 回收站变更后通知 App 刷新 Feed/projects
+}
+
+function formatTime(epoch: number): string {
+  try {
+    const d = new Date(epoch);
+    return d.toLocaleString();
+  } catch {
+    return String(epoch);
+  }
+}
+
+function extractTitle(row: TrashRow, type: TrashType): string {
+  try {
+    const p = JSON.parse(row.payload);
+    if (type === 'observations') return p.title || p.subtitle || `#${row.original_id}`;
+    if (type === 'summaries') return p.request || `Session #${row.original_id}`;
+    if (type === 'sessions') return p.user_prompt || p.custom_title || `Session #${row.original_id}`;
+  } catch {
+    // ignore
+  }
+  return `#${row.original_id}`;
+}
+
+export function TrashModal({ isOpen, onClose, onChange }: TrashModalProps) {
+  const { t } = useI18n();
+  const [data, setData] = useState<TrashListResponse | null>(null);
+  const [activeTab, setActiveTab] = useState<TrashType>('observations');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchTrash = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const res = await authFetch('/api/trash');
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || res.statusText);
+      }
+      const json = (await res.json()) as TrashListResponse;
+      setData(json);
+    } catch (err) {
+      setError(t('trash.fetchFailed', { msg: err instanceof Error ? err.message : String(err) }));
+    } finally {
+      setIsLoading(false);
+    }
+  }, [t]);
+
+  useEffect(() => {
+    if (isOpen) fetchTrash();
+  }, [isOpen, fetchTrash]);
+
+  // ESC 关
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [isOpen, onClose]);
+
+  const handleRestore = useCallback(async (type: TrashType, trashId: number) => {
+    try {
+      const res = await authFetch(`/api/trash/${type}/${trashId}/restore`, { method: 'POST' });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || res.statusText);
+      }
+      await fetchTrash();
+      onChange?.();
+    } catch (err) {
+      window.alert(t('trash.restoreFailed', { msg: err instanceof Error ? err.message : String(err) }));
+    }
+  }, [fetchTrash, onChange, t]);
+
+  const handlePermanentDelete = useCallback(async (type: TrashType, trashId: number) => {
+    if (!window.confirm(t('trash.permanentDeleteConfirm'))) return;
+    try {
+      const res = await authFetch(`/api/trash/${type}/${trashId}`, { method: 'DELETE' });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || res.statusText);
+      }
+      await fetchTrash();
+    } catch (err) {
+      window.alert(t('trash.permanentDeleteFailed', { msg: err instanceof Error ? err.message : String(err) }));
+    }
+  }, [fetchTrash, t]);
+
+  const handleClearAll = useCallback(async () => {
+    const total = data
+      ? data.totals.observations + data.totals.sessions + data.totals.summaries
+      : 0;
+    if (total === 0) return;
+    if (!window.confirm(t('trash.clearAllConfirm', { n: total }))) return;
+    try {
+      const res = await authFetch('/api/trash', { method: 'DELETE' });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || res.statusText);
+      }
+      const body = (await res.json()) as { cleared?: number };
+      window.alert(t('trash.clearAllSuccess', { n: body.cleared ?? total }));
+      await fetchTrash();
+    } catch (err) {
+      window.alert(t('trash.clearAllFailed', { msg: err instanceof Error ? err.message : String(err) }));
+    }
+  }, [data, fetchTrash, t]);
+
+  const rowsForActiveTab = useMemo<TrashRow[]>(() => {
+    if (!data) return [];
+    return data[activeTab];
+  }, [data, activeTab]);
+
+  const totals = data?.totals ?? { observations: 0, sessions: 0, summaries: 0 };
+  const grandTotal = totals.observations + totals.sessions + totals.summaries;
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <div
+        className="trash-modal"
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          background: 'var(--color-bg-card)',
+          border: '1px solid var(--color-border-primary)',
+          borderRadius: '8px',
+          width: 'min(1100px, 90vw)',
+          maxHeight: '85vh',
+          margin: '40px auto',
+          display: 'flex',
+          flexDirection: 'column',
+          color: 'var(--color-text-primary)',
+        }}
+      >
+        {/* Header */}
+        <div
+          className="modal-header"
+          style={{
+            padding: '12px 16px',
+            borderBottom: '1px solid var(--color-border-primary)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '12px',
+          }}
+        >
+          <h2 style={{ margin: 0, fontSize: '16px' }}>{t('trash.title')}</h2>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <button
+              type="button"
+              onClick={fetchTrash}
+              disabled={isLoading}
+              style={{
+                padding: '4px 10px',
+                background: 'transparent',
+                color: 'var(--color-text-primary)',
+                border: '1px solid var(--color-border-primary)',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontSize: '12px',
+              }}
+            >
+              {t('trash.refresh')}
+            </button>
+            <button
+              type="button"
+              onClick={handleClearAll}
+              disabled={isLoading || grandTotal === 0}
+              style={{
+                padding: '4px 10px',
+                background: '#c43d3d',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: grandTotal === 0 ? 'not-allowed' : 'pointer',
+                opacity: grandTotal === 0 ? 0.5 : 1,
+                fontSize: '12px',
+              }}
+            >
+              {t('trash.clearAll')}
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="modal-close-btn"
+              title={t('settings.closeEsc')}
+              style={{
+                padding: '4px 8px',
+                background: 'transparent',
+                color: 'var(--color-text-primary)',
+                border: '1px solid var(--color-border-primary)',
+                borderRadius: '4px',
+                cursor: 'pointer',
+              }}
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+
+        {/* Tabs */}
+        <div
+          style={{
+            padding: '8px 16px',
+            borderBottom: '1px solid var(--color-border-primary)',
+            display: 'flex',
+            gap: '8px',
+          }}
+          role="tablist"
+        >
+          {(['observations', 'sessions', 'summaries'] as TrashType[]).map(type => {
+            const labelKey: Record<TrashType, string> = {
+              observations: 'trash.tab.observations',
+              sessions: 'trash.tab.sessions',
+              summaries: 'trash.tab.summaries',
+            };
+            const isActive = activeTab === type;
+            return (
+              <button
+                key={type}
+                type="button"
+                role="tab"
+                aria-selected={isActive}
+                onClick={() => setActiveTab(type)}
+                style={{
+                  padding: '6px 12px',
+                  background: isActive ? 'var(--color-accent-primary, #58a6ff)' : 'transparent',
+                  color: isActive ? '#fff' : 'var(--color-text-primary)',
+                  border: '1px solid var(--color-border-primary)',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  fontSize: '12px',
+                }}
+              >
+                {t(labelKey[type], { n: totals[type] })}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Body */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: '16px' }}>
+          {error && (
+            <div style={{ color: '#f85149', marginBottom: '12px' }}>{error}</div>
+          )}
+          {isLoading && !data && (
+            <div style={{ color: 'var(--color-text-secondary)' }}>{t('trash.loading')}</div>
+          )}
+          {!isLoading && rowsForActiveTab.length === 0 && (
+            <div style={{ color: 'var(--color-text-secondary)', padding: '40px', textAlign: 'center' }}>
+              {t('trash.empty')}
+            </div>
+          )}
+          {rowsForActiveTab.length > 0 && (
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid var(--color-border-primary)' }}>
+                  <th style={{ textAlign: 'left', padding: '8px', width: '40%' }}>{t('trash.colTitle')}</th>
+                  <th style={{ textAlign: 'left', padding: '8px', width: '20%' }}>{t('trash.colProject')}</th>
+                  <th style={{ textAlign: 'left', padding: '8px', width: '15%' }}>{t('trash.colTime')}</th>
+                  <th style={{ textAlign: 'left', padding: '8px', width: '10%' }}>{t('trash.colReason')}</th>
+                  <th style={{ textAlign: 'right', padding: '8px', width: '15%' }}>{t('trash.colActions')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rowsForActiveTab.map(row => {
+                  const reasonKey =
+                    row.reason === 'observation' ? 'trash.reason.observation' :
+                    row.reason === 'session' ? 'trash.reason.session' :
+                    row.reason === 'project' ? 'trash.reason.project' :
+                    'trash.unknown';
+                  return (
+                    <tr key={row.trash_id} style={{ borderBottom: '1px solid var(--color-border-primary)' }}>
+                      <td style={{ padding: '8px', wordBreak: 'break-word' }}>
+                        {extractTitle(row, activeTab)}
+                      </td>
+                      <td style={{ padding: '8px', color: 'var(--color-text-secondary)' }}>
+                        {row.project || t('trash.unknown')}
+                      </td>
+                      <td style={{ padding: '8px', color: 'var(--color-text-secondary)', whiteSpace: 'nowrap' }}>
+                        {formatTime(row.deleted_at_epoch)}
+                      </td>
+                      <td style={{ padding: '8px', color: 'var(--color-text-secondary)' }}>
+                        {t(reasonKey)}
+                      </td>
+                      <td style={{ padding: '8px', textAlign: 'right', whiteSpace: 'nowrap' }}>
+                        <button
+                          type="button"
+                          onClick={() => handleRestore(activeTab, row.trash_id)}
+                          style={{
+                            padding: '3px 8px',
+                            marginRight: '6px',
+                            background: 'transparent',
+                            color: '#3fb950',
+                            border: '1px solid #3fb950',
+                            borderRadius: '3px',
+                            cursor: 'pointer',
+                            fontSize: '11px',
+                          }}
+                        >
+                          {t('trash.restore')}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handlePermanentDelete(activeTab, row.trash_id)}
+                          style={{
+                            padding: '3px 8px',
+                            background: 'transparent',
+                            color: '#f85149',
+                            border: '1px solid #f85149',
+                            borderRadius: '3px',
+                            cursor: 'pointer',
+                            fontSize: '11px',
+                          }}
+                        >
+                          {t('trash.permanentDelete')}
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

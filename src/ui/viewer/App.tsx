@@ -3,7 +3,7 @@ import { Header } from './components/Header';
 import { Feed } from './components/Feed';
 import { ContextSettingsModal } from './components/ContextSettingsModal';
 import { LogsDrawer } from './components/LogsModal';
-import { WelcomeCard, getStoredWelcomeDismissed, setStoredWelcomeDismissed } from './components/WelcomeCard';
+import { TrashModal } from './components/TrashModal';
 import { useSSE } from './hooks/useSSE';
 import { useSettings } from './hooks/useSettings';
 import { useStats } from './hooks/useStats';
@@ -19,7 +19,7 @@ export function App() {
   const [currentFilter, setCurrentFilter] = useState('');
   const [contextPreviewOpen, setContextPreviewOpen] = useState(false);
   const [logsModalOpen, setLogsModalOpen] = useState(false);
-  const [welcomeDismissed, setWelcomeDismissed] = useState<boolean>(getStoredWelcomeDismissed);
+  const [trashModalOpen, setTrashModalOpen] = useState(false);
   const [paginatedObservations, setPaginatedObservations] = useState<Observation[]>([]);
   const [paginatedSummaries, setPaginatedSummaries] = useState<Summary[]>([]);
   const [paginatedPrompts, setPaginatedPrompts] = useState<UserPrompt[]>([]);
@@ -68,6 +68,12 @@ export function App() {
     setLogsModalOpen(prev => !prev);
   }, []);
 
+  // Toggle trash modal
+  const toggleTrashModal = useCallback(() => {
+    setTrashModalOpen(prev => !prev);
+  }, []);
+
+  // Handle loading more data
   const handleLoadMore = useCallback(async () => {
     try {
       const [newObservations, newSummaries, newPrompts] = await Promise.all([
@@ -164,6 +170,7 @@ export function App() {
         onThemeChange={setThemePreference}
         onContextPreviewToggle={toggleContextPreview}
         onDeleteProject={handleDeleteProject}
+        onTrashOpen={toggleTrashModal}
       />
 
       <Feed
@@ -204,6 +211,16 @@ export function App() {
       <LogsDrawer
         isOpen={logsModalOpen}
         onClose={toggleLogsModal}
+      />
+
+      <TrashModal
+        isOpen={trashModalOpen}
+        onClose={toggleTrashModal}
+        onChange={() => {
+          // 恢复后让 Feed 重新拉取分页 + 刷 stats
+          setDeleteNonce(n => n + 1);
+          refreshStats();
+        }}
       />
     </>
   );
