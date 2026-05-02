@@ -253,4 +253,6 @@ export const messagesEn: Record<string, string> = {
   'trash.deleteProjectPerm': 'Permanently delete entire project',
   'trash.deleteProjectPermConfirm': 'Permanently delete all {n} rows for project "{name}"? This cannot be undone.',
   'trash.projectsEmpty': 'No project-level trash data',
+  'trash.restoreOnlyVia': 'Leaf rows cannot be restored individually (would break foreign keys). Use the Project or Session tab to restore in batch.',
+  'trash.restoreSessionAlsoChildren': 'Restoring a session also restores its trashed observations and summaries.',
 };

@@ -403,58 +403,95 @@ export function TrashModal({ isOpen, onClose, onChange }: TrashModalProps) {
             </div>
           )}
           {activeTab !== 'projects' && rowsForActiveTab.length > 0 && (
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
-              <thead>
-                <tr style={{ borderBottom: '1px solid var(--color-border-primary)' }}>
-                  <th style={{ ...cellPad, textAlign: 'left', width: '40%' }}>{t('trash.colTitle')}</th>
-                  <th style={{ ...cellPad, textAlign: 'left', width: '20%' }}>{t('trash.colProject')}</th>
-                  <th style={{ ...cellPad, textAlign: 'left', width: '15%' }}>{t('trash.colTime')}</th>
-                  <th style={{ ...cellPad, textAlign: 'left', width: '10%' }}>{t('trash.colReason')}</th>
-                  <th style={{ ...cellPad, textAlign: 'right', width: '15%' }}>{t('trash.colActions')}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {rowsForActiveTab.map(row => {
-                  const reasonKey =
-                    row.reason === 'observation' ? 'trash.reason.observation' :
-                    row.reason === 'session' ? 'trash.reason.session' :
-                    row.reason === 'project' ? 'trash.reason.project' :
-                    'trash.unknown';
-                  return (
-                    <tr key={row.trash_id} style={{ borderBottom: '1px solid var(--color-border-primary)' }}>
-                      <td style={{ ...cellPad, wordBreak: 'break-word' }}>
-                        {extractTitle(row, activeTab as RowTabType)}
-                      </td>
-                      <td style={{ ...cellPad, color: 'var(--color-text-secondary)' }}>
-                        {row.project || t('trash.unknown')}
-                      </td>
-                      <td style={{ ...cellPad, color: 'var(--color-text-secondary)', whiteSpace: 'nowrap' }}>
-                        {formatTime(row.deleted_at_epoch)}
-                      </td>
-                      <td style={{ ...cellPad, color: 'var(--color-text-secondary)' }}>
-                        {t(reasonKey)}
-                      </td>
-                      <td style={{ ...cellPad, textAlign: 'right', whiteSpace: 'nowrap' }}>
-                        <button
-                          type="button"
-                          onClick={() => handleRestore(activeTab as RowTabType, row.trash_id)}
-                          style={btnRestore}
-                        >
-                          {t('trash.restore')}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handlePermanentDelete(activeTab as RowTabType, row.trash_id)}
-                          style={btnDelete}
-                        >
-                          {t('trash.permanentDelete')}
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+            <>
+              {(activeTab === 'observations' || activeTab === 'summaries') && (
+                <div
+                  style={{
+                    marginBottom: '12px',
+                    padding: '8px 12px',
+                    background: 'rgba(210, 153, 34, 0.1)',
+                    border: '1px solid rgba(210, 153, 34, 0.3)',
+                    borderRadius: '4px',
+                    fontSize: '12px',
+                    color: 'var(--color-text-secondary)',
+                  }}
+                >
+                  {t('trash.restoreOnlyVia')}
+                </div>
+              )}
+              {activeTab === 'sessions' && (
+                <div
+                  style={{
+                    marginBottom: '12px',
+                    padding: '8px 12px',
+                    background: 'rgba(63, 185, 80, 0.1)',
+                    border: '1px solid rgba(63, 185, 80, 0.3)',
+                    borderRadius: '4px',
+                    fontSize: '12px',
+                    color: 'var(--color-text-secondary)',
+                  }}
+                >
+                  {t('trash.restoreSessionAlsoChildren')}
+                </div>
+              )}
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                <thead>
+                  <tr style={{ borderBottom: '1px solid var(--color-border-primary)' }}>
+                    <th style={{ ...cellPad, textAlign: 'left', width: '40%' }}>{t('trash.colTitle')}</th>
+                    <th style={{ ...cellPad, textAlign: 'left', width: '20%' }}>{t('trash.colProject')}</th>
+                    <th style={{ ...cellPad, textAlign: 'left', width: '15%' }}>{t('trash.colTime')}</th>
+                    <th style={{ ...cellPad, textAlign: 'left', width: '10%' }}>{t('trash.colReason')}</th>
+                    <th style={{ ...cellPad, textAlign: 'right', width: '15%' }}>{t('trash.colActions')}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rowsForActiveTab.map(row => {
+                    const reasonKey =
+                      row.reason === 'observation' ? 'trash.reason.observation' :
+                      row.reason === 'session' ? 'trash.reason.session' :
+                      row.reason === 'project' ? 'trash.reason.project' :
+                      'trash.unknown';
+                    // observations / summaries 是叶子节点,单独恢复会因父 session 不存在 FK 失败
+                    // → disable 恢复按钮,只允许会话或项目维度整批恢复
+                    const restoreDisabled = activeTab === 'observations' || activeTab === 'summaries';
+                    return (
+                      <tr key={row.trash_id} style={{ borderBottom: '1px solid var(--color-border-primary)' }}>
+                        <td style={{ ...cellPad, wordBreak: 'break-word' }}>
+                          {extractTitle(row, activeTab as RowTabType)}
+                        </td>
+                        <td style={{ ...cellPad, color: 'var(--color-text-secondary)' }}>
+                          {row.project || t('trash.unknown')}
+                        </td>
+                        <td style={{ ...cellPad, color: 'var(--color-text-secondary)', whiteSpace: 'nowrap' }}>
+                          {formatTime(row.deleted_at_epoch)}
+                        </td>
+                        <td style={{ ...cellPad, color: 'var(--color-text-secondary)' }}>
+                          {t(reasonKey)}
+                        </td>
+                        <td style={{ ...cellPad, textAlign: 'right', whiteSpace: 'nowrap' }}>
+                          {!restoreDisabled && (
+                            <button
+                              type="button"
+                              onClick={() => handleRestore(activeTab as RowTabType, row.trash_id)}
+                              style={btnRestore}
+                            >
+                              {t('trash.restore')}
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => handlePermanentDelete(activeTab as RowTabType, row.trash_id)}
+                            style={btnDelete}
+                          >
+                            {t('trash.permanentDelete')}
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </>
           )}
         </div>
       </div>

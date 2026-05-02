@@ -69,15 +69,19 @@ export class DeleteRoutes extends BaseRouteHandler {
     app.delete('/api/observations/:id', requireLocalhost, this.wrapHandler(this.handleDeleteObservation));
     app.delete('/api/sessions/:id', requireLocalhost, this.wrapHandler(this.handleDeleteSession));
     app.delete('/api/projects/:name', requireLocalhost, this.wrapHandler(this.handleDeleteProject));
-    // 回收站 CRUD —— 单行
+    // 回收站 CRUD ——
+    // 注意:Express 按注册顺序匹配,具体路径必须先于通配路径
+    // 否则 /api/trash/projects/foo/restore 会被 /api/trash/:type/:trashId/restore 抢走,
+    // :type 拿到 "projects" 然后校验失败
     app.get('/api/trash', requireLocalhost, this.wrapHandler(this.handleListTrash));
-    app.post('/api/trash/:type/:trashId/restore', requireLocalhost, this.wrapHandler(this.handleRestore));
-    app.delete('/api/trash/:type/:trashId', requireLocalhost, this.wrapHandler(this.handleTrashPermanentDelete));
     app.delete('/api/trash', requireLocalhost, this.wrapHandler(this.handleTrashClearAll));
-    // 回收站按项目维度 —— 聚合视图 + 整批恢复 / 永久删
+    // —— 项目维度(具体)在前 ——
     app.get('/api/trash/projects', requireLocalhost, this.wrapHandler(this.handleListTrashProjects));
     app.post('/api/trash/projects/:name/restore', requireLocalhost, this.wrapHandler(this.handleRestoreProject));
     app.delete('/api/trash/projects/:name', requireLocalhost, this.wrapHandler(this.handleProjectPermanentDelete));
+    // —— 通配(:type)在后 ——
+    app.post('/api/trash/:type/:trashId/restore', requireLocalhost, this.wrapHandler(this.handleRestore));
+    app.delete('/api/trash/:type/:trashId', requireLocalhost, this.wrapHandler(this.handleTrashPermanentDelete));
     logger.info('SYSTEM', 'DeleteRoutes registered', {
       routes: [
         'DELETE /api/observations/:id',
@@ -420,6 +424,11 @@ export class DeleteRoutes extends BaseRouteHandler {
   };
 
   // POST /api/trash/:type/:trashId/restore
+  // 行为:
+  //   type=sessions: 恢复 sdk_sessions 行,同时把 trash 表里属于该 session 的
+  //                  observations/summaries 也一并恢复(级联恢复子项)
+  //   type=observations/summaries: 检查父 session 是否在主表;不在 → 409,
+  //                  让 UI 引导用户通过会话或项目维度整批恢复
   private handleRestore = async (req: Request, res: Response): Promise<void> => {
     this.ensureTrashTables();
     const type = req.params.type as TrashType;
@@ -458,20 +467,83 @@ export class DeleteRoutes extends BaseRouteHandler {
       return;
     }
 
-    const columns = Object.keys(payload);
-    const placeholders = columns.map(() => '?').join(',');
-    const colNames = columns.map(c => `"${c}"`).join(',');
-    const values = columns.map(c => payload[c] as unknown);
+    // 子项(obs/sum)恢复前必须父 session 在主表存在(FK 约束)
+    if (type === 'observations' || type === 'summaries') {
+      const memSessionId = payload.memory_session_id as string | null;
+      if (memSessionId) {
+        const parent = db.query('SELECT id FROM sdk_sessions WHERE memory_session_id = ?').get(memSessionId);
+        if (!parent) {
+          res.status(409).json({
+            error: `Parent session "${memSessionId}" not in sdk_sessions — cannot restore orphan ${type} row`,
+            hint: 'Restore via the session row or the project tab so the session is recreated first.',
+            code: 'ORPHAN_NO_PARENT',
+          });
+          return;
+        }
+      }
+    }
 
-    const tx = db.transaction(() => {
-      db.prepare(`INSERT INTO ${mainTable} (${colNames}) VALUES (${placeholders})`).run(...values as (string | number | null)[]);
-      db.prepare(`DELETE FROM ${trashTable} WHERE trash_id = ?`).run(trashId);
-    });
-    tx();
+    const restoredCounts = { observations: 0, sessions: 0, summaries: 0 };
+
+    try {
+      const tx = db.transaction(() => {
+        db.run('PRAGMA defer_foreign_keys = ON');
+
+        // 1. 恢复主行
+        const cols = Object.keys(payload);
+        const colNames = cols.map(c => `"${c}"`).join(',');
+        const placeholders = cols.map(() => '?').join(',');
+        db.prepare(`INSERT INTO ${mainTable} (${colNames}) VALUES (${placeholders})`).run(
+          ...cols.map(c => payload[c] as string | number | null)
+        );
+        db.prepare(`DELETE FROM ${trashTable} WHERE trash_id = ?`).run(trashId);
+        if (type === 'observations') restoredCounts.observations += 1;
+        if (type === 'summaries')    restoredCounts.summaries    += 1;
+        if (type === 'sessions')     restoredCounts.sessions     += 1;
+
+        // 2. 如果是 session 级恢复,把 trash 表里同 memory_session_id 的 obs/sum 一并恢复
+        if (type === 'sessions') {
+          const memSessionId = payload.memory_session_id as string | null;
+          if (memSessionId) {
+            const childObs = db.query('SELECT * FROM trash_observations WHERE memory_session_id = ?').all(memSessionId) as TrashRow[];
+            const childSums = db.query('SELECT * FROM trash_summaries WHERE memory_session_id = ?').all(memSessionId) as TrashRow[];
+
+            for (const row of childObs) {
+              const p = JSON.parse(row.payload) as Record<string, unknown>;
+              const c = Object.keys(p);
+              const cn = c.map(x => `"${x}"`).join(',');
+              const ph = c.map(() => '?').join(',');
+              db.prepare(`INSERT INTO observations (${cn}) VALUES (${ph})`).run(
+                ...c.map(x => p[x] as string | number | null)
+              );
+              db.prepare('DELETE FROM trash_observations WHERE trash_id = ?').run(row.trash_id);
+              restoredCounts.observations += 1;
+            }
+            for (const row of childSums) {
+              const p = JSON.parse(row.payload) as Record<string, unknown>;
+              const c = Object.keys(p);
+              const cn = c.map(x => `"${x}"`).join(',');
+              const ph = c.map(() => '?').join(',');
+              db.prepare(`INSERT INTO session_summaries (${cn}) VALUES (${ph})`).run(
+                ...c.map(x => p[x] as string | number | null)
+              );
+              db.prepare('DELETE FROM trash_summaries WHERE trash_id = ?').run(row.trash_id);
+              restoredCounts.summaries += 1;
+            }
+          }
+        }
+      });
+      tx();
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      logger.error('SYSTEM', 'Trash row restore failed', { type, trashId }, error as Error);
+      res.status(500).json({ error: `Restore failed: ${msg}` });
+      return;
+    }
 
     this.rebroadcastProjects();
-    logger.info('SYSTEM', 'Trash row restored', { type, trashId, originalId: payload.id });
-    res.json({ ok: true, restored: { type, originalId: payload.id } });
+    logger.info('SYSTEM', 'Trash row restored', { type, trashId, originalId: payload.id, ...restoredCounts });
+    res.json({ ok: true, restored: { type, originalId: payload.id, ...restoredCounts } });
   };
 
   // DELETE /api/trash/:type/:trashId
