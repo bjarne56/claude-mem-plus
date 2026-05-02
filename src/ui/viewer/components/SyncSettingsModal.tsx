@@ -182,6 +182,42 @@ export function SyncSettingsModal({ isOpen, onClose }: Props) {
     }
   }, [callAction, fetchStatus, t]);
 
+  /** 共享某项目 — prompt 用户输入 target user + mode */
+  const handleShareProject = useCallback(async (projectName: string): Promise<void> => {
+    const target = window.prompt(t('sync.promptShareTarget', { project: projectName }));
+    if (!target || !target.trim()) return;
+    const modeRaw = window.prompt(t('sync.promptShareMode'), 'fork-allowed');
+    if (!modeRaw) return;
+    const mode = modeRaw.trim();
+    if (!['read-only', 'fork-allowed', 'auto-copy'].includes(mode)) {
+      window.alert(t('sync.shareInvalidMode', { mode }));
+      return;
+    }
+    try {
+      await callAction('/api/sync/share-project', {
+        project_name: projectName,
+        target_type: 'user',
+        target_username: target.trim(),
+        share_mode: mode,
+      });
+      setError(t('sync.shareSuccess', { project: projectName, target: target.trim(), mode }));
+      await fetchStatus();
+    } catch (e) {
+      setError(t('sync.shareFailed', { msg: e instanceof Error ? e.message : String(e) }));
+    }
+  }, [callAction, fetchStatus, t]);
+
+  const handleUnshareProject = useCallback(async (projectName: string): Promise<void> => {
+    if (!window.confirm(t('sync.unshareConfirm', { project: projectName }))) return;
+    try {
+      await callAction('/api/sync/unshare-project', { project_name: projectName });
+      setError(t('sync.unshareSuccess', { project: projectName }));
+      await fetchStatus();
+    } catch (e) {
+      setError(t('sync.shareFailed', { msg: e instanceof Error ? e.message : String(e) }));
+    }
+  }, [callAction, fetchStatus, t]);
+
   if (!isOpen) return null;
 
   return (
@@ -366,20 +402,63 @@ export function SyncSettingsModal({ isOpen, onClose }: Props) {
                         <th style={{ textAlign: 'right' }}>{t('sync.colObsCount')}</th>
                         <th>{t('sync.colShare')}</th>
                         <th>{t('sync.colFlags')}</th>
+                        <th style={{ textAlign: 'right' }}>{t('sync.colActions')}</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {projects.map(p => (
-                        <tr key={p.name}>
-                          <td>{p.name}</td>
-                          <td style={{ textAlign: 'right' }}>{p.observation_count}</td>
-                          <td>{p.share_state ?? '-'}</td>
-                          <td>
-                            {p.is_excluded && <span style={{ color: '#999' }}>excl</span>}{' '}
-                            {p.is_forked && <span style={{ color: '#9cf' }}>fork</span>}
-                          </td>
-                        </tr>
-                      ))}
+                      {projects.map(p => {
+                        const isShared = p.share_state && p.share_state !== '-' && p.share_state !== 'private';
+                        return (
+                          <tr key={p.name}>
+                            <td>{p.name}</td>
+                            <td style={{ textAlign: 'right' }}>{p.observation_count}</td>
+                            <td>{p.share_state ?? '-'}</td>
+                            <td>
+                              {p.is_excluded && <span style={{ color: '#999' }}>excl</span>}{' '}
+                              {p.is_forked && <span style={{ color: '#9cf' }}>fork</span>}
+                            </td>
+                            <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+                              <button
+                                type="button"
+                                onClick={() => handleShareProject(p.name)}
+                                disabled={busy || p.is_forked}
+                                title={p.is_forked ? t('sync.cantShareFork') : t('sync.share')}
+                                style={{
+                                  padding: '3px 8px',
+                                  marginRight: 4,
+                                  background: 'transparent',
+                                  color: p.is_forked ? '#999' : '#3fb950',
+                                  border: `1px solid ${p.is_forked ? '#444' : '#3fb950'}`,
+                                  borderRadius: 3,
+                                  cursor: p.is_forked ? 'not-allowed' : 'pointer',
+                                  fontSize: 11,
+                                }}
+                              >
+                                {t('sync.share')}
+                              </button>
+                              {isShared && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleUnshareProject(p.name)}
+                                  disabled={busy}
+                                  title={t('sync.unshare')}
+                                  style={{
+                                    padding: '3px 8px',
+                                    background: 'transparent',
+                                    color: '#f85149',
+                                    border: '1px solid #f85149',
+                                    borderRadius: 3,
+                                    cursor: 'pointer',
+                                    fontSize: 11,
+                                  }}
+                                >
+                                  {t('sync.unshare')}
+                                </button>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 )}
