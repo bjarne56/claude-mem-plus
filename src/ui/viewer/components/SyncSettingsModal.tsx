@@ -182,25 +182,65 @@ export function SyncSettingsModal({ isOpen, onClose }: Props) {
     }
   }, [callAction, fetchStatus, t]);
 
-  /** 共享某项目 — prompt 用户输入 target user + mode */
+  /** 共享某项目 — 三步 prompt:target_type → 详细字段 → mode */
   const handleShareProject = useCallback(async (projectName: string): Promise<void> => {
-    const target = window.prompt(t('sync.promptShareTarget', { project: projectName }));
-    if (!target || !target.trim()) return;
-    const modeRaw = window.prompt(t('sync.promptShareMode'), 'fork-allowed');
+    // 步骤 1:选 target_type
+    const targetTypeRaw = window.prompt(t('sync.promptShareType', { project: projectName }), 'user');
+    if (!targetTypeRaw) return;
+    const targetType = targetTypeRaw.trim().toLowerCase();
+    if (!['user', 'public', 'link'].includes(targetType)) {
+      window.alert(t('sync.shareInvalidType', { type: targetType }));
+      return;
+    }
+
+    // 步骤 2:按 type 收集额外字段
+    const body: Record<string, unknown> = {
+      project_name: projectName,
+      target_type: targetType,
+    };
+    let displayTarget = '';
+
+    if (targetType === 'user') {
+      const username = window.prompt(t('sync.promptShareTargetUser'));
+      if (!username || !username.trim()) return;
+      body.target_username = username.trim();
+      displayTarget = `@${username.trim()}`;
+    } else if (targetType === 'link') {
+      const days = window.prompt(t('sync.promptShareLinkExpires'), '7');
+      if (days === null) return;
+      const n = parseInt(days.trim(), 10);
+      if (!isNaN(n) && n > 0) {
+        body.expires_in_secs = n * 86400;
+      }
+      displayTarget = t('sync.shareLinkAnonymous', { days: n > 0 ? String(n) : 'no expiry' });
+    } else {
+      // public:无额外字段
+      displayTarget = t('sync.shareAllUsers');
+    }
+
+    // 步骤 3:选 mode(link 强制 read-only,server 端也会强制)
+    const modeDefault = targetType === 'link' ? 'read-only' : 'fork-allowed';
+    const modeRaw = window.prompt(t('sync.promptShareMode'), modeDefault);
     if (!modeRaw) return;
     const mode = modeRaw.trim();
     if (!['read-only', 'fork-allowed', 'auto-copy'].includes(mode)) {
       window.alert(t('sync.shareInvalidMode', { mode }));
       return;
     }
+    body.share_mode = mode;
+
     try {
-      await callAction('/api/sync/share-project', {
-        project_name: projectName,
-        target_type: 'user',
-        target_username: target.trim(),
-        share_mode: mode,
-      });
-      setError(t('sync.shareSuccess', { project: projectName, target: target.trim(), mode }));
+      const result = (await callAction('/api/sync/share-project', body)) as { share_url?: string; share_token?: string } | null;
+      let msg = t('sync.shareSuccess', { project: projectName, target: displayTarget, mode });
+      if (targetType === 'link' && result && (result.share_url || result.share_token)) {
+        const url = result.share_url || `<token: ${result.share_token}>`;
+        msg += `\n\n${t('sync.shareLinkCreated')}: ${url}`;
+        // 自动复制到剪贴板(if 浏览器支持)
+        if (navigator.clipboard && result.share_url) {
+          navigator.clipboard.writeText(result.share_url).catch(() => { /* ignore */ });
+        }
+      }
+      window.alert(msg);
       await fetchStatus();
     } catch (e) {
       setError(t('sync.shareFailed', { msg: e instanceof Error ? e.message : String(e) }));
