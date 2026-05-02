@@ -290,7 +290,8 @@ export class WorkerService implements WorkerRef {
     // 软删除路由(项目/会话/单条 observation) + 回收站 CRUD,软删到 trash_* 影子表
     this.server.registerRoutes(new DeleteRoutes(this.dbManager, this.sseBroadcaster));
     // cmem-sync client 路由(/api/sync/*)— localhost-only,token 在主库 sync_state 表
-    this.server.registerRoutes(new SyncRoutes(this.dbManager.getConnection()));
+    // SyncRoutes 注册延后到 dbManager.initialize() 之后(在 start() 里),
+    // 因为它构造时立即用 db 实例。这里先放占位注释。
   }
 
   async start(): Promise<void> {
@@ -398,6 +399,11 @@ export class WorkerService implements WorkerRef {
       this.server.registerRoutes(this.searchRoutes);
       logger.info('WORKER', 'SearchManager initialized and search routes registered');
 
+      // SyncRoutes 注册:必须在 dbManager.initialize() 之后,因为 SyncManager 构造立即用 db 实例
+      this.server.registerRoutes(new SyncRoutes(this.dbManager.getDatabase()));
+      logger.info('WORKER', 'SyncRoutes registered (post-init)');
+
+      // Register corpus routes (knowledge agents) — needs SearchOrchestrator from search module
       const { SearchOrchestrator } = await import('./worker/search/SearchOrchestrator.js');
       const corpusSearchOrchestrator = new SearchOrchestrator(
         this.dbManager.getSessionSearch(),

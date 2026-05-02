@@ -2,6 +2,7 @@
 import { Database } from 'bun:sqlite';
 import { SessionStore } from '../sqlite/SessionStore.js';
 import { SessionSearch } from '../sqlite/SessionSearch.js';
+import { MigrationRunner } from '../sqlite/migrations/runner.js';
 import { ChromaSync } from '../sync/ChromaSync.js';
 import { SettingsDefaultsManager } from '../../shared/SettingsDefaultsManager.js';
 import { USER_SETTINGS_PATH, DB_PATH } from '../../shared/paths.js';
@@ -16,7 +17,20 @@ export class DatabaseManager {
 
   async initialize(): Promise<void> {
     this.db = new Database(DB_PATH);
-    
+
+    // [zh-fork] 跑 migrations(包括 v31 sync_state / shared_view 等)
+    // worker 自己的 DatabaseManager 之前没接 MigrationRunner,导致 sync_state 等
+    // subagent 加的表只有 sqlite/Database.ts 这个 deprecated 入口才会建。
+    // 现在 worker 启动时自己跑一遍 migration runner 保证 schema 最新。
+    try {
+      const runner = new MigrationRunner(this.db);
+      runner.runAllMigrations();
+      logger.info('DB', 'Migrations applied');
+    } catch (e) {
+      logger.warn('DB', 'Migration runner failed (continuing)', { error: e instanceof Error ? e.message : String(e) });
+    }
+
+    // Shared connection between store and search
     this.sessionStore = new SessionStore(this.db);
     this.sessionSearch = new SessionSearch(this.db);
 
