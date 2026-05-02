@@ -65,12 +65,32 @@ const forkSchema = z.object({
   new_name: z.string().optional(),
 });
 
+const autoSyncSchema = z.object({
+  enabled: z.boolean().optional(),
+  // UI 用分钟更直观,server 端转秒
+  interval_minutes: z.number().int().min(1).max(1440).optional(),
+  direction: z.enum(['push', 'pull', 'both']).optional(),
+});
+
 export class SyncRoutes extends BaseRouteHandler {
   private syncManager: SyncManager;
 
-  constructor(db: Database) {
+  /**
+   * 优先用外部传入的 SyncManager(worker-service 持有同一实例,便于启动时控 timer);
+   * 兼容旧调用:只传 db 时内部 new 一个。
+   */
+  constructor(dbOrManager: Database | SyncManager) {
     super();
-    this.syncManager = new SyncManager(db);
+    if (dbOrManager instanceof SyncManager) {
+      this.syncManager = dbOrManager;
+    } else {
+      this.syncManager = new SyncManager(dbOrManager);
+    }
+  }
+
+  /** 外部访问 manager(worker-service 启动时用来 startAutoSync) */
+  getSyncManager(): SyncManager {
+    return this.syncManager;
   }
 
   setupRoutes(app: express.Application): void {
@@ -87,6 +107,10 @@ export class SyncRoutes extends BaseRouteHandler {
     app.post('/api/sync/share-project', requireLocalhost, validateBody(shareSchema), this.handleShare.bind(this));
     app.post('/api/sync/unshare-project', requireLocalhost, validateBody(unshareSchema), this.handleUnshare.bind(this));
     app.post('/api/sync/fork-project', requireLocalhost, validateBody(forkSchema), this.handleFork.bind(this));
+
+    // 自动同步配置 — 读 / 写
+    app.get('/api/sync/auto', requireLocalhost, this.handleAutoGet.bind(this));
+    app.post('/api/sync/auto', requireLocalhost, validateBody(autoSyncSchema), this.handleAutoPost.bind(this));
   }
 
   // ===== handlers =====
@@ -284,6 +308,40 @@ export class SyncRoutes extends BaseRouteHandler {
     } catch (e) {
       const message = e instanceof Error ? e.message : String(e);
       res.status(500).json({ error: { code: 'FORK_FAILED', message } });
+    }
+  });
+
+  // ===== auto-sync handlers =====
+
+  private handleAutoGet = this.wrapHandler((_req: Request, res: Response): void => {
+    const c = this.syncManager.getAutoSyncConfig();
+    res.json({
+      enabled: c.enabled,
+      interval_minutes: Math.round(c.intervalSecs / 60),
+      direction: c.direction,
+      last_run_at: c.lastRunAt,
+      next_run_at: c.nextRunAt,
+    });
+  });
+
+  private handleAutoPost = this.wrapHandler((req: Request, res: Response): void => {
+    const body = req.body as z.infer<typeof autoSyncSchema>;
+    try {
+      const updated = this.syncManager.setAutoSyncConfig({
+        enabled: body.enabled,
+        intervalSecs: body.interval_minutes !== undefined ? body.interval_minutes * 60 : undefined,
+        direction: body.direction,
+      });
+      res.json({
+        enabled: updated.enabled,
+        interval_minutes: Math.round(updated.intervalSecs / 60),
+        direction: updated.direction,
+        last_run_at: updated.lastRunAt,
+        next_run_at: updated.nextRunAt,
+      });
+    } catch (e) {
+      const message = e instanceof Error ? e.message : String(e);
+      res.status(400).json({ error: { code: 'AUTO_SYNC_INVALID', message } });
     }
   });
 

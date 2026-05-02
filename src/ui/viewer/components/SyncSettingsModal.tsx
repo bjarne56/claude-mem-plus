@@ -34,6 +34,25 @@ interface SyncProject {
   observation_count: number;
 }
 
+interface AutoSyncDto {
+  enabled: boolean;
+  interval_minutes: number;
+  direction: 'push' | 'pull' | 'both';
+  last_run_at: number | null;
+  next_run_at: number | null;
+}
+
+/** 把秒数显示成 "HH:MM:SS" 或 "MM:SS"(< 1h);负数返回 "now" */
+function fmtCountdown(secs: number): string {
+  if (secs <= 0) return '0s';
+  const h = Math.floor(secs / 3600);
+  const m = Math.floor((secs % 3600) / 60);
+  const s = secs % 60;
+  if (h > 0) return `${h}h ${m}m`;
+  if (m > 0) return `${m}m ${s}s`;
+  return `${s}s`;
+}
+
 interface Props {
   isOpen: boolean;
   onClose: () => void;
@@ -79,6 +98,23 @@ export function SyncSettingsModal({ isOpen, onClose }: Props) {
     invite_code: '',
   });
 
+  // 项目列表搜索词(client filter)
+  const [search, setSearch] = useState('');
+  // 状态摘要默认折叠,只显示 chips
+  const [statusExpanded, setStatusExpanded] = useState(false);
+  // 自动同步配置 + 下次倒计时(每秒 tick)
+  const [autoSync, setAutoSync] = useState<AutoSyncDto | null>(null);
+  const [autoSyncDraft, setAutoSyncDraft] = useState<{ interval_minutes: number; direction: 'push' | 'pull' | 'both' }>({
+    interval_minutes: 10,
+    direction: 'both',
+  });
+  const [autoSavedHint, setAutoSavedHint] = useState<string | null>(null);
+  const [nowSec, setNowSec] = useState(Math.floor(Date.now() / 1000));
+  useEffect(() => {
+    const id = setInterval(() => setNowSec(Math.floor(Date.now() / 1000)), 1000);
+    return () => clearInterval(id);
+  }, []);
+
   const fetchStatus = useCallback(async (): Promise<void> => {
     setLoading(true);
     setError(null);
@@ -94,6 +130,16 @@ export function SyncSettingsModal({ isOpen, onClose }: Props) {
         const p = (await pRes.json()) as { projects: SyncProject[] };
         setProjects(p.projects);
       }
+
+      // 拉自动同步配置(独立失败不影响主流程)
+      try {
+        const aRes = await fetch('/api/sync/auto');
+        if (aRes.ok) {
+          const a = (await aRes.json()) as AutoSyncDto;
+          setAutoSync(a);
+          setAutoSyncDraft({ interval_minutes: a.interval_minutes, direction: a.direction });
+        }
+      } catch { /* swallow */ }
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -296,16 +342,52 @@ export function SyncSettingsModal({ isOpen, onClose }: Props) {
     }
   }, [callAction, fetchStatus, t]);
 
+  /** 保存自动同步配置 — 后端会返回新的 next_run_at */
+  const saveAutoSync = useCallback(async (patch: Partial<AutoSyncDto>): Promise<void> => {
+    try {
+      const body: Record<string, unknown> = {};
+      if (patch.enabled !== undefined) body.enabled = patch.enabled;
+      if (patch.interval_minutes !== undefined) body.interval_minutes = patch.interval_minutes;
+      if (patch.direction !== undefined) body.direction = patch.direction;
+      const r = (await callAction('/api/sync/auto', body)) as AutoSyncDto;
+      setAutoSync(r);
+      setAutoSyncDraft({ interval_minutes: r.interval_minutes, direction: r.direction });
+      setAutoSavedHint(t('sync.autoSyncSavedHint'));
+      setTimeout(() => setAutoSavedHint(null), 2000);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    }
+  }, [callAction, t]);
+
+  // 项目列表搜索过滤(client side,简单 includes)
+  const filteredProjects = search.trim()
+    ? projects.filter(p => p.name.toLowerCase().includes(search.trim().toLowerCase()))
+    : projects;
+
   if (!isOpen) return null;
+
+  // chip 通用样式 — 状态摘要折叠形态
+  const chipStyle: React.CSSProperties = {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 4,
+    padding: '2px 8px',
+    background: 'var(--color-bg-tertiary, rgba(255,255,255,0.04))',
+    border: '1px solid var(--color-border-primary, #2a2a2a)',
+    borderRadius: 12,
+    fontSize: 12,
+    color: 'var(--color-text-secondary)',
+    whiteSpace: 'nowrap',
+  };
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div
         className="context-settings-modal"
         onClick={(e) => e.stopPropagation()}
-        style={{ maxWidth: 720 }}
+        style={{ maxWidth: 880, width: '95vw', maxHeight: '88vh', display: 'flex', flexDirection: 'column' }}
       >
-        <div className="modal-header">
+        <div className="modal-header" style={{ flexShrink: 0 }}>
           <h2>{t('sync.title')}</h2>
           <button onClick={onClose} className="modal-close-btn" title={t('settings.closeEsc')}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -315,7 +397,7 @@ export function SyncSettingsModal({ isOpen, onClose }: Props) {
           </button>
         </div>
 
-        <div className="modal-body" style={{ padding: 24, overflow: 'auto' }}>
+        <div className="modal-body" style={{ padding: 20, overflow: 'auto', flex: 1, minHeight: 0 }}>
           {error && (
             <div style={{ color: '#ff6b6b', marginBottom: 12, padding: 8, background: '#2a0808', borderRadius: 4 }}>
               {error}
@@ -326,49 +408,63 @@ export function SyncSettingsModal({ isOpen, onClose }: Props) {
 
           {status && (
             <>
-              {/* 状态摘要 */}
-              <section style={{ marginBottom: 24 }}>
-                <h3 style={{ marginTop: 0 }}>{t('sync.status')}</h3>
-                <table style={{ width: '100%', fontSize: 14 }}>
-                  <tbody>
-                    <tr>
-                      <td style={{ padding: '4px 8px', color: '#999' }}>{t('sync.serverUrl')}</td>
-                      <td>{status.serverUrl ?? <em>{t('sync.notConfigured')}</em>}</td>
-                    </tr>
-                    <tr>
-                      <td style={{ padding: '4px 8px', color: '#999' }}>{t('sync.loggedIn')}</td>
-                      <td>{status.loggedIn ? t('common.yes') : t('common.no')}</td>
-                    </tr>
-                    <tr>
-                      <td style={{ padding: '4px 8px', color: '#999' }}>{t('sync.user')}</td>
-                      <td>{status.username ?? '-'}</td>
-                    </tr>
-                    <tr>
-                      <td style={{ padding: '4px 8px', color: '#999' }}>{t('sync.machine')}</td>
-                      <td>{status.machineName ?? '-'}</td>
-                    </tr>
-                    <tr>
-                      <td style={{ padding: '4px 8px', color: '#999' }}>{t('sync.lastPulledSeq')}</td>
-                      <td>{status.lastPulledSeq}</td>
-                    </tr>
-                    <tr>
-                      <td style={{ padding: '4px 8px', color: '#999' }}>{t('sync.lastPush')}</td>
-                      <td>{fmtEpoch(status.lastPushedAt)}</td>
-                    </tr>
-                    <tr>
-                      <td style={{ padding: '4px 8px', color: '#999' }}>{t('sync.lastPull')}</td>
-                      <td>{fmtEpoch(status.lastPulledAt)}</td>
-                    </tr>
-                    <tr>
-                      <td style={{ padding: '4px 8px', color: '#999' }}>{t('sync.pendingPush')}</td>
-                      <td>{status.pendingPush}</td>
-                    </tr>
-                    <tr>
-                      <td style={{ padding: '4px 8px', color: '#999' }}>{t('sync.pendingDowngrades')}</td>
-                      <td>{status.pendingDowngrades}</td>
-                    </tr>
-                  </tbody>
-                </table>
+              {/* 状态摘要 — 默认 chips,展开看完整表 */}
+              <section style={{ marginBottom: 16 }}>
+                <div style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  marginBottom: 8, gap: 8, flexWrap: 'wrap',
+                }}>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>
+                    <span style={{ ...chipStyle, color: status.loggedIn ? '#3fb950' : '#d29922' }}>
+                      {status.loggedIn ? '● ' + (status.username ?? '?') : '○ ' + t('sync.notConfigured')}
+                    </span>
+                    {status.serverUrl && (
+                      <span style={chipStyle} title={status.serverUrl}>
+                        {status.serverUrl.replace(/^https?:\/\//, '')}
+                      </span>
+                    )}
+                    {status.machineName && <span style={chipStyle}>{status.machineName}</span>}
+                    {status.pendingPush > 0 && (
+                      <span style={{ ...chipStyle, color: '#d29922', borderColor: '#d29922' }}>
+                        ⇧ {status.pendingPush}
+                      </span>
+                    )}
+                    {status.pendingDowngrades > 0 && (
+                      <span style={{ ...chipStyle, color: '#f85149', borderColor: '#f85149' }}>
+                        ⚠ {status.pendingDowngrades}
+                      </span>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setStatusExpanded(v => !v)}
+                    style={{
+                      padding: '2px 8px', fontSize: 11, background: 'transparent',
+                      border: '1px solid var(--color-border-primary)', borderRadius: 3, cursor: 'pointer',
+                      color: 'var(--color-text-secondary)',
+                    }}
+                  >
+                    {statusExpanded ? t('sync.collapseDetails') : t('sync.expandDetails')}
+                  </button>
+                </div>
+                {statusExpanded && (
+                  <table style={{ width: '100%', fontSize: 13, marginTop: 4 }}>
+                    <tbody>
+                      <tr>
+                        <td style={{ padding: '3px 8px', color: '#999', width: 140 }}>{t('sync.lastPulledSeq')}</td>
+                        <td>{status.lastPulledSeq}</td>
+                      </tr>
+                      <tr>
+                        <td style={{ padding: '3px 8px', color: '#999' }}>{t('sync.lastPush')}</td>
+                        <td>{fmtEpoch(status.lastPushedAt)}</td>
+                      </tr>
+                      <tr>
+                        <td style={{ padding: '3px 8px', color: '#999' }}>{t('sync.lastPull')}</td>
+                        <td>{fmtEpoch(status.lastPulledAt)}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                )}
               </section>
 
               {/* Auth */}
@@ -507,21 +603,126 @@ export function SyncSettingsModal({ isOpen, onClose }: Props) {
                 )}
               </section>
 
-              {/* 同步操作 */}
+              {/* 同步操作 + 自动同步 */}
               {status.loggedIn && (
-                <section style={{ marginBottom: 24 }}>
-                  <h3>{t('sync.actions')}</h3>
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <button onClick={handlePush} disabled={busy}>{t('sync.pushNow')}</button>
-                    <button onClick={handlePull} disabled={busy}>{t('sync.pullNow')}</button>
-                    <button onClick={fetchStatus} disabled={busy}>{t('common.retry')}</button>
-                  </div>
-                </section>
+                <>
+                  <section style={{ marginBottom: 16 }}>
+                    <h3 style={{ marginBottom: 8 }}>{t('sync.actions')}</h3>
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                      <button onClick={handlePush} disabled={busy}>{t('sync.pushNow')}</button>
+                      <button onClick={handlePull} disabled={busy}>{t('sync.pullNow')}</button>
+                      <button onClick={fetchStatus} disabled={busy}>{t('common.retry')}</button>
+                    </div>
+                  </section>
+
+                  {/* 自动同步面板 */}
+                  <section style={{
+                    marginBottom: 16, padding: 12,
+                    background: 'rgba(88, 166, 255, 0.04)',
+                    border: '1px solid var(--color-border-primary, #2a2a2a)',
+                    borderRadius: 6,
+                  }}>
+                    <div style={{
+                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                      marginBottom: autoSync?.enabled ? 12 : 0,
+                    }}>
+                      <h3 style={{ margin: 0, fontSize: 14 }}>{t('sync.autoSync')}</h3>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 13 }}>
+                        <input
+                          type="checkbox"
+                          checked={autoSync?.enabled ?? false}
+                          onChange={e => void saveAutoSync({ enabled: e.target.checked })}
+                          disabled={busy}
+                        />
+                        <span>{t('sync.autoSyncEnabled')}</span>
+                      </label>
+                    </div>
+                    {autoSync?.enabled && (
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, fontSize: 13 }}>
+                        <div>
+                          <label style={{ display: 'block', color: '#999', fontSize: 11, marginBottom: 4 }}>
+                            {t('sync.autoSyncInterval')}
+                          </label>
+                          <select
+                            value={autoSyncDraft.interval_minutes}
+                            onChange={e => {
+                              const v = parseInt(e.target.value, 10);
+                              setAutoSyncDraft(d => ({ ...d, interval_minutes: v }));
+                              void saveAutoSync({ interval_minutes: v });
+                            }}
+                            disabled={busy}
+                            style={{ width: '100%' }}
+                          >
+                            <option value={5}>5 min</option>
+                            <option value={10}>10 min</option>
+                            <option value={15}>15 min</option>
+                            <option value={30}>30 min</option>
+                            <option value={60}>1 h</option>
+                            <option value={180}>3 h</option>
+                            <option value={360}>6 h</option>
+                            <option value={720}>12 h</option>
+                            <option value={1440}>24 h</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label style={{ display: 'block', color: '#999', fontSize: 11, marginBottom: 4 }}>
+                            {t('sync.autoSyncDirection')}
+                          </label>
+                          <select
+                            value={autoSyncDraft.direction}
+                            onChange={e => {
+                              const v = e.target.value as 'push' | 'pull' | 'both';
+                              setAutoSyncDraft(d => ({ ...d, direction: v }));
+                              void saveAutoSync({ direction: v });
+                            }}
+                            disabled={busy}
+                            style={{ width: '100%' }}
+                          >
+                            <option value="both">{t('sync.autoSyncDirectionBoth')}</option>
+                            <option value="push">{t('sync.autoSyncDirectionPush')}</option>
+                            <option value="pull">{t('sync.autoSyncDirectionPull')}</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label style={{ display: 'block', color: '#999', fontSize: 11, marginBottom: 4 }}>
+                            {t('sync.autoSyncNextRun')}
+                          </label>
+                          <div style={{ padding: '4px 0', color: '#3fb950', fontFamily: 'monospace' }}>
+                            {autoSync.next_run_at
+                              ? fmtCountdown(autoSync.next_run_at - nowSec)
+                              : '-'}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    {autoSavedHint && (
+                      <div style={{ marginTop: 8, color: '#3fb950', fontSize: 11 }}>{autoSavedHint}</div>
+                    )}
+                  </section>
+                </>
               )}
 
               {/* 项目列表 — 未登录时显示引导,登录后但项目空显示 hint */}
               <section>
-                <h3>{t('sync.projects')}</h3>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, gap: 8 }}>
+                  <h3 style={{ margin: 0 }}>
+                    {t('sync.projects')}
+                    {projects.length > 0 && (
+                      <span style={{ marginLeft: 8, fontSize: 12, color: '#999', fontWeight: 'normal' }}>
+                        ({filteredProjects.length}/{projects.length})
+                      </span>
+                    )}
+                  </h3>
+                  {projects.length > 5 && (
+                    <input
+                      type="text"
+                      placeholder={t('sync.searchPlaceholder')}
+                      value={search}
+                      onChange={e => setSearch(e.target.value)}
+                      style={{ width: 200, padding: '4px 8px', fontSize: 12 }}
+                    />
+                  )}
+                </div>
                 {!status.loggedIn ? (
                   <div
                     style={{
@@ -550,22 +751,38 @@ export function SyncSettingsModal({ isOpen, onClose }: Props) {
                   >
                     {t('sync.noProjectsYet')}
                   </div>
+                ) : filteredProjects.length === 0 ? (
+                  <div style={{
+                    padding: '16px', textAlign: 'center', color: '#999', fontSize: 13,
+                    border: '1px dashed var(--color-border-primary, #2a2a2a)', borderRadius: 6,
+                  }}>
+                    {t('sync.noMatch', { q: search })}
+                  </div>
                 ) : (
-                  <table style={{ width: '100%', fontSize: 14 }}>
-                    <thead>
-                      <tr>
-                        <th style={{ textAlign: 'left' }}>{t('sync.colName')}</th>
-                        <th style={{ textAlign: 'right' }}>{t('sync.colObsCount')}</th>
-                        <th>{t('sync.colShare')}</th>
-                        <th>{t('sync.colFlags')}</th>
-                        <th style={{ textAlign: 'right' }}>{t('sync.colActions')}</th>
+                  <div style={{
+                    maxHeight: 320,
+                    overflow: 'auto',
+                    border: '1px solid var(--color-border-primary, #2a2a2a)',
+                    borderRadius: 4,
+                  }}>
+                  <table style={{ width: '100%', fontSize: 13, borderCollapse: 'collapse' }}>
+                    <thead style={{
+                      position: 'sticky', top: 0, zIndex: 1,
+                      background: 'var(--color-bg-secondary, #1a1a1a)',
+                    }}>
+                      <tr style={{ fontSize: 11, textTransform: 'uppercase', color: '#999' }}>
+                        <th style={{ textAlign: 'left', padding: '6px 8px' }}>{t('sync.colName')}</th>
+                        <th style={{ textAlign: 'right', padding: '6px 8px' }}>{t('sync.colObsCount')}</th>
+                        <th style={{ textAlign: 'left', padding: '6px 8px' }}>{t('sync.colShare')}</th>
+                        <th style={{ textAlign: 'left', padding: '6px 8px' }}>{t('sync.colFlags')}</th>
+                        <th style={{ textAlign: 'right', padding: '6px 8px' }}>{t('sync.colActions')}</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {projects.map(p => {
+                      {filteredProjects.map(p => {
                         const isShared = p.share_state && p.share_state !== '-' && p.share_state !== 'private';
                         return (
-                          <tr key={p.name}>
+                          <tr key={p.name} style={{ borderTop: '1px solid var(--color-border-primary, #2a2a2a)' }}>
                             <td>{p.name}</td>
                             <td style={{ textAlign: 'right' }}>{p.observation_count}</td>
                             <td>{p.share_state ?? '-'}</td>
@@ -617,6 +834,7 @@ export function SyncSettingsModal({ isOpen, onClose }: Props) {
                       })}
                     </tbody>
                   </table>
+                  </div>
                 )}
               </section>
             </>

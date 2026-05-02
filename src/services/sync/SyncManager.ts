@@ -19,7 +19,7 @@
 import type { Database } from 'bun:sqlite';
 import { logger } from '../../utils/logger.js';
 import { ApiClient, type PullResponse, type PushObservationPayload, type PushResponse, type SharedObservation } from './ApiClient.js';
-import { SyncState } from './SyncState.js';
+import { SyncState, type AutoSyncDirection } from './SyncState.js';
 import { uuidV7 } from './uuid-v7.js';
 import { resolveProjectMarker, normalizeProjectName } from './ProjectMarker.js';
 
@@ -59,10 +59,31 @@ export interface PullResult {
 
 const PUSH_BATCH_SIZE = 200;
 
+export interface AutoSyncConfig {
+  enabled: boolean;
+  intervalSecs: number;
+  direction: AutoSyncDirection;
+  /** 上次自动同步实际触发的时间(epoch),null = 还没触发过 */
+  lastRunAt: number | null;
+  /** 下次预计触发时间(epoch);timer 未启动时 null */
+  nextRunAt: number | null;
+}
+
+/** UI 上限制最小间隔,防止配置成 1 秒打爆 server */
+const MIN_AUTO_SYNC_INTERVAL_SECS = 60;
+const MAX_AUTO_SYNC_INTERVAL_SECS = 24 * 3600;
+
 export class SyncManager {
   readonly state: SyncState;
   readonly api: ApiClient;
   readonly db: Database;
+
+  /** 自动同步定时器句柄;null = 未启动 */
+  private autoSyncTimer: NodeJS.Timeout | null = null;
+  /** 最近一次自动同步触发时间 — 仅内存,不持久化(进程重启重置) */
+  private autoLastRunAt: number | null = null;
+  /** 下次自动同步预计触发时间 — 仅内存 */
+  private autoNextRunAt: number | null = null;
 
   constructor(db: Database) {
     this.db = db;
@@ -102,9 +123,16 @@ export class SyncManager {
       });
       logger.info('SYNC', '机器已注册', { machine_id: m.machine.id, name: m.machine.name });
     }
+
+    // 登录成功后,如果配置打开了自动同步,立刻起 timer
+    if (this.getAutoSyncConfig().enabled) {
+      this.startAutoSync();
+    }
   }
 
   async logout(): Promise<void> {
+    // 先停 timer,避免登出后还在尝试用旧 token push/pull
+    this.stopAutoSync();
     try {
       await this.api.logout();
     } catch (e) {
@@ -472,6 +500,114 @@ export class SyncManager {
       pendingPush: pending.c,
       pendingDowngrades: downgrades.c,
     };
+  }
+
+  // ===== 自动同步 =====
+
+  /** 读取持久化配置 + 内存里的 last/next 时间戳 */
+  getAutoSyncConfig(): AutoSyncConfig {
+    const row = this.state.get();
+    return {
+      enabled: row.auto_sync_enabled === 1,
+      intervalSecs: row.auto_sync_interval_secs,
+      direction: row.auto_sync_direction,
+      lastRunAt: this.autoLastRunAt,
+      nextRunAt: this.autoNextRunAt,
+    };
+  }
+
+  /**
+   * 写入配置 + 按需 (重)启动 / 停止 timer。
+   * 校验:间隔在 [60, 86400] 秒;direction 必须 push/pull/both。
+   * 配置变更后 timer 立即生效(立即重置,不等当前周期跑完)。
+   */
+  setAutoSyncConfig(patch: Partial<{ enabled: boolean; intervalSecs: number; direction: AutoSyncDirection }>): AutoSyncConfig {
+    const cur = this.getAutoSyncConfig();
+    const next = {
+      enabled: patch.enabled ?? cur.enabled,
+      intervalSecs: patch.intervalSecs ?? cur.intervalSecs,
+      direction: patch.direction ?? cur.direction,
+    };
+
+    if (next.intervalSecs < MIN_AUTO_SYNC_INTERVAL_SECS || next.intervalSecs > MAX_AUTO_SYNC_INTERVAL_SECS) {
+      throw new Error(`auto_sync_interval_secs 必须在 ${MIN_AUTO_SYNC_INTERVAL_SECS}-${MAX_AUTO_SYNC_INTERVAL_SECS} 之间`);
+    }
+    if (!['push', 'pull', 'both'].includes(next.direction)) {
+      throw new Error(`auto_sync_direction 必须为 push / pull / both`);
+    }
+
+    this.state.update({
+      auto_sync_enabled: next.enabled ? 1 : 0,
+      auto_sync_interval_secs: next.intervalSecs,
+      auto_sync_direction: next.direction,
+    });
+
+    if (next.enabled && this.state.isLoggedIn()) {
+      this.startAutoSync();
+    } else {
+      this.stopAutoSync();
+    }
+
+    return this.getAutoSyncConfig();
+  }
+
+  /**
+   * 启动定时器(如果已启动会先 stop 再 start,实现"应用配置")。
+   * 注意:不立即触发一次同步,首次触发在 intervalSecs 之后,避免登录瞬间打 server。
+   */
+  startAutoSync(): void {
+    this.stopAutoSync();
+    const cfg = this.getAutoSyncConfig();
+    if (!cfg.enabled || !this.state.isLoggedIn()) return;
+
+    const intervalMs = cfg.intervalSecs * 1000;
+    this.autoNextRunAt = Math.floor(Date.now() / 1000) + cfg.intervalSecs;
+
+    this.autoSyncTimer = setInterval(() => {
+      void this.runAutoSyncOnce(cfg.direction).catch(e => {
+        logger.warn('SYNC', 'auto-sync 周期失败(已 swallow,下次继续)', {
+          message: e instanceof Error ? e.message : String(e),
+        });
+      });
+    }, intervalMs);
+    // 让 unref 不阻止 worker 退出 — 避免 SIGINT 时 hang
+    if (typeof this.autoSyncTimer.unref === 'function') {
+      this.autoSyncTimer.unref();
+    }
+
+    logger.info('SYNC', 'auto-sync 已启动', {
+      intervalSecs: cfg.intervalSecs,
+      direction: cfg.direction,
+    });
+  }
+
+  stopAutoSync(): void {
+    if (this.autoSyncTimer) {
+      clearInterval(this.autoSyncTimer);
+      this.autoSyncTimer = null;
+      this.autoNextRunAt = null;
+      logger.debug('SYNC', 'auto-sync 已停止');
+    }
+  }
+
+  /** 单次自动同步触发;direction='both' 时先 pull 再 push(避免推上去自己又拉下来) */
+  private async runAutoSyncOnce(direction: AutoSyncDirection): Promise<void> {
+    if (!this.state.isLoggedIn()) {
+      logger.debug('SYNC', 'auto-sync skip:未登录');
+      return;
+    }
+    this.autoLastRunAt = Math.floor(Date.now() / 1000);
+    const cfg = this.getAutoSyncConfig();
+    this.autoNextRunAt = this.autoLastRunAt + cfg.intervalSecs;
+
+    if (direction === 'pull' || direction === 'both') {
+      const r = await this.pull();
+      logger.debug('SYNC', 'auto-sync pull', r);
+    }
+    if (direction === 'push' || direction === 'both') {
+      const r = await this.push();
+      logger.debug('SYNC', 'auto-sync push', r);
+    }
   }
 }
 

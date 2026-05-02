@@ -7,6 +7,8 @@
 import type { Database } from 'bun:sqlite';
 import { logger } from '../../utils/logger.js';
 
+export type AutoSyncDirection = 'push' | 'pull' | 'both';
+
 export interface SyncStateRow {
   id: 1;
   server_url: string | null;
@@ -22,6 +24,12 @@ export interface SyncStateRow {
   last_pushed_at_epoch: number | null;
   last_pulled_at_epoch: number | null;
   updated_at_epoch: number;
+  /** 0/1 — 是否启用定时自动同步 */
+  auto_sync_enabled: number;
+  /** 自动同步间隔(秒);UI 限制 ≥ 60 */
+  auto_sync_interval_secs: number;
+  /** 'push' | 'pull' | 'both';both = 先 pull 再 push */
+  auto_sync_direction: AutoSyncDirection;
 }
 
 export type SyncStatePatch = Partial<Omit<SyncStateRow, 'id' | 'updated_at_epoch'>>;

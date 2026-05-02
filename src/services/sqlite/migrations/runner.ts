@@ -34,6 +34,7 @@ export class MigrationRunner {
     this.addObservationsUniqueContentHashIndex();
     this.addObservationsMetadataColumn();
     this.addCmemSyncTables();
+    this.addSyncAutoColumns();
   }
 
   private initializeSchema(): void {
@@ -1098,5 +1099,31 @@ export class MigrationRunner {
 
     this.db.prepare('INSERT OR IGNORE INTO schema_versions (version, applied_at) VALUES (?, ?)').run(31, new Date().toISOString());
     logger.debug('DB', 'cmem-sync client tables installed (migration 31)');
+  }
+
+  /**
+   * migration 32:给 sync_state 加自动同步配置列
+   *   - auto_sync_enabled        0/1
+   *   - auto_sync_interval_secs  默认 600(10 min);UI 限定 ≥ 60 防止打爆 server
+   *   - auto_sync_direction      'push' / 'pull' / 'both';默认 both
+   * 用 PRAGMA 检查列存在性,可重入。
+   */
+  private addSyncAutoColumns(): void {
+    const cols = this.db.query('PRAGMA table_info(sync_state)').all() as TableColumnInfo[];
+    const has = (name: string) => cols.some(c => c.name === name);
+
+    if (!has('auto_sync_enabled')) {
+      this.db.run('ALTER TABLE sync_state ADD COLUMN auto_sync_enabled INTEGER NOT NULL DEFAULT 0');
+    }
+    if (!has('auto_sync_interval_secs')) {
+      this.db.run('ALTER TABLE sync_state ADD COLUMN auto_sync_interval_secs INTEGER NOT NULL DEFAULT 600');
+    }
+    if (!has('auto_sync_direction')) {
+      // 不带 CHECK 约束,因为 SQLite 加列时不能加 CHECK;校验在应用层
+      this.db.run("ALTER TABLE sync_state ADD COLUMN auto_sync_direction TEXT NOT NULL DEFAULT 'both'");
+    }
+
+    this.db.prepare('INSERT OR IGNORE INTO schema_versions (version, applied_at) VALUES (?, ?)').run(32, new Date().toISOString());
+    logger.debug('DB', 'sync auto columns installed (migration 32)');
   }
 }

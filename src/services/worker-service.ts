@@ -400,8 +400,21 @@ export class WorkerService implements WorkerRef {
       logger.info('WORKER', 'SearchManager initialized and search routes registered');
 
       // SyncRoutes 注册:必须在 dbManager.initialize() 之后,因为 SyncManager 构造立即用 db 实例
-      this.server.registerRoutes(new SyncRoutes(this.dbManager.getDatabase()));
+      const syncRoutes = new SyncRoutes(this.dbManager.getDatabase());
+      this.server.registerRoutes(syncRoutes);
       logger.info('WORKER', 'SyncRoutes registered (post-init)');
+
+      // 如果用户已开自动同步且已登录 → 启动定时器(进程重启后自动恢复)
+      try {
+        const sm = syncRoutes.getSyncManager();
+        if (sm.getAutoSyncConfig().enabled && sm.state.isLoggedIn()) {
+          sm.startAutoSync();
+        }
+      } catch (e) {
+        logger.warn('WORKER', 'auto-sync 启动失败(不影响 worker 主流程)', {
+          message: e instanceof Error ? e.message : String(e),
+        });
+      }
 
       // Register corpus routes (knowledge agents) — needs SearchOrchestrator from search module
       const { SearchOrchestrator } = await import('./worker/search/SearchOrchestrator.js');
