@@ -3,6 +3,7 @@ import { Header } from './components/Header';
 import { Feed } from './components/Feed';
 import { ContextSettingsModal } from './components/ContextSettingsModal';
 import { LogsDrawer } from './components/LogsModal';
+import { WelcomeCard, getStoredWelcomeDismissed } from './components/WelcomeCard';
 import { TrashModal } from './components/TrashModal';
 import { SyncSettingsModal } from './components/SyncSettingsModal';
 import { useSSE } from './hooks/useSSE';
@@ -22,6 +23,7 @@ export function App() {
   const [logsModalOpen, setLogsModalOpen] = useState(false);
   const [trashModalOpen, setTrashModalOpen] = useState(false);
   const [syncModalOpen, setSyncModalOpen] = useState(false);
+  const [welcomeDismissed, setWelcomeDismissed] = useState<boolean>(getStoredWelcomeDismissed);
   const [paginatedObservations, setPaginatedObservations] = useState<Observation[]>([]);
   const [paginatedSummaries, setPaginatedSummaries] = useState<Summary[]>([]);
   const [paginatedPrompts, setPaginatedPrompts] = useState<UserPrompt[]>([]);
@@ -109,7 +111,7 @@ export function App() {
     setPaginatedPrompts([]);
     handleLoadMore();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentFilter, currentSource, deleteNonce]);
+  }, [currentFilter, deleteNonce]);
 
   // 删除回调:走 DELETE API,成功后从本地 state 移除该项 + 刷新 stats + bump nonce 触发分页重载
   const handleDeleteObservation = useCallback(async (id: number) => {
