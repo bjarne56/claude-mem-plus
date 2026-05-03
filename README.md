@@ -4,12 +4,12 @@
 ═══════════════════════════════════════════════════════════════════════════════
 -->
 
-> **claude-mem-plus** is a fork of [thedotmack/claude-mem](https://github.com/thedotmack/claude-mem) that adds:
+> **claude-mem-plus** is a fork of [thedotmack/claude-mem](https://github.com/thedotmack/claude-mem) v12.5.0 that adds:
 >
-> - 🔄 **cmem-sync** — cross-machine sync + project sharing via the self-hosted
->   companion server **[cmem-server](https://github.com/bjarne56/cmem-server)**
->   (single Rust binary, SQLite, JWT, admin web).
 > - 🌐 **31-language viewer UI** with browser auto-detect + RTL support.
+> - 🔄 **cmem-sync** — 远程备份 + 自动同步 + 多用户共享 + 团队共享，
+>   通过自托管 companion server **[cmem-server](https://github.com/bjarne56/cmem-server)**
+>   (single Rust binary, SQLite, JWT, admin web)。
 > - 🗑️ **Soft-delete + trash bin** for projects / sessions / observations
 >   (4-tab UI, cascade restore).
 > - 🚪 **Public `/register` page** on the server with hot-toggle registration

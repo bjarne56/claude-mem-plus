@@ -18,11 +18,7 @@ interface HeaderProps {
   onContextPreviewToggle: () => void;
   onDeleteProject?: (project: string) => void;
   onTrashOpen?: () => void;
-}
-
-function buildSourceTabs(sources: string[]): string[] {
-  const merged = ['all', 'claude', 'codex', ...sources];
-  return Array.from(new Set(merged.filter(Boolean)));
+  onShowHelp?: () => void;
 }
 
 export function Header({
@@ -37,17 +33,10 @@ export function Header({
   onContextPreviewToggle,
   onDeleteProject,
   onTrashOpen,
+  onShowHelp,
 }: HeaderProps) {
   useSpinningFavicon(isProcessing);
   const { t } = useI18n();
-  const availableSources = buildSourceTabs(sources);
-
-  function formatSourceLabel(source: string): string {
-    if (source === 'all') return t('source.all');
-    if (source === 'claude') return t('source.claude');
-    if (source === 'codex') return t('source.codex');
-    return source.charAt(0).toUpperCase() + source.slice(1);
-  }
 
   return (
     <div className="header">
@@ -63,19 +52,6 @@ export function Header({
           </div>
           <span className="logo-text">claude-mem</span>
         </h1>
-        <div className="source-tabs" role="tablist" aria-label={t('header.contextSourceTabs')}>
-          {availableSources.map(source => (
-            <button
-              key={source}
-              type="button"
-              className={`source-tab ${currentSource === source ? 'active' : ''}`}
-              onClick={() => onSourceChange(source)}
-              aria-pressed={currentSource === source}
-            >
-              {formatSourceLabel(source)}
-            </button>
-          ))}
-        </div>
       </div>
       <div className="status">
         <a
