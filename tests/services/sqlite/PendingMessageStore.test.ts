@@ -13,7 +13,7 @@ describe('PendingMessageStore - Self-Healing claimNextMessage', () => {
 
   beforeEach(() => {
     db = new ClaudeMemDatabase(':memory:').db;
-    store = new PendingMessageStore(db, 3);
+    store = new PendingMessageStore(db);
     sessionDbId = createSDKSession(db, CONTENT_SESSION_ID, 'test-project', 'Test prompt');
   });
 
@@ -34,19 +34,25 @@ describe('PendingMessageStore - Self-Healing claimNextMessage', () => {
   }
 
   function makeMessageStaleProcessing(messageId: number): void {
-    const staleTimestamp = Date.now() - 120_000; 
+    // v12.5.0 移除了 started_processing_at_epoch 列，直接设置 status=processing 即可
     db.run(
-      `UPDATE pending_messages SET status = 'processing', started_processing_at_epoch = ? WHERE id = ?`,
-      [staleTimestamp, messageId]
+      `UPDATE pending_messages SET status = 'processing' WHERE id = ?`,
+      [messageId]
     );
   }
 
   test('stuck processing messages are recovered on next claim', () => {
+    // v12.5.0: claimNextMessage 只取 status='pending' 的消息
+    // 对于 stuck processing 消息，需要先 resetProcessingToPending
     const msgId = enqueueMessage();
     makeMessageStaleProcessing(msgId);
 
     const beforeClaim = db.query('SELECT status FROM pending_messages WHERE id = ?').get(msgId) as { status: string };
     expect(beforeClaim.status).toBe('processing');
+
+    // 先 reset，让 claimNextMessage 能取到
+    const reset = store.resetProcessingToPending(sessionDbId);
+    expect(reset).toBe(1);
 
     const claimed = store.claimNextMessage(sessionDbId);
 
@@ -60,10 +66,11 @@ describe('PendingMessageStore - Self-Healing claimNextMessage', () => {
     const activeId = enqueueMessage();
     const pendingId = enqueueMessage();
 
-    const recentTimestamp = Date.now() - 5_000; 
+    // v12.5.0: 直接设置 status=processing（不再有 started_processing_at_epoch 列）
+    // 活跃 processing 不会被 claimNextMessage 取走
     db.run(
-      `UPDATE pending_messages SET status = 'processing', started_processing_at_epoch = ? WHERE id = ?`,
-      [recentTimestamp, activeId]
+      `UPDATE pending_messages SET status = 'processing' WHERE id = ?`,
+      [activeId]
     );
 
     const claimed = store.claimNextMessage(sessionDbId);
@@ -82,6 +89,9 @@ describe('PendingMessageStore - Self-Healing claimNextMessage', () => {
 
     makeMessageStaleProcessing(stuckId);
 
+    // v12.5.0: resetProcessingToPending 重置所有 processing 为 pending
+    // 然后 claimNextMessage 按 id 顺序取第一条（即原来的 stuckId）
+    store.resetProcessingToPending(sessionDbId);
     const claimed = store.claimNextMessage(sessionDbId);
 
     expect(claimed).not.toBeNull();
@@ -114,6 +124,8 @@ describe('PendingMessageStore - Self-Healing claimNextMessage', () => {
     const session2MsgId = store.enqueue(session2Id, 'other-session', msg);
     makeMessageStaleProcessing(session2MsgId);
 
+    // v12.5.0: resetProcessingToPending 按 session 作用域
+    store.resetProcessingToPending(session2Id);
     const claimed = store.claimNextMessage(session2Id);
     expect(claimed).not.toBeNull();
     expect(claimed!.id).toBe(session2MsgId);

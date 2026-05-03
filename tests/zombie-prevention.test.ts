@@ -12,7 +12,7 @@ describe('Zombie Agent Prevention', () => {
 
   beforeEach(() => {
     db = new ClaudeMemDatabase(':memory:').db;
-    pendingStore = new PendingMessageStore(db, 3);
+    pendingStore = new PendingMessageStore(db);
   });
 
   afterEach(() => {
@@ -86,7 +86,9 @@ describe('Zombie Agent Prevention', () => {
     enqueueTestMessage(sessionId1, 'content-1');
     enqueueTestMessage(sessionId2, 'content-2');
 
-    const orphanedSessions = pendingStore.getSessionsWithPendingMessages();
+    // v12.5.0: getSessionsWithPendingMessages 已移除，改为逐 session 检查 getPendingCount
+    const trackedSessions = [sessionId1, sessionId2];
+    const orphanedSessions = trackedSessions.filter(sid => pendingStore.getPendingCount(sid) > 0);
     expect(orphanedSessions).toContain(sessionId1);
     expect(orphanedSessions).toContain(sessionId2);
 
@@ -131,7 +133,6 @@ describe('Zombie Agent Prevention', () => {
     const sessionId = createDbSession('content-queue-test');
 
     expect(pendingStore.getPendingCount(sessionId)).toBe(0);
-    expect(pendingStore.hasAnyPendingWork()).toBe(false);
 
     const msgId1 = enqueueTestMessage(sessionId, 'content-queue-test');
     expect(pendingStore.getPendingCount(sessionId)).toBe(1);
@@ -142,26 +143,16 @@ describe('Zombie Agent Prevention', () => {
     const msgId3 = enqueueTestMessage(sessionId, 'content-queue-test');
     expect(pendingStore.getPendingCount(sessionId)).toBe(3);
 
-    expect(pendingStore.hasAnyPendingWork()).toBe(true);
-
     const claimed = pendingStore.claimNextMessage(sessionId);
     expect(claimed).not.toBeNull();
     expect(claimed?.id).toBe(msgId1);
 
+    // claimNextMessage 不减少 pending count（status 从 pending 变 processing，仍在计数内）
     expect(pendingStore.getPendingCount(sessionId)).toBe(3);
 
-    pendingStore.confirmProcessed(msgId1);
-    expect(pendingStore.getPendingCount(sessionId)).toBe(2);
-
-    const msg2 = pendingStore.claimNextMessage(sessionId);
-    pendingStore.confirmProcessed(msg2!.id);
-    expect(pendingStore.getPendingCount(sessionId)).toBe(1);
-
-    const msg3 = pendingStore.claimNextMessage(sessionId);
-    pendingStore.confirmProcessed(msg3!.id);
-
+    // v12.5.0: confirmProcessed 已移除，用 clearPendingForSession 清除
+    pendingStore.clearPendingForSession(sessionId);
     expect(pendingStore.getPendingCount(sessionId)).toBe(0);
-    expect(pendingStore.hasAnyPendingWork()).toBe(false);
   });
 
   test('should track pending work across multiple sessions', async () => {
@@ -170,7 +161,7 @@ describe('Zombie Agent Prevention', () => {
     const session3Id = createDbSession('content-multi-3');
 
     enqueueTestMessage(session1Id, 'content-multi-1');
-    enqueueTestMessage(session1Id, 'content-multi-1'); 
+    enqueueTestMessage(session1Id, 'content-multi-1');
 
     enqueueTestMessage(session2Id, 'content-multi-2');
 
@@ -178,7 +169,9 @@ describe('Zombie Agent Prevention', () => {
     expect(pendingStore.getPendingCount(session2Id)).toBe(1);
     expect(pendingStore.getPendingCount(session3Id)).toBe(0);
 
-    const sessionsWithPending = pendingStore.getSessionsWithPendingMessages();
+    // v12.5.0: getSessionsWithPendingMessages 已移除，改为逐 session 过滤
+    const allTrackedIds = [session1Id, session2Id, session3Id];
+    const sessionsWithPending = allTrackedIds.filter(sid => pendingStore.getPendingCount(sid) > 0);
     expect(sessionsWithPending).toContain(session1Id);
     expect(sessionsWithPending).toContain(session2Id);
     expect(sessionsWithPending).not.toContain(session3Id);
@@ -206,19 +199,19 @@ describe('Zombie Agent Prevention', () => {
     expect(claimed).not.toBeNull();
     expect(claimed!.id).toBe(msgId);
 
-    const staleTimestamp = Date.now() - 120_000; 
-    db.run(
-      `UPDATE pending_messages SET started_processing_at_epoch = ? WHERE id = ?`,
-      [staleTimestamp, msgId]
-    );
+    // v12.5.0: 手工模拟 stuck processing（claimNextMessage 已经把它改为 processing）
+    // 验证 resetProcessingToPending 可以把它恢复为 pending，从而 claimNextMessage 再次拿到它
+    expect(pendingStore.getPendingCount(sessionId)).toBe(1);
 
-    expect(pendingStore.getPendingCount(sessionId)).toBe(1); 
+    // 重置 processing -> pending，然后再次 claim
+    const reset = pendingStore.resetProcessingToPending(sessionId);
+    expect(reset).toBe(1);
 
     const recovered = pendingStore.claimNextMessage(sessionId);
     expect(recovered).not.toBeNull();
     expect(recovered!.id).toBe(msgId);
 
-    pendingStore.confirmProcessed(msgId);
+    pendingStore.clearPendingForSession(sessionId);
     expect(pendingStore.getPendingCount(sessionId)).toBe(0);
   });
 
@@ -254,12 +247,11 @@ describe('Zombie Agent Prevention', () => {
       enqueueTestMessage(sessionId, 'content-terminate-1');
 
       expect(pendingStore.getPendingCount(sessionId)).toBe(2);
-      expect(pendingStore.hasAnyPendingWork()).toBe(true);
 
-      const abandoned = pendingStore.transitionMessagesTo('abandoned', { sessionDbId: sessionId });
+      // v12.5.0: transitionMessagesTo 已移除，用 clearPendingForSession
+      const abandoned = pendingStore.clearPendingForSession(sessionId);
       expect(abandoned).toBe(2);
 
-      expect(pendingStore.hasAnyPendingWork()).toBe(false);
       expect(pendingStore.getPendingCount(sessionId)).toBe(0);
     });
 
@@ -268,23 +260,25 @@ describe('Zombie Agent Prevention', () => {
 
       expect(pendingStore.getPendingCount(sessionId)).toBe(0);
 
-      const abandoned = pendingStore.transitionMessagesTo('abandoned', { sessionDbId: sessionId });
+      // v12.5.0: transitionMessagesTo 已移除，用 clearPendingForSession
+      const abandoned = pendingStore.clearPendingForSession(sessionId);
       expect(abandoned).toBe(0);
 
-      expect(pendingStore.hasAnyPendingWork()).toBe(false);
+      expect(pendingStore.getPendingCount(sessionId)).toBe(0);
     });
 
     test('should be idempotent — double terminate marks zero on second call', () => {
       const sessionId = createDbSession('content-terminate-idempotent');
       enqueueTestMessage(sessionId, 'content-terminate-idempotent');
 
-      const first = pendingStore.transitionMessagesTo('abandoned', { sessionDbId: sessionId });
+      // v12.5.0: transitionMessagesTo 已移除，用 clearPendingForSession
+      const first = pendingStore.clearPendingForSession(sessionId);
       expect(first).toBe(1);
 
-      const second = pendingStore.transitionMessagesTo('abandoned', { sessionDbId: sessionId });
+      const second = pendingStore.clearPendingForSession(sessionId);
       expect(second).toBe(0);
 
-      expect(pendingStore.hasAnyPendingWork()).toBe(false);
+      expect(pendingStore.getPendingCount(sessionId)).toBe(0);
     });
 
     test('should remove session from Map via removeSessionImmediate', () => {
@@ -311,13 +305,17 @@ describe('Zombie Agent Prevention', () => {
       enqueueTestMessage(sid2, 'content-multi-term-2');
       enqueueTestMessage(sid3, 'content-multi-term-3');
 
-      expect(pendingStore.hasAnyPendingWork()).toBe(true);
+      // v12.5.0: hasAnyPendingWork 已移除，改为逐个检查
+      const anyPending = () =>
+        [sid1, sid2, sid3].some(sid => pendingStore.getPendingCount(sid) > 0);
+      expect(anyPending()).toBe(true);
 
-      pendingStore.transitionMessagesTo('abandoned', { sessionDbId: sid1 });
-      pendingStore.transitionMessagesTo('abandoned', { sessionDbId: sid2 });
-      pendingStore.transitionMessagesTo('abandoned', { sessionDbId: sid3 });
+      // v12.5.0: transitionMessagesTo 已移除，用 clearPendingForSession
+      pendingStore.clearPendingForSession(sid1);
+      pendingStore.clearPendingForSession(sid2);
+      pendingStore.clearPendingForSession(sid3);
 
-      expect(pendingStore.hasAnyPendingWork()).toBe(false);
+      expect(anyPending()).toBe(false);
     });
 
     test('should not affect other sessions when terminating one', () => {
@@ -327,11 +325,13 @@ describe('Zombie Agent Prevention', () => {
       enqueueTestMessage(sid1, 'content-isolate-1');
       enqueueTestMessage(sid2, 'content-isolate-2');
 
-      pendingStore.transitionMessagesTo('abandoned', { sessionDbId: sid1 });
+      // v12.5.0: transitionMessagesTo 已移除，用 clearPendingForSession
+      pendingStore.clearPendingForSession(sid1);
 
       expect(pendingStore.getPendingCount(sid1)).toBe(0);
       expect(pendingStore.getPendingCount(sid2)).toBe(1);
-      expect(pendingStore.hasAnyPendingWork()).toBe(true);
+      // v12.5.0: hasAnyPendingWork 已移除，改为直接检查 session2
+      expect(pendingStore.getPendingCount(sid2) > 0).toBe(true);
     });
 
     test('should mark both pending and processing messages as abandoned', () => {
@@ -344,11 +344,14 @@ describe('Zombie Agent Prevention', () => {
       expect(claimed).not.toBeNull();
       expect(claimed!.id).toBe(msgId1);
 
+      // claimNextMessage 不减少计数（pending + processing 都算在内）
       expect(pendingStore.getPendingCount(sessionId)).toBe(2);
 
-      const abandoned = pendingStore.transitionMessagesTo('abandoned', { sessionDbId: sessionId });
+      // v12.5.0: transitionMessagesTo 已移除，用 clearPendingForSession
+      // clearPendingForSession 会删除所有消息，包括 processing 状态的
+      const abandoned = pendingStore.clearPendingForSession(sessionId);
       expect(abandoned).toBe(2);
-      expect(pendingStore.hasAnyPendingWork()).toBe(false);
+      expect(pendingStore.getPendingCount(sessionId)).toBe(0);
     });
 
     test('should enforce invariant: no pending work after terminate regardless of initial state', () => {
@@ -362,8 +365,8 @@ describe('Zombie Agent Prevention', () => {
 
       expect(pendingStore.getPendingCount(sessionId)).toBe(3);
 
-      pendingStore.transitionMessagesTo('abandoned', { sessionDbId: sessionId });
-      expect(pendingStore.hasAnyPendingWork()).toBe(false);
+      // v12.5.0: transitionMessagesTo 已移除，用 clearPendingForSession
+      pendingStore.clearPendingForSession(sessionId);
       expect(pendingStore.getPendingCount(sessionId)).toBe(0);
     });
   });
