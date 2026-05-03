@@ -1,10 +1,11 @@
 {
-  "name": "claude-mem",
-  "version": "12.5.0",
-  "description": "Memory compression system for Claude Code - persist context across sessions",
+  "name": "claude-mem-plus",
+  "version": "12.4.9",
+  "description": "claude-mem fork with cmem-sync (cross-machine sync via self-hosted cmem-server), 31-language UI, soft-delete + trash, public registration page. Pairs with bjarne56/cmem-server.",
   "keywords": [
     "claude",
     "claude-code",
+    "claude-mem",
     "claude-agent-sdk",
     "mcp",
     "plugin",
@@ -13,17 +14,22 @@
     "knowledge-graph",
     "transcript",
     "typescript",
-    "nodejs"
+    "nodejs",
+    "sync",
+    "cmem",
+    "cmem-sync",
+    "self-hosted",
+    "i18n"
   ],
-  "author": "Alex Newman",
+  "author": "Alex Newman (upstream) + bjarne56 (fork)",
   "license": "AGPL-3.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/thedotmack/claude-mem.git"
+    "url": "https://github.com/bjarne56/claude-mem-plus.git"
   },
-  "homepage": "https://github.com/thedotmack/claude-mem#readme",
+  "homepage": "https://github.com/bjarne56/claude-mem-plus#readme",
   "bugs": {
-    "url": "https://github.com/thedotmack/claude-mem/issues"
+    "url": "https://github.com/bjarne56/claude-mem-plus/issues"
   },
   "type": "module",
   "bin": {

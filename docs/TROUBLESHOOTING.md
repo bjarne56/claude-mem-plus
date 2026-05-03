@@ -31,7 +31,7 @@ export PATH="$(npm config get prefix)/bin:$PATH"
 
 **修**(推荐):换 nvm 装 Node,这样 npm prefix 在 `~/.nvm/versions/...`,不需要 sudo。install-client.sh 会自动用 nvm fallback。
 
-或临时 `sudo npm install -g claude-mem`(有副作用,不推荐)。
+或临时 `sudo npm install -g claude-mem-plus`(有副作用,不推荐)。
 
 ### node 版本太旧
 
@@ -43,20 +43,23 @@ warn  node v16.x.x 太旧(需 ≥ 18)
 
 ### `Unknown command: sync`
 
-**根因**:全局装的是 upstream,本 fork 才有 sync 子命令。
+**根因**:全局装的是 upstream `claude-mem`,本 fork(`claude-mem-plus`)才有 sync 子命令。
 
 **修**:
 
 ```bash
-# 选 1:从 fork tarball 装
-bash install-client.sh install --tarball file:///path/to/claude-mem-12.4.9.tgz
+# 选 1:npm 直接装本 fork
+npm install -g claude-mem-plus
 
-# 选 2:从 git 装
-bash install-client.sh install --git https://github.com/<your>/claude-mem
+# 选 2:从 fork tarball 装
+bash install-client.sh install --tarball file:///path/to/claude-mem-plus-12.4.9.tgz
 
-# 选 3:开发模式 npm link(在 fork 仓库根)
-cd /path/to/claude-mem-fork && npm link
-which claude-mem    # 应指向 fork 路径
+# 选 3:从 git 装
+bash install-client.sh install --git https://github.com/bjarne56/claude-mem-plus
+
+# 选 4:开发模式 npm link(在 fork 仓库根)
+cd /path/to/claude-mem-plus && npm link
+which claude-mem    # 应指向 fork 路径(注意 bin 名仍是 claude-mem)
 ```
 
 ---

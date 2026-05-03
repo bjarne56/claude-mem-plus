@@ -1,8 +1,9 @@
 # 使用指南
 
-适用于 claude-mem **本 fork**(zh-fork)。
+适用于 **claude-mem-plus**(claude-mem 的 fork,带 cmem-sync / 31 语言 / 回收站 / 公开注册)。
 
 > 安装见 [INSTALL.md](INSTALL.md)。故障见 [TROUBLESHOOTING.md](TROUBLESHOOTING.md)。
+> **必须配对** [bjarne56/cmem-server](https://github.com/bjarne56/cmem-server) 使用 sync 功能。
 
 ---
 

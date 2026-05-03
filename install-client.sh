@@ -86,10 +86,10 @@ esac
 SERVER_URL=""
 SKIP_HOOKS=0
 SKIP_SYNC=0
-PACKAGE_NAME="claude-mem"
+PACKAGE_NAME="claude-mem-plus"   # 本 fork 的 npm 包名;装上后命令仍是 claude-mem(bin 名沿用)
 PACKAGE_SOURCE="npm"
 TARBALL_URL=""
-GIT_REPO="https://github.com/thedotmack/claude-mem"
+GIT_REPO="https://github.com/bjarne56/claude-mem-plus"
 KEEP_DATA=0
 PURGE=0
 

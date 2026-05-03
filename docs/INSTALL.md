@@ -1,8 +1,9 @@
 # 安装指南
 
-适用于 claude-mem **本 fork**(zh-fork,带 cmem-sync / 31 语言 / 回收站 / 删除)。
+适用于 **claude-mem-plus**(claude-mem 的 fork,带 cmem-sync / 31 语言 / 回收站 / 删除 / 公开注册页)。
 
-> 想找 cmem-server **服务端**安装?去 [`cmem-server/docs/DEPLOYMENT.md`](../../cmem-server/docs/DEPLOYMENT.md)。
+> 想找 **cmem-server 服务端**?见独立仓库 [bjarne56/cmem-server](https://github.com/bjarne56/cmem-server)。
+> client + server 是两个仓库,**必须配对使用**才能跨机器同步与共享。
 
 ---
 
@@ -13,7 +14,8 @@
 | 第一次装,普通用户 | [一键脚本](#1-一键脚本最快) |
 | fork / 内部分发 / 开源版本 | [tarball 安装](#2-tarball-安装) |
 | 开发者本地改代码 | [git 源码安装](#3-git-源码安装) |
-| 上游 npm 包(无 sync) | `npm install -g claude-mem`(失去 fork 增量功能) |
+| **本 fork**(claude-mem-plus,有 sync / i18n / trash) | `npm install -g claude-mem-plus` |
+| 上游 npm 包(无 sync,普通 claude-mem) | `npm install -g claude-mem`(注意:跟本 fork bin 同名 `claude-mem`,**不能并存**) |
 
 所有路线最终结果等价 — 都装到 npm 全局 bin,数据目录在 `~/.claude-mem/`。
 
@@ -46,7 +48,7 @@ curl -sSL .../install-client.sh | bash -s install --server https://cmem.example.
 
 1. 检测 OS → 装 Node 22 (brew / apt / dnf / pacman / apk / nvm fallback)
 2. 装 Bun (brew / 官方 install.sh)
-3. `npm install -g claude-mem` (或 `--package <fork-name>`)
+3. `npm install -g claude-mem-plus`(或 `--package <other-name>` 切换到其他 fork)
 4. `claude-mem install --ide claude-code` 注册 SessionStart / PostToolUse 等 hook
 5. `claude-mem start` 启动 worker daemon (port 37700+uid%100)
 6. 检测系统语言 → 写入 `~/.claude-mem/settings.json` 的 `CLAUDE_MEM_MODE`
@@ -161,7 +163,7 @@ bash install-client.sh uninstall --keep-data
 
 ```bash
 claude-mem stop
-npm uninstall -g claude-mem
+npm uninstall -g claude-mem-plus
 rm -rf ~/.claude/plugins/marketplaces/thedotmack
 rm -rf ~/.claude-mem                    # 谨慎:丢所有 observation + 同步状态
 ```
@@ -194,7 +196,7 @@ claude-mem 客户端**没有官方 Docker 镜像**(它是常驻在用户 dev 机
 
 ```dockerfile
 FROM node:22-bookworm
-RUN npm install -g claude-mem  # 或 --tarball <内部 url>
+RUN npm install -g claude-mem-plus  # 或 --tarball <内部 url>
 RUN curl -fsSL https://bun.sh/install | bash
 ENV PATH="/root/.bun/bin:$PATH"
 VOLUME /root/.claude-mem

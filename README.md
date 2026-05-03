@@ -1,3 +1,45 @@
+<!--
+═══════════════════════════════════════════════════════════════════════════════
+  claude-mem-plus  —  fork of thedotmack/claude-mem
+═══════════════════════════════════════════════════════════════════════════════
+-->
+
+> **claude-mem-plus** is a fork of [thedotmack/claude-mem](https://github.com/thedotmack/claude-mem) that adds:
+>
+> - 🔄 **cmem-sync** — cross-machine sync + project sharing via the self-hosted
+>   companion server **[cmem-server](https://github.com/bjarne56/cmem-server)**
+>   (single Rust binary, SQLite, JWT, admin web).
+> - 🌐 **31-language viewer UI** with browser auto-detect + RTL support.
+> - 🗑️ **Soft-delete + trash bin** for projects / sessions / observations
+>   (4-tab UI, cascade restore).
+> - 🚪 **Public `/register` page** on the server with hot-toggle registration
+>   policy (open / invite-only / closed) at `/admin/settings`.
+> - 🔌 **Self-hosted-first** — no cloud dependency; both client and server run
+>   on your own infra.
+>
+> 👉 **Fork docs:** **[CMEM_SYNC_README.md](CMEM_SYNC_README.md)**
+> · [INSTALL](docs/INSTALL.md)
+> · [USAGE](docs/USAGE.md)
+> · [TROUBLESHOOTING](docs/TROUBLESHOOTING.md)
+>
+> 👉 **Companion server (required for sync):**
+> **[bjarne56/cmem-server](https://github.com/bjarne56/cmem-server)**
+> — *self-hosted; without it, push/pull/share are no-ops.*
+>
+> ```bash
+> # Client (this repo) — install on every dev machine
+> npm install -g claude-mem-plus
+>
+> # Server — install once on your VPS
+> git clone https://github.com/bjarne56/cmem-server && cd cmem-server
+> sudo ./scripts/install-server.sh --domain cmem.example.com
+> ```
+>
+> Below is the **upstream README** (Alex Newman's original claude-mem).
+> Fork-specific increments live in [CMEM_SYNC_README.md](CMEM_SYNC_README.md).
+
+---
+
 <h1 align="center">
   <br>
   <a href="https://github.com/thedotmack/claude-mem">

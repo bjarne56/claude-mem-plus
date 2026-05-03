@@ -1,14 +1,19 @@
-# claude-mem with cmem-sync
+# claude-mem-plus
 
-[Claude Code](https://docs.claude.com/en/docs/claude-code) 的持久化记忆系统(claude-mem)+ 跨多机同步 + 项目级共享(cmem-sync)。
+[Claude Code](https://docs.claude.com/en/docs/claude-code) 的持久化记忆系统 + 跨多机同步 + 项目级共享(cmem-sync 协议)。
 
-> 这是 [thedotmack/claude-mem](https://github.com/thedotmack/claude-mem) 的 fork,加了:
-> - **31 种语言** viewer i18n(navigator 自动检测,LanguageSelect 下拉)
-> - **删除 / 回收站**(项目/会话/observation 三级软删 + 恢复)
-> - **cmem-sync 同步客户端**(集成进 worker,push/pull/share/fork 子命令)
-> - **HumanFormatter 多语言**(SessionStart 注入文本按 CLAUDE_MEM_MODE 双语)
-> - **install.sh 检测系统语言**自动写 CLAUDE_MEM_MODE
-> - 配套 [cmem-server](../cmem-server/) Rust 同步服务器
+**npm**:`npm install -g claude-mem-plus`(bin 沿用 `claude-mem`,跟上游 npm 包不能并存)
+
+> 本仓库是 [thedotmack/claude-mem](https://github.com/thedotmack/claude-mem) 的 fork,加了:
+> - 🔄 **cmem-sync 同步客户端**(push / pull / share / fork 子命令,集成进 worker)
+> - 🌐 **31 种语言** viewer i18n(navigator 自动检测,LanguageSelect 下拉,RTL 支持)
+> - 🗑️ **删除 / 回收站**(项目/会话/observation 三级软删 + 4-tab 恢复 UI)
+> - 🌍 **HumanFormatter 多语言**(SessionStart 注入文本按 CLAUDE_MEM_MODE 双语)
+> - 🔍 **install.sh 检测系统语言**自动写 CLAUDE_MEM_MODE
+> - 🚪 **公开 /register 注册页**(配套 server 提供,admin 可热切 open / invite_only / closed)
+> - ✅ **安装脚本** `install / check / uninstall / pack-release` 全套
+>
+> ⚠️ **必须配套 [bjarne56/cmem-server](https://github.com/bjarne56/cmem-server)** 这个独立仓库(Rust 单二进制 + SQLite + JWT + admin web)— 没有它,sync / share / fork 全部是 no-op。
 
 ## 5 分钟上手
 
