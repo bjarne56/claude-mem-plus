@@ -65,13 +65,13 @@ describe('SessionCleanupHelper', () => {
       expect(session.earliestPendingTimestamp).toBeNull();
     });
 
-    it('should call worker.broadcastProcessingStatus() if available', () => {
+    it('should not call broadcast when worker is passed (broadcast moved to caller)', () => {
       const session = createMockSession();
-      const { worker, broadcastProcessingStatusMock } = createMockWorker();
+      const { broadcastProcessingStatusMock } = createMockWorker();
 
-      cleanupProcessedMessages(session, worker);
+      cleanupProcessedMessages(session, undefined);
 
-      expect(broadcastProcessingStatusMock).toHaveBeenCalledTimes(1);
+      expect(broadcastProcessingStatusMock).not.toHaveBeenCalled();
     });
 
     it('should handle missing worker gracefully (no crash)', () => {

@@ -6,6 +6,12 @@ mock.module('../../src/utils/logger.js', () => ({
     debug: () => {},
     warn: () => {},
     error: () => {},
+    failure: () => {},
+    success: () => {},
+    timing: () => {},
+    dataIn: () => {},
+    dataOut: () => {},
+    happyPathError: () => {},
     formatTool: (toolName: string, toolInput?: any) => toolInput ? `${toolName}(...)` : toolName,
   },
 }));

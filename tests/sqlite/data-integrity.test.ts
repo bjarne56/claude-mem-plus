@@ -152,7 +152,10 @@ describe('TRIAGE-03: Data Integrity', () => {
 
     it('hasAnyPendingWork returns false when no pending or processing messages exist', () => {
       const pendingStore = new PendingMessageStore(db);
-      expect(pendingStore.hasAnyPendingWork()).toBe(false);
+      // v12.5.0: hasAnyPendingWork 已从 PendingMessageStore 中移除
+      // 改用逐 session 检查 getPendingCount 来验证无待处理工作
+      // 使用假的 sessionDbId=1 查询（表为空，所有 session 返回 0）
+      expect(pendingStore.getPendingCount(1)).toBe(0);
     });
   });
 });

@@ -44,6 +44,11 @@ mock.module('../../../src/utils/logger.js', () => ({
     warn: () => {},
     error: () => {},
     failure: () => {},
+    success: () => {},
+    timing: () => {},
+    dataIn: () => {},
+    dataOut: () => {},
+    happyPathError: () => {},
   },
 }));
 

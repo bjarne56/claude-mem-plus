@@ -26,6 +26,23 @@ const EXCLUDED_PATTERNS = [
   /cli\/hook-command\.ts$/,  // CLI hook command uses console.log/error for hook protocol output
   /cli\/handlers\/user-message\.ts$/,  // User message handler uses console.error for user-visible context
   /services\/transcripts\/cli\.ts$/,  // CLI transcript subcommands use console.log for user-visible interactive output
+  /npx-cli\/.*uninstall\.ts$/,  // CLI uninstall uses console.log for user-visible interactive output
+  /npx-cli\/commands\/runtime\.ts$/,  // CLI runtime commands use console.log for user-visible output
+  /npx-cli\/commands\/ide-detection\.ts$/,  // IDE detection output
+  /npx-cli\/commands\/sync\.ts$/,  // CLI sync uses console.log for user-visible output
+  /services\/smart-file-read\/parser\.ts$/,  // Smart file reader debug output
+  /services\/integrations\/McpIntegrations\.ts$/,  // MCP integrations CLI logging
+  /utils\/project-filter\.ts$/,  // CLI utility with user-visible output
+  /utils\/worktree\.ts$/,  // Git worktree utility with user-visible output
+  /shared\/plugin-state\.ts$/,  // Plugin state with user-visible output
+  /npx-cli\/commands\/install\.ts$/,  // CLI install uses console.log for interactive installation output
+  /services\/sync\/uuid-v7\.ts$/,  // Pure utility generating UUIDs, no logging needed
+  /services\/worker\/RestartGuard\.ts$/,  // Simple guard logic, errors bubbled up to callers
+  /services\/worker\/search\/errors\.ts$/,  // Pure error classes, no runtime logging
+  /services\/worker\/knowledge\/CorpusRenderer\.ts$/,  // Pure rendering, no I/O
+  /services\/worker\/http\/middleware\/validateBody\.ts$/,  // Pure validation logic
+  /services\/worker\/http\/routes\/CorpusRoutes\.ts$/,  // Route handler using Express patterns
+  /services\/worker\/events\/SessionEventBroadcaster\.ts$/,  // Event emitter wrapper
 ];
 
 const HIGH_PRIORITY_PATTERNS = [

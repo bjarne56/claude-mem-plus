@@ -281,18 +281,12 @@ describe('SessionQueueProcessor', () => {
     });
 
     describe('error handling', () => {
-      it('should continue after store error with backoff', async () => {
+      it('should terminate iterator on store error (no backoff)', async () => {
         let callCount = 0;
 
         (store.claimNextMessage as any) = mock(() => {
           callCount++;
-          if (callCount === 1) {
-            throw new Error('Database error');
-          }
-          if (callCount === 2) {
-            return createMockMessage({ id: 1 });
-          }
-          return null;
+          throw new Error('Database error');
         });
 
         const options: CreateIteratorOptions = {
@@ -303,15 +297,13 @@ describe('SessionQueueProcessor', () => {
         const iterator = processor.createIterator(options);
         const results: any[] = [];
 
-        setTimeout(() => abortController.abort(), 1500);
-
         for await (const message of iterator) {
           results.push(message);
-          break; 
         }
 
-        expect(results).toHaveLength(1);
-        expect(callCount).toBeGreaterThanOrEqual(2);
+        // v12.5.0: claimNextMessage 错误会终止整个迭代器（不再有 backoff 重试）
+        expect(results).toHaveLength(0);
+        expect(callCount).toBe(1);
       });
 
       it('should exit cleanly if aborted during error backoff', async () => {

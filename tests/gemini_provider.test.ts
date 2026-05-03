@@ -103,12 +103,14 @@ describe('GeminiProvider', () => {
       markProcessed: mockMarkProcessed,
       confirmProcessed: mock(() => {}),  // CLAIM-CONFIRM pattern: confirm after successful storage
       cleanupProcessed: mockCleanupProcessed,
-      resetStuckMessages: mockResetStuckMessages
+      resetStuckMessages: mockResetStuckMessages,
+      resetProcessingToPending: mock(() => 0)  // Required by ResponseProcessor.ts and getMessageIterator
     };
 
     mockSessionManager = {
       getMessageIterator: async function* () { yield* []; },
-      getPendingMessageStore: () => mockPendingMessageStore
+      getPendingMessageStore: () => mockPendingMessageStore,
+      clearPendingForSession: mock(() => {})  // Required by ResponseProcessor.ts for CLAIM-CONFIRM
     } as unknown as SessionManager;
 
     agent = new GeminiProvider(mockDbManager, mockSessionManager);

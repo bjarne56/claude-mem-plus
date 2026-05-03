@@ -108,11 +108,13 @@ describe('Plugin Distribution - hooks.json Integrity', () => {
 });
 
 describe('Plugin Distribution - package.json Files Field', () => {
-  it('should include "plugin" in root package.json files field', () => {
+  it('should include "plugin/.claude-plugin" in root package.json files field', () => {
     const packageJsonPath = path.join(projectRoot, 'package.json');
     const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'));
     expect(packageJson.files).toBeDefined();
-    expect(packageJson.files).toContain('plugin');
+    // package.json 的 files 字段使用 plugin/.claude-plugin 和 plugin/package.json 作为发布清单路径
+    expect(packageJson.files).toContain('plugin/.claude-plugin');
+    expect(packageJson.files).toContain('plugin/package.json');
   });
 });
 

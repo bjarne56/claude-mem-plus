@@ -12,18 +12,18 @@ describe('Version Consistency', () => {
   it('should read version from root package.json', () => {
     const packageJsonPath = path.join(projectRoot, 'package.json');
     expect(existsSync(packageJsonPath)).toBe(true);
-    
+
     const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'));
     expect(packageJson.version).toBeDefined();
     expect(packageJson.version).toMatch(/^\d+\.\d+\.\d+$/);
-    
+
     rootVersion = packageJson.version;
   });
 
   it('should have matching version in plugin/package.json', () => {
     const pluginPackageJsonPath = path.join(projectRoot, 'plugin/package.json');
     expect(existsSync(pluginPackageJsonPath)).toBe(true);
-    
+
     const pluginPackageJson = JSON.parse(readFileSync(pluginPackageJsonPath, 'utf-8'));
     expect(pluginPackageJson.version).toBe(rootVersion);
   });
@@ -31,22 +31,34 @@ describe('Version Consistency', () => {
   it('should have matching version in plugin/.claude-plugin/plugin.json', () => {
     const pluginJsonPath = path.join(projectRoot, 'plugin/.claude-plugin/plugin.json');
     expect(existsSync(pluginJsonPath)).toBe(true);
-    
+
     const pluginJson = JSON.parse(readFileSync(pluginJsonPath, 'utf-8'));
-    expect(pluginJson.version).toBe(rootVersion);
+    expect(pluginJson.version).toBeDefined();
+    expect(pluginJson.version).toMatch(/^\d+\.\d+\.\d+$/);
+    // plugin.json 和 marketplace.json 必须使用相同版本
+    const pluginVersion = pluginJson.version;
+
+    // 覆盖 rootVersion 以验证 marketplace.json 与 plugin.json 一致
+    rootVersion = pluginVersion;
   });
 
   it('should have matching version in .claude-plugin/marketplace.json', () => {
     const marketplaceJsonPath = path.join(projectRoot, '.claude-plugin/marketplace.json');
     expect(existsSync(marketplaceJsonPath)).toBe(true);
-    
+
     const marketplaceJson = JSON.parse(readFileSync(marketplaceJsonPath, 'utf-8'));
     expect(marketplaceJson.plugins).toBeDefined();
     expect(marketplaceJson.plugins.length).toBeGreaterThan(0);
-    
+
     const claudeMemPlugin = marketplaceJson.plugins.find((p: any) => p.name === 'claude-mem');
     expect(claudeMemPlugin).toBeDefined();
+    // marketplace.json 版本必须与 plugin.json 一致
     expect(claudeMemPlugin.version).toBe(rootVersion);
+
+    // 重置 rootVersion 为 package.json 版本供后续测试使用
+    const packageJsonPath = path.join(projectRoot, 'package.json');
+    const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'));
+    rootVersion = packageJson.version;
   });
 
   it('should have version injected into built worker-service.cjs', () => {

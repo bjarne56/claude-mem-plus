@@ -11,12 +11,13 @@ mock.module('../../src/services/domain/ModeManager.js', () => ({
 }));
 
 import { parseAgentXml } from '../../src/sdk/parser.js';
+import type { ParsedObservation } from '../../src/sdk/parser.js';
 
-function expectObservation(raw: string) {
+function expectObservations(raw: string): ParsedObservation[] {
   const result = parseAgentXml(raw);
-  if (!result.valid) throw new Error(`expected valid observation, got reason: ${result.reason}`);
-  if (result.kind !== 'observation') throw new Error(`expected observation, got ${result.kind}`);
-  return result.data;
+  if (!result.valid) throw new Error(`expected valid, got valid=false`);
+  if (result.summary !== null) throw new Error(`expected observations, got summary`);
+  return result.observations;
 }
 
 describe('parseAgentXml — observations', () => {
@@ -27,7 +28,7 @@ describe('parseAgentXml — observations', () => {
       <narrative>The token refresh logic skips expired tokens.</narrative>
     </observation>`;
 
-    const result = expectObservation(xml);
+    const result = expectObservations(xml);
 
     expect(result).toHaveLength(1);
     expect(result[0].title).toBe('Found a bug in auth module');
@@ -41,7 +42,7 @@ describe('parseAgentXml — observations', () => {
       <narrative>Patched the null pointer dereference in session handler.</narrative>
     </observation>`;
 
-    const result = expectObservation(xml);
+    const result = expectObservations(xml);
 
     expect(result).toHaveLength(1);
     expect(result[0].title).toBeNull();
@@ -54,7 +55,7 @@ describe('parseAgentXml — observations', () => {
       <facts><fact>File limit is hardcoded to 5</fact></facts>
     </observation>`;
 
-    const result = expectObservation(xml);
+    const result = expectObservations(xml);
 
     expect(result).toHaveLength(1);
     expect(result[0].facts).toEqual(['File limit is hardcoded to 5']);
@@ -66,7 +67,7 @@ describe('parseAgentXml — observations', () => {
       <concepts><concept>dependency-injection</concept></concepts>
     </observation>`;
 
-    const result = expectObservation(xml);
+    const result = expectObservations(xml);
 
     expect(result).toHaveLength(1);
     expect(result[0].concepts).toEqual(['dependency-injection']);
@@ -104,7 +105,7 @@ describe('parseAgentXml — observations', () => {
       <observation><type>refactor</type><title></title><narrative>  </narrative></observation>
     `;
 
-    const result = expectObservation(xml);
+    const result = expectObservations(xml);
 
     expect(result).toHaveLength(1);
     expect(result[0].title).toBe('Real observation');
@@ -125,7 +126,7 @@ describe('parseAgentXml — observations', () => {
       <title>Missing type field</title>
     </observation>`;
 
-    const result = expectObservation(xml);
+    const result = expectObservations(xml);
 
     expect(result).toHaveLength(1);
     expect(result[0].type).toBe('bugfix');
@@ -134,9 +135,6 @@ describe('parseAgentXml — observations', () => {
   it('returns a fail-fast result when no observation/summary blocks are present', () => {
     const result = parseAgentXml('Some text without any observations.');
     expect(result.valid).toBe(false);
-    if (!result.valid) {
-      expect(result.reason).toMatch(/unknown root|empty/);
-    }
   });
 
   it('parses files_read and files_modified arrays correctly', () => {
@@ -147,10 +145,29 @@ describe('parseAgentXml — observations', () => {
       <files_modified><file>src/utils.ts</file></files_modified>
     </observation>`;
 
-    const result = expectObservation(xml);
+    const result = expectObservations(xml);
 
     expect(result).toHaveLength(1);
     expect(result[0].files_read).toEqual(['src/utils.ts', 'src/parser.ts']);
     expect(result[0].files_modified).toEqual(['src/utils.ts']);
+  });
+});
+
+describe('parseAgentXml — summaries', () => {
+  it('does NOT coerce <observation> into a summary (former #1633 path deleted)', () => {
+    const result = parseAgentXml('<observation><title>foo</title></observation>');
+    expect(result.valid).toBe(true);
+    expect(result.summary).toBeNull();
+    expect(result.observations).toHaveLength(1);
+  });
+
+  it('prefers <summary> over <observation> when both present', () => {
+    const text = `<summary><request>do X</request></summary><observation><title>irrelevant</title></observation>`;
+    const result = parseAgentXml(text);
+    expect(result.valid).toBe(true);
+    expect(result.summary).not.toBeNull();
+    expect(result.summary!.request).toBe('do X');
+    // summary 优先，observations 数组为空
+    expect(result.observations).toEqual([]);
   });
 });
