@@ -6,8 +6,12 @@ const watcherSource = readFileSync(
   join(__dirname, '..', 'src', 'services', 'transcripts', 'watcher.ts'),
   'utf-8',
 );
-const sessionRoutesSource = readFileSync(
-  join(__dirname, '..', 'src', 'services', 'worker', 'http', 'routes', 'SessionRoutes.ts'),
+const pendingStoreSource = readFileSync(
+  join(__dirname, '..', 'src', 'services', 'sqlite', 'PendingMessageStore.ts'),
+  'utf-8',
+);
+const generatorExitSource = readFileSync(
+  join(__dirname, '..', 'src', 'services', 'worker', 'session', 'GeneratorExitHandler.ts'),
   'utf-8',
 );
 
@@ -31,8 +35,11 @@ describe('Codex transcript ingestion on Windows (#2192)', () => {
   });
 
   it('requeues in-flight processing rows when the generator aborts (queue self-deadlock fix)', () => {
-    expect(sessionRoutesSource).toMatch(/Generator aborted/);
-    expect(sessionRoutesSource).toMatch(/processingMessageIds\.slice\(\)/);
-    expect(sessionRoutesSource).toMatch(/inflightStore\.markFailed\(messageId\)/);
+    // 验证 resetProcessingToPending 将 processing 行重置为 pending 防止队列死锁
+    expect(pendingStoreSource).toMatch(/resetProcessingToPending/);
+    expect(pendingStoreSource).toMatch(/SET status = 'pending'/);
+    expect(pendingStoreSource).toMatch(/WHERE session_db_id = \? AND status = 'processing'/);
+    // 验证 GeneratorExitHandler 引用 clearPendingForSession 来清理行
+    expect(generatorExitSource).toMatch(/clearPendingForSession/);
   });
 });
