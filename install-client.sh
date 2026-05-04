@@ -266,67 +266,116 @@ _install_bun_curl() {
     export PATH="$BUN_INSTALL/bin:$PATH"
 }
 
-# ── 上游 claude-mem 检测 + 安全卸载 ──────────────────
-# 触发条件:npm 全局有 'claude-mem' 包(不是 'claude-mem-plus')
-# 步骤:
-#   1) 停 worker (claude-mem stop)
-#   2) 备份关键数据到 ~/.claude-mem/.pre-fork-backup-<ts>/(只是 cp 一份关键文件,
-#      ~/.claude-mem/ 整体不会被 npm 删,所以默认数据安全;备份是兜底)
-#   3) 删 npm 全局 'claude-mem'
-#   4) 清理 bin 软链残留(npm 卸 claude-mem 会带走 'claude-mem' bin,
-#      但 fork 后续 install -g 会重新生成,所以这里只做检查)
+# ── 上游 / 旧 fork 完整检测 + 安全卸载 ────────────────
+# 触发条件:npm 全局有 'claude-mem' 或旧 'claude-mem-plus'
+# 安全保证:
+#   - ~/.claude-mem/ 整个数据目录 npm 不会动
+#   - 软链场景:readlink 取真实目录后备份
+#   - 卸载前备份 DB/chroma/settings 等关键文件到 .pre-fork-backup-<ts>/
 detect_and_remove_upstream() {
     # 没有 npm 直接跳
     command -v npm >/dev/null 2>&1 || return 0
 
-    local installed
-    installed=$(npm ls -g --depth=0 2>/dev/null | command grep -E "── claude-mem@" | head -1)
+    local upstream_installed fork_installed
+    upstream_installed=$(npm ls -g --depth=0 2>/dev/null | command grep -E "── claude-mem@" | head -1)
+    fork_installed=$(npm ls -g --depth=0 2>/dev/null | command grep -E "── claude-mem-plus@" | head -1)
 
-    # 没装上游 → 直接返回
-    if [[ -z "$installed" ]]; then
-        info "未检测到上游 claude-mem,跳过卸载步骤"
+    # 啥都没装,直接返回
+    if [[ -z "$upstream_installed" && -z "$fork_installed" ]]; then
+        info "未检测到任何 claude-mem 包,跳过卸载步骤"
         return 0
     fi
 
-    info "检测到上游 claude-mem:$installed"
-    info "执行:停服务 → 备份数据 → 卸载 npm 包"
+    [[ -n "$upstream_installed" ]] && info "检测到上游  : $upstream_installed"
+    [[ -n "$fork_installed"     ]] && info "检测到旧 fork: $fork_installed"
+    info "执行:杀服务 → 备份数据 → 卸 npm → 清旧版本 cache"
 
-    # 1) 停 worker(用上游命令,因为这时全局 claude-mem 还是上游)
+    # 1) 优先用 claude-mem stop 停 PID 文件里的 worker(干净退出)
     if command -v claude-mem >/dev/null 2>&1; then
-        info "  停 worker..."
+        info "  claude-mem stop ..."
         claude-mem stop >/dev/null 2>&1 || true
         sleep 1
     fi
 
-    # 2) 备份 ~/.claude-mem 关键文件(整体目录 npm 不会动,这里只是兜底)
+    # 2) 兜底:杀所有 worker-service 残留进程(PID 文件失联 / 多 worker 场景)
+    local killed=0
+    for pid in $(pgrep -f "worker-service\.cjs" 2>/dev/null); do
+        kill -TERM "$pid" 2>/dev/null && ((killed++))
+    done
+    if [[ "$killed" -gt 0 ]]; then
+        sleep 1
+        # 仍存活的强杀
+        for pid in $(pgrep -f "worker-service\.cjs" 2>/dev/null); do
+            kill -KILL "$pid" 2>/dev/null
+        done
+        info "  杀掉 $killed 个 worker 进程"
+    fi
+
+    # 3) 备份关键文件
     if [[ -e "$HOME/.claude-mem" ]]; then
-        # ~/.claude-mem 可能是软链(指向 ~/ai/claude-mem-plus 等)或真目录
         local data_dir
         if [[ -L "$HOME/.claude-mem" ]]; then
             data_dir=$(readlink "$HOME/.claude-mem")
         else
             data_dir="$HOME/.claude-mem"
         fi
-        local backup_dir="$data_dir/.pre-fork-backup-$(date +%Y%m%d-%H%M%S)"
-        mkdir -p "$backup_dir"
-        local backed=0
-        for f in claude-mem.db claude-mem.db-wal claude-mem.db-shm settings.json chroma-sync-state.json supervisor.json; do
-            if [[ -f "$data_dir/$f" ]]; then
-                cp "$data_dir/$f" "$backup_dir/" 2>/dev/null && ((backed++))
+        if [[ -d "$data_dir" ]]; then
+            local backup_dir="$data_dir/.pre-fork-backup-$(date +%Y%m%d-%H%M%S)"
+            mkdir -p "$backup_dir"
+            local backed=0
+            for f in claude-mem.db claude-mem.db-wal claude-mem.db-shm \
+                     settings.json chroma-sync-state.json supervisor.json; do
+                if [[ -f "$data_dir/$f" ]]; then
+                    cp "$data_dir/$f" "$backup_dir/" 2>/dev/null && ((backed++))
+                fi
+            done
+            if [[ -d "$data_dir/chroma" ]]; then
+                cp -R "$data_dir/chroma" "$backup_dir/" 2>/dev/null && ((backed++))
             fi
-        done
-        if [[ -d "$data_dir/chroma" ]]; then
-            cp -R "$data_dir/chroma" "$backup_dir/" 2>/dev/null && ((backed++))
+            ok "  备份 $backed 项 → $backup_dir"
+
+            # 4) 删 stale PID 文件 / supervisor.json(防新 worker 启动时误读)
+            for stale in worker.pid supervisor.json; do
+                if [[ -f "$data_dir/$stale" ]]; then
+                    rm -f "$data_dir/$stale"
+                fi
+            done
         fi
-        ok "  已备份 $backed 项关键数据 → $backup_dir"
     else
         info "  ~/.claude-mem 不存在,无需备份"
     fi
 
-    # 3) 卸 npm 全局 claude-mem
-    info "  npm uninstall -g claude-mem..."
-    npm uninstall -g claude-mem >/dev/null 2>&1 || warn "  npm 卸载报错(忽略)"
-    ok "  上游 claude-mem 已卸载;数据保留在 ~/.claude-mem/(及备份目录)"
+    # 5) 卸 npm 包(上游 + 旧 fork 都卸,后面 install_claude_mem 会装新版)
+    if [[ -n "$upstream_installed" ]]; then
+        info "  npm uninstall -g claude-mem ..."
+        npm uninstall -g claude-mem >/dev/null 2>&1 || warn "  npm 卸 claude-mem 报错(忽略)"
+    fi
+    if [[ -n "$fork_installed" ]]; then
+        info "  npm uninstall -g claude-mem-plus ..."
+        npm uninstall -g claude-mem-plus >/dev/null 2>&1 || warn "  npm 卸 claude-mem-plus 报错(忽略)"
+    fi
+
+    # 6) 清旧版本 plugin cache(claude-code 缓存的多版本目录,留最新一个就够)
+    local cache_root="$HOME/.claude/plugins/cache/thedotmack/claude-mem"
+    if [[ -d "$cache_root" ]]; then
+        local versions
+        versions=$(/bin/ls -1 "$cache_root" 2>/dev/null | command grep -E "^[0-9]+\.[0-9]+\.[0-9]+$" | sort -V)
+        local count
+        count=$(echo "$versions" | command grep -c .)
+        if [[ "$count" -gt 1 ]]; then
+            # 留最新一个,删其他
+            local latest
+            latest=$(echo "$versions" | tail -1)
+            local removed=0
+            while IFS= read -r v; do
+                [[ "$v" == "$latest" ]] && continue
+                rm -rf "$cache_root/$v" 2>/dev/null && ((removed++))
+            done <<< "$versions"
+            info "  清旧版 plugin cache:删 $removed 个,留 $latest"
+        fi
+    fi
+
+    ok "完整卸载完成;数据保留在 ~/.claude-mem/(+ 备份目录)"
 }
 
 # ── 装 claude-mem ───────────────────────────────────
