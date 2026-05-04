@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [12.5.1] - 2026-05-03
+
+## Fixed
+
+- **Install failure on Node 25+** — `bun install` no longer fails when trying to compile the unused `tree-sitter` runtime against Node 25's V8 headers (which require C++20). Added `trustedDependencies: ["tree-sitter-cli"]` to the plugin manifest so bun runs only the CLI's prebuilt-binary download script and skips all other lifecycle scripts — including the failing native compile and the unused `.node` bindings of all 24+ grammar packages. claude-mem only ever shells out to the prebuilt `tree-sitter-cli` Rust binary; the runtime native module was never imported. (#2278)
+
+## Internal
+
+- Sync the OpenClaw plugin manifest version (10.4.1 → 12.5.1) so it tracks with the rest of the package going forward; the version-bump skill already lists it but past releases skipped it.
+
 ## [12.5.0] - 2026-05-02
 
 ## Highlights
