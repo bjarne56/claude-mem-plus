@@ -1,15 +1,16 @@
-# claude-mem-plus v12.5.0
+# claude-mem-plus v12.6.1
 
-[Claude Code](https://docs.claude.com/en/docs/claude-code) 的持久化记忆系统 + 远程备份 + 自动同步 + 多用户/团队共享。
+[Claude Code](https://docs.claude.com/en/docs/claude-code) 的持久化记忆系统 + 远程备份 + 自动同步 + 多用户/团队共享 + 安装时多语言适配。
 
-**基于 [thedotmack/claude-mem v12.5.0](https://github.com/thedotmack/claude-mem/releases/tag/v12.5.0) 二次开发。**
+**基于 [thedotmack/claude-mem v12.6.0](https://github.com/thedotmack/claude-mem/releases/tag/v12.6.0) 二次开发。**
 
 **npm**:`npm install -g claude-mem-plus`(bin 沿用 `claude-mem`,跟上游 npm 包不能并存)
 
-> 本仓库是 [thedotmack/claude-mem](https://github.com/thedotmack/claude-mem) v12.5.0 的 fork,新增:
+> 本仓库是 [thedotmack/claude-mem](https://github.com/thedotmack/claude-mem) v12.6.0 的 fork,新增:
 > - 🔄 **cmem-sync 远程备份 + 自动同步** — push/pull 到自托管 cmem-server，定时自动同步，跨机器无缝切换
 > - 👥 **多用户共享 + 团队共享** — 三种共享模式 (read-only / fork-allowed / auto-copy)，支持批量给多个用户授权
 > - 🌐 **31 种语言 viewer UI** — browser 自动检测，LanguageSelect 下拉，RTL 支持
+> - 🌐 **31 种语言 SKILL.md description** — `install-client.sh` 检测系统 locale，重写每个 SKILL.md frontmatter 的 `description:` 行，让 Claude Code 的 `/` 菜单按系统语言显示命令说明；缺翻译的 locale 保留英文
 > - 🗑️ **软删除 + 回收站** — 项目/会话/observation 三级软删 + 4-tab 恢复 UI
 > - 🚪 **公开 /register 注册页** — 配套 server 提供，admin 可热切 open / invite_only / closed
 >

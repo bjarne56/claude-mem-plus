@@ -79,6 +79,11 @@ uninstall 选项:
   - 创建 ~/.claude-mem/(数据目录,~10 MB 起步)
   - ~/.claude/plugins/marketplaces/thedotmack/(claude-code 插件,~6 MB)
   - ~/.claude-mem/settings.json(检测系统语言写 CLAUDE_MEM_MODE)
+  - 按系统语言本地化每个 SKILL.md 的 frontmatter description
+    (31 种语言: zh / zh-tw / ja / ko / fr / de / es / it / pt / pt-br /
+     ru / uk / pl / cs / hu / ro / nl / sv / nb / da / fi / el / tr /
+     ar / he / hi / id / ms / fil / vi / th + en fallback)
+    缺翻译的语言保持英文;翻译数据来自 plugin/skills/_descriptions.i18n.json
 USAGE
         exit 0 ;;
 esac

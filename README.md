@@ -4,9 +4,14 @@
 ═══════════════════════════════════════════════════════════════════════════════
 -->
 
-> **claude-mem-plus** is a fork of [thedotmack/claude-mem](https://github.com/thedotmack/claude-mem) v12.5.0 that adds:
+> **claude-mem-plus** is a fork of [thedotmack/claude-mem](https://github.com/thedotmack/claude-mem) v12.6.0 that adds:
 >
 > - 🌐 **31-language viewer UI** with browser auto-detect + RTL support.
+> - 🌐 **31-language SKILL.md descriptions** — `install-client.sh` detects
+>   your system locale (macOS `AppleLocale` / Linux `$LANG`) and rewrites the
+>   `description:` line of each `SKILL.md` so the slash-command menu in
+>   Claude Code shows command help in your language. Unsupported locales fall
+>   back to English.
 > - 🔄 **cmem-sync** — 远程备份 + 自动同步 + 多用户共享 + 团队共享，
 >   通过自托管 companion server **[cmem-server](https://github.com/bjarne56/cmem-server)**
 >   (single Rust binary, SQLite, JWT, admin web)。
