@@ -67,9 +67,16 @@ install 选项:
   --no-hooks            跳过 claude-code hook 注册
   --no-sync             完全不做 sync 配置
   --package NAME        npm 包名(默认 claude-mem-plus,fork 暂未发到 npm,
-                        所以默认走 git;指定本参数时走 npm registry)
+                        所以默认走本地源码或 git;指定本参数时走 npm registry)
   --tarball URL         从 .tgz 装(适合 fork 自托管)
   --git URL             从 git clone+build 装(默认源,fork 仓库地址)
+  --local [PATH]        从本地源码 build+pack+install(默认 PATH = 脚本所在目录)
+  --remote              强制从 git clone(即使脚本在源码仓库里也忽略本地源码)
+
+源选择优先级:
+  1. 显式 --local / --git / --tarball / --package(走 npm)
+  2. 默认:如果脚本在 fork 源码仓库里(同目录有 package.json + name=claude-mem-plus)
+         自动用 local;否则 git clone
 
 数据保留(install / 升级 / 重装都不动):
   ~/.claude-mem/                 数据目录(SQLite + Chroma + settings.json + logs)
@@ -97,13 +104,27 @@ SERVER_URL=""
 SKIP_HOOKS=0
 SKIP_SYNC=0
 PACKAGE_NAME="claude-mem-plus"   # 本 fork 的 npm 包名;装上后命令仍是 claude-mem(bin 名沿用)
-# 默认从 git clone+build 装(fork 暂未发到 npm registry,所以默认走 git;
-# 用 --package + --source npm 可强制走 registry)
-PACKAGE_SOURCE="git"
 TARBALL_URL=""
 GIT_REPO="https://github.com/bjarne56/claude-mem-plus"
+LOCAL_SRC=""                    # 检测到的本地源码根目录(空 = 没本地源码)
 KEEP_DATA=0
 PURGE=0
+
+# ── 检测脚本是否在 fork 源码仓库里运行 ──────────────────
+# 如果 install-client.sh 同目录有 package.json 且 name=claude-mem-plus,
+# 优先用本地源码 build,跳过 git clone(省 1-2 分钟,也避免远程拉到旧代码)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [[ -f "$SCRIPT_DIR/package.json" ]] \
+   && command grep -q '"name": *"claude-mem-plus"' "$SCRIPT_DIR/package.json" 2>/dev/null; then
+    LOCAL_SRC="$SCRIPT_DIR"
+fi
+
+# 默认源选择优先级:本地源码 > git clone(fork 未发 npm 时不能走 npm)
+if [[ -n "$LOCAL_SRC" ]]; then
+    PACKAGE_SOURCE="local"
+else
+    PACKAGE_SOURCE="git"
+fi
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -113,6 +134,8 @@ while [[ $# -gt 0 ]]; do
         --package)       PACKAGE_NAME="$2"; shift 2 ;;
         --tarball)       PACKAGE_SOURCE="tarball"; TARBALL_URL="$2"; shift 2 ;;
         --git)           PACKAGE_SOURCE="git"; GIT_REPO="$2"; shift 2 ;;
+        --local)         PACKAGE_SOURCE="local"; LOCAL_SRC="${2:-$LOCAL_SRC}"; [[ -n "${2:-}" ]] && shift 2 || shift ;;
+        --remote)        PACKAGE_SOURCE="git"; LOCAL_SRC=""; shift ;;
         --keep-data)     KEEP_DATA=1; shift ;;
         --purge)         PURGE=1; shift ;;
         -h|--help)       exec "$0" help ;;
@@ -246,6 +269,35 @@ install_claude_mem() {
             local tgz="/tmp/claude-mem-$$.tgz"
             curl -fSL "$TARBALL_URL" -o "$tgz" || fail "下载失败"
             npm install -g "$tgz" || fail "tarball 装失败"
+            rm -f "$tgz"
+            ;;
+        local)
+            [[ -n "$LOCAL_SRC" && -d "$LOCAL_SRC" ]] || fail "本地源码路径无效: $LOCAL_SRC"
+            info "本地源码 build + 装(源:$LOCAL_SRC)"
+            # 检测旧上游 claude-mem,自动卸载(数据 ~/.claude-mem 不动)
+            if command -v claude-mem >/dev/null 2>&1; then
+                local existing
+                existing=$(npm ls -g claude-mem --depth=0 2>/dev/null | command grep "claude-mem@" | head -1)
+                if [[ -n "$existing" ]]; then
+                    info "检测到已装上游 claude-mem,先卸载"
+                    npm uninstall -g claude-mem 2>/dev/null || true
+                fi
+            fi
+            (
+                cd "$LOCAL_SRC" || exit 1
+                # 仅在 node_modules 缺失时 install,加快重复安装
+                if [[ ! -d node_modules ]]; then
+                    npm install || exit 1
+                fi
+                npm run build || exit 1
+                # 清理旧 tgz
+                rm -f claude-mem*-*.tgz
+                npm pack || exit 1
+            ) || fail "本地 build/pack 失败"
+            local tgz
+            tgz=$(ls "$LOCAL_SRC"/claude-mem*-*.tgz 2>/dev/null | head -1)
+            [[ -n "$tgz" && -f "$tgz" ]] || fail "找不到 npm pack 产物 (期望 $LOCAL_SRC/claude-mem*.tgz)"
+            npm install -g "$tgz" || fail "装失败"
             rm -f "$tgz"
             ;;
         git)
@@ -620,7 +672,11 @@ cmd_install() {
     step "2/6 装 Bun(worker 运行时)"
     ensure_bun
 
-    step "3/6 装 claude-mem(源:$PACKAGE_SOURCE)"
+    if [[ "$PACKAGE_SOURCE" == "local" ]]; then
+        step "3/6 装 claude-mem(本地源码:$LOCAL_SRC)"
+    else
+        step "3/6 装 claude-mem(源:$PACKAGE_SOURCE)"
+    fi
     install_claude_mem
 
     step "4/6 注册 claude-code hook"
