@@ -263,6 +263,107 @@ register_hooks() {
         || warn "hook 注册可能失败,手动跑 'claude-mem install --ide claude-code'"
 }
 
+# ── 检测系统 locale,规范化为 BCP-47 lang code ─────────
+# 支持的 31 种 lang code:
+#   zh zh-tw ja ko fr de es it pt pt-br ru uk pl cs hu ro nl sv nb da
+#   fi el tr ar he hi id ms fil vi th
+# (en 是 fallback,SKILL.md 默认就是英文)
+detect_system_lang() {
+    local raw=""
+    # macOS:AppleLocale 优先(更准确,反映用户在系统设置选的语言)
+    if command -v defaults >/dev/null 2>&1; then
+        raw=$(defaults read NSGlobalDomain AppleLocale 2>/dev/null | head -1)
+    fi
+    # Linux / fallback:LC_ALL > LC_MESSAGES > LANG
+    if [[ -z "$raw" ]]; then
+        raw="${LC_ALL:-${LC_MESSAGES:-${LANG:-en}}}"
+    fi
+    raw="${raw%%.*}"   # 去掉 .UTF-8
+    raw="${raw%%@*}"   # 去掉 @calendar=...
+    raw="${raw//_/-}"  # 下划线转连字符
+    raw=$(echo "$raw" | tr '[:upper:]' '[:lower:]')
+
+    case "$raw" in
+        zh|zh-cn|zh-hans*) echo "zh" ;;
+        zh-tw|zh-hk|zh-mo|zh-hant*) echo "zh-tw" ;;
+        pt-br) echo "pt-br" ;;
+        pt|pt-pt) echo "pt" ;;
+        nb*|no*|nn*) echo "nb" ;;
+        fil*|tl|tl-*) echo "fil" ;;
+        ms|ms-*) echo "ms" ;;
+        # 其余取主语言代码,Claude Code 显示该语言或 fallback en
+        *) echo "${raw%%-*}" ;;
+    esac
+}
+
+# ── 在每个 SKILL.md 里 in-place 替换 frontmatter description: 为本机语言 ──
+# 缺翻译的 lang 默认保留英文(SKILL.md 自带的)。
+# JSON 由 build-hooks.js 复制到 plugin/skills/_descriptions.i18n.json。
+apply_skill_locale() {
+    local lang="${1:-$(detect_system_lang)}"
+    if [[ "$lang" == "en" ]]; then
+        info "系统语言 = en,SKILL.md 已是英文,无需 patch"
+        return 0
+    fi
+
+    # 定位 plugin/skills 目录:优先 marketplace 安装路径
+    local skills_dir=""
+    for cand in \
+        "$HOME/.claude/plugins/marketplaces/thedotmack/plugin/skills" \
+        "$(npm root -g 2>/dev/null)/claude-mem-plus/plugin/skills" \
+        "$(npm root -g 2>/dev/null)/claude-mem/plugin/skills"; do
+        if [[ -d "$cand" ]]; then skills_dir="$cand"; break; fi
+    done
+    if [[ -z "$skills_dir" ]]; then
+        warn "找不到 plugin/skills/,跳过 SKILL.md 本地化"
+        return 0
+    fi
+
+    local i18n_json="$skills_dir/_descriptions.i18n.json"
+    if [[ ! -f "$i18n_json" ]]; then
+        warn "缺 $i18n_json,跳过 SKILL.md 本地化(可能是旧版)"
+        return 0
+    fi
+
+    if ! command -v node >/dev/null 2>&1; then
+        warn "未装 node,跳过 SKILL.md 本地化"
+        return 0
+    fi
+
+    info "patch SKILL.md description → $lang"
+    local count=0 missed=0
+    for skill_md in "$skills_dir"/*/SKILL.md; do
+        [[ -f "$skill_md" ]] || continue
+        local skill_name
+        skill_name=$(basename "$(dirname "$skill_md")")
+        local desc
+        desc=$(node -e "
+            const j = require('$i18n_json');
+            const m = j['$skill_name'];
+            if (m && typeof m['$lang'] === 'string') process.stdout.write(m['$lang']);
+        ")
+        if [[ -z "$desc" ]]; then
+            ((missed++))
+            continue
+        fi
+        # frontmatter description 行用 node 直接替换(避免 sed 的转义噩梦)
+        node -e "
+            const fs = require('fs');
+            const f = '$skill_md';
+            const desc = process.argv[1];
+            let txt = fs.readFileSync(f, 'utf8');
+            // 只替换 frontmatter 内的 description: ...(单行 YAML)
+            const m = txt.match(/^---\n([\s\S]*?)\n---/);
+            if (!m) process.exit(0);
+            const newFm = m[1].replace(/^description: .*\$/m, 'description: ' + desc);
+            txt = txt.replace(m[0], '---\n' + newFm + '\n---');
+            fs.writeFileSync(f, txt);
+        " "$desc"
+        ((count++))
+    done
+    ok "已本地化 $count 个 SKILL.md(跳过 $missed 个无翻译)"
+}
+
 # ── 启动 worker ─────────────────────────────────────
 start_worker() {
     info "claude-mem start"
@@ -490,19 +591,22 @@ cmd_install() {
     log "${BOLD}claude-mem 客户端安装${RESET}"
     log "${DIM}  支持:macOS / Ubuntu / Debian / Rocky / Fedora / Arch / Alpine${RESET}"
 
-    step "1/5 装 Node"
+    step "1/6 装 Node"
     ensure_node
 
-    step "2/5 装 Bun(worker 运行时)"
+    step "2/6 装 Bun(worker 运行时)"
     ensure_bun
 
-    step "3/5 装 claude-mem(源:$PACKAGE_SOURCE)"
+    step "3/6 装 claude-mem(源:$PACKAGE_SOURCE)"
     install_claude_mem
 
-    step "4/5 注册 claude-code hook"
+    step "4/6 注册 claude-code hook"
     register_hooks
 
-    step "5/5 启动 worker + 可选 sync 配置"
+    step "5/6 按系统语言本地化 SKILL.md description"
+    apply_skill_locale
+
+    step "6/6 启动 worker + 可选 sync 配置"
     start_worker
     sync_login_optional
 

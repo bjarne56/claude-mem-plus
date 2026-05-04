@@ -341,12 +341,22 @@ async function buildHooks() {
     fs.copyFileSync(onboardingExplainerSrc, onboardingExplainerDst);
     console.log(`✓ Copied ${onboardingExplainerSrc} → ${onboardingExplainerDst}`);
 
+    console.log('\n📋 Copying skill description i18n to plugin tree...');
+    const skillI18nSrc = 'scripts/skill-i18n/descriptions.json';
+    const skillI18nDst = 'plugin/skills/_descriptions.i18n.json';
+    if (!fs.existsSync(skillI18nSrc)) {
+      throw new Error(`Missing skill i18n source: ${skillI18nSrc}`);
+    }
+    fs.copyFileSync(skillI18nSrc, skillI18nDst);
+    console.log(`✓ Copied ${skillI18nSrc} → ${skillI18nDst}`);
+
     console.log('\n📋 Verifying distribution files...');
     const requiredDistributionFiles = [
       'plugin/skills/mem-search/SKILL.md',
       'plugin/skills/smart-explore/SKILL.md',
       'plugin/skills/how-it-works/SKILL.md',
       'plugin/skills/how-it-works/onboarding-explainer.md',
+      'plugin/skills/_descriptions.i18n.json',
       'plugin/hooks/hooks.json',
       'plugin/.claude-plugin/plugin.json',
     ];
