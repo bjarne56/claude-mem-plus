@@ -43,6 +43,8 @@ const EXCLUDED_PATTERNS = [
   /services\/worker\/http\/middleware\/validateBody\.ts$/,  // Pure validation logic
   /services\/worker\/http\/routes\/CorpusRoutes\.ts$/,  // Route handler using Express patterns
   /services\/worker\/events\/SessionEventBroadcaster\.ts$/,  // Event emitter wrapper
+  /services\/worker\/provider-errors\.ts$/,  // Pure error class hierarchy (v12.6.0), no I/O
+  /services\/worker\/RateLimitStore\.ts$/,   // Pure data store for rate-limit telemetry (v12.6.0), no logging
 ];
 
 const HIGH_PRIORITY_PATTERNS = [

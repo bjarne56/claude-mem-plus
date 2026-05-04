@@ -53,8 +53,11 @@ describe('ResponseProcessor', () => {
       spyOn(logger, 'error').mockImplementation(() => {}),
     ];
 
+    // v12.6.0: ResponseProcessor.syncAndBroadcastObservations 改为按 observationIds
+    // 索引到 observations 数组(issue #2240 dedupe 修复)。默认 mock 只返回 1 个 ID,
+    // 因为大部分测试只传 1 个 <observation>;multiple-obs 测试自己 override 成 [1,2]。
     mockStoreObservations = mock(() => ({
-      observationIds: [1, 2],
+      observationIds: [1],
       summaryId: 1,
       createdAtEpoch: 1700000000000,
     } as StorageResult));
@@ -189,6 +192,18 @@ describe('ResponseProcessor', () => {
         </observation>
       `;
 
+      // 这个测试有 2 个 observation,override mock 让 observationIds 与之对应
+      mockStoreObservations = mock(() => ({
+        observationIds: [1, 2],
+        summaryId: 1,
+        createdAtEpoch: 1700000000000,
+      } as StorageResult));
+      (mockDbManager.getSessionStore as any) = () => ({
+        storeObservations: mockStoreObservations,
+        ensureMemorySessionIdRegistered: mock(() => {}),
+        getSessionById: mock(() => ({ memory_session_id: 'memory-session-456' })),
+      });
+
       await processAgentResponse(
         responseText,
         session,
@@ -253,6 +268,18 @@ describe('ResponseProcessor', () => {
           <notes>Some notes</notes>
         </summary>
       `;
+
+      // 这个测试只有 summary 没有 observation,override mock 让 observationIds=[]
+      mockStoreObservations = mock(() => ({
+        observationIds: [],
+        summaryId: 1,
+        createdAtEpoch: 1700000000000,
+      } as StorageResult));
+      (mockDbManager.getSessionStore as any) = () => ({
+        storeObservations: mockStoreObservations,
+        ensureMemorySessionIdRegistered: mock(() => {}),
+        getSessionById: mock(() => ({ memory_session_id: 'memory-session-456' })),
+      });
 
       await processAgentResponse(
         responseText,
