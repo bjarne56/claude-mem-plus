@@ -266,8 +266,75 @@ _install_bun_curl() {
     export PATH="$BUN_INSTALL/bin:$PATH"
 }
 
+# ── 上游 claude-mem 检测 + 安全卸载 ──────────────────
+# 触发条件:npm 全局有 'claude-mem' 包(不是 'claude-mem-plus')
+# 步骤:
+#   1) 停 worker (claude-mem stop)
+#   2) 备份关键数据到 ~/.claude-mem/.pre-fork-backup-<ts>/(只是 cp 一份关键文件,
+#      ~/.claude-mem/ 整体不会被 npm 删,所以默认数据安全;备份是兜底)
+#   3) 删 npm 全局 'claude-mem'
+#   4) 清理 bin 软链残留(npm 卸 claude-mem 会带走 'claude-mem' bin,
+#      但 fork 后续 install -g 会重新生成,所以这里只做检查)
+detect_and_remove_upstream() {
+    # 没有 npm 直接跳
+    command -v npm >/dev/null 2>&1 || return 0
+
+    local installed
+    installed=$(npm ls -g --depth=0 2>/dev/null | command grep -E "── claude-mem@" | head -1)
+
+    # 没装上游 → 直接返回
+    if [[ -z "$installed" ]]; then
+        info "未检测到上游 claude-mem,跳过卸载步骤"
+        return 0
+    fi
+
+    info "检测到上游 claude-mem:$installed"
+    info "执行:停服务 → 备份数据 → 卸载 npm 包"
+
+    # 1) 停 worker(用上游命令,因为这时全局 claude-mem 还是上游)
+    if command -v claude-mem >/dev/null 2>&1; then
+        info "  停 worker..."
+        claude-mem stop >/dev/null 2>&1 || true
+        sleep 1
+    fi
+
+    # 2) 备份 ~/.claude-mem 关键文件(整体目录 npm 不会动,这里只是兜底)
+    if [[ -e "$HOME/.claude-mem" ]]; then
+        # ~/.claude-mem 可能是软链(指向 ~/ai/claude-mem-plus 等)或真目录
+        local data_dir
+        if [[ -L "$HOME/.claude-mem" ]]; then
+            data_dir=$(readlink "$HOME/.claude-mem")
+        else
+            data_dir="$HOME/.claude-mem"
+        fi
+        local backup_dir="$data_dir/.pre-fork-backup-$(date +%Y%m%d-%H%M%S)"
+        mkdir -p "$backup_dir"
+        local backed=0
+        for f in claude-mem.db claude-mem.db-wal claude-mem.db-shm settings.json chroma-sync-state.json supervisor.json; do
+            if [[ -f "$data_dir/$f" ]]; then
+                cp "$data_dir/$f" "$backup_dir/" 2>/dev/null && ((backed++))
+            fi
+        done
+        if [[ -d "$data_dir/chroma" ]]; then
+            cp -R "$data_dir/chroma" "$backup_dir/" 2>/dev/null && ((backed++))
+        fi
+        ok "  已备份 $backed 项关键数据 → $backup_dir"
+    else
+        info "  ~/.claude-mem 不存在,无需备份"
+    fi
+
+    # 3) 卸 npm 全局 claude-mem
+    info "  npm uninstall -g claude-mem..."
+    npm uninstall -g claude-mem >/dev/null 2>&1 || warn "  npm 卸载报错(忽略)"
+    ok "  上游 claude-mem 已卸载;数据保留在 ~/.claude-mem/(及备份目录)"
+}
+
 # ── 装 claude-mem ───────────────────────────────────
 install_claude_mem() {
+    # 先检测+卸载上游(npm uninstall 会带走 'claude-mem' bin 软链,后续 install -g
+    # 会重新生成,所以顺序必须 detect → npm install)
+    detect_and_remove_upstream
+
     case "$PACKAGE_SOURCE" in
         npm)
             info "npm install -g $PACKAGE_NAME"
@@ -283,15 +350,6 @@ install_claude_mem() {
         local)
             [[ -n "$LOCAL_SRC" && -d "$LOCAL_SRC" ]] || fail "本地源码路径无效: $LOCAL_SRC"
             info "本地源码 build + 装(源:$LOCAL_SRC)"
-            # 检测旧上游 claude-mem,自动卸载(数据 ~/.claude-mem 不动)
-            if command -v claude-mem >/dev/null 2>&1; then
-                local existing
-                existing=$(npm ls -g claude-mem --depth=0 2>/dev/null | command grep "claude-mem@" | head -1)
-                if [[ -n "$existing" ]]; then
-                    info "检测到已装上游 claude-mem,先卸载"
-                    npm uninstall -g claude-mem 2>/dev/null || true
-                fi
-            fi
             (
                 cd "$LOCAL_SRC" || exit 1
                 # 仅在 node_modules 缺失时 install,加快重复安装
@@ -311,15 +369,6 @@ install_claude_mem() {
             ;;
         git)
             info "git clone + 本地 build + 装(源:$GIT_REPO)"
-            # 如果之前已经卸载过 npm 全局 claude-mem,这里需要先确认旧的 bin
-            # 不会跟 fork 冲突。pnpm/yarn link 残留也清掉。
-            if command -v claude-mem >/dev/null 2>&1; then
-                local existing=$(npm ls -g claude-mem --depth=0 2>/dev/null | grep "claude-mem@" | head -1)
-                if [[ -n "$existing" ]]; then
-                    info "检测到已装上游 claude-mem,先卸载(数据 ~/.claude-mem 不受影响)"
-                    npm uninstall -g claude-mem 2>/dev/null || true
-                fi
-            fi
             local tmp="/tmp/claude-mem-build-$$"
             git clone --depth 1 "$GIT_REPO" "$tmp" || fail "clone 失败"
             (cd "$tmp" && npm install && npm run build) || fail "build 失败"
