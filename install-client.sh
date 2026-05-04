@@ -48,17 +48,19 @@ info() { log "  ${INFO} $*"; }
 step() { echo; log "${BOLD}${BLUE}▶ $*${RESET}"; }
 
 # ── 解析子命令 + 参数 ──────────────────────────────────
-# 第一个非 -h 的位置参数决定子命令(install / check / uninstall);
-# 缺省 = install,保持向后兼容(老的 `bash install-client.sh --server X` 仍工作)
-CMD="install"
+# 必须显式给子命令(install / check / uninstall);不带子命令默认显示 help,
+# 防止用户误操作直接装。
+CMD=""
 case "${1:-}" in
     install|check|uninstall) CMD="$1"; shift ;;
-    -h|--help|help)
+    ""|-h|--help|help)
         cat <<USAGE
-claude-mem 客户端 — 安装 / 检查 / 卸载
+claude-mem-plus 客户端 — 安装 / 检查 / 卸载
+
+⚠️  必须显式带子命令才会动作;裸跑 \`./install-client.sh\` 只显示本说明。
 
 子命令:
-  install (默认)        全新安装
+  install               安装 / 升级 claude-mem-plus(必须显式给)
   check                 检查已装环境健康度
   uninstall             卸载
 
@@ -72,6 +74,9 @@ install 选项:
   --git URL             从 git clone+build 装(默认源,fork 仓库地址)
   --local [PATH]        从本地源码 build+pack+install(默认 PATH = 脚本所在目录)
   --remote              强制从 git clone(即使脚本在源码仓库里也忽略本地源码)
+  --data-dir PATH       把 ~/.claude-mem 软链到 PATH(集中存储 / 多机共享场景);
+                        已有 ~/.claude-mem 真目录会自动迁内容到 PATH 后建软链
+  --no-data-prompt      跳过"数据目录软链"交互问(curl-pipe 等非 TTY 默认就跳)
 
 源选择优先级:
   1. 显式 --local / --git / --tarball / --package(走 npm)
@@ -107,6 +112,8 @@ PACKAGE_NAME="claude-mem-plus"   # 本 fork 的 npm 包名;装上后命令仍是
 TARBALL_URL=""
 GIT_REPO="https://github.com/bjarne56/claude-mem-plus"
 LOCAL_SRC=""                    # 检测到的本地源码根目录(空 = 没本地源码)
+DATA_SYMLINK_TARGET=""           # 软链 ~/.claude-mem → <这个目录>(空 = 不软链)
+NO_SYMLINK_PROMPT=0              # 1 = 跳过交互问数据目录软链
 KEEP_DATA=0
 PURGE=0
 
@@ -136,6 +143,8 @@ while [[ $# -gt 0 ]]; do
         --git)           PACKAGE_SOURCE="git"; GIT_REPO="$2"; shift 2 ;;
         --local)         PACKAGE_SOURCE="local"; LOCAL_SRC="${2:-$LOCAL_SRC}"; [[ -n "${2:-}" ]] && shift 2 || shift ;;
         --remote)        PACKAGE_SOURCE="git"; LOCAL_SRC=""; shift ;;
+        --data-dir)      DATA_SYMLINK_TARGET="$2"; shift 2 ;;
+        --no-data-prompt)NO_SYMLINK_PROMPT=1; shift ;;
         --keep-data)     KEEP_DATA=1; shift ;;
         --purge)         PURGE=1; shift ;;
         -h|--help)       exec "$0" help ;;
@@ -439,6 +448,98 @@ apply_skill_locale() {
     ok "已本地化 $count 个 SKILL.md(跳过 $missed 个无翻译)"
 }
 
+# ── 数据目录软链(可选) ───────────────────────────────
+# 把 ~/.claude-mem 改成 → 用户指定目录(集中存储 / 多机同步 / 共享盘等场景)。
+# v12.x 起 settings.json / worker.pid / 全部数据都从 CLAUDE_MEM_DATA_DIR 派生,
+# 所以 ~/.claude-mem 真目录可以整个换成单根软链,upstream 加新文件也自动落到
+# 软链目标,无需后续维护。
+#
+# 触发逻辑:
+#   1. --data-dir PATH        显式指定,直接用
+#   2. --no-data-prompt       跳过提问,什么也不做
+#   3. 交互 TTY                问用户(回车跳过 = 什么也不做)
+#   4. 非 TTY (curl-pipe)     什么也不做(默认安全)
+setup_data_symlink() {
+    local target="$DATA_SYMLINK_TARGET"
+
+    # 没显式给路径 → 看要不要交互问
+    if [[ -z "$target" ]]; then
+        if [[ "$NO_SYMLINK_PROMPT" -eq 1 ]] || [[ ! -t 0 ]]; then
+            info "跳过数据目录软链(未指定 --data-dir 也无 TTY 输入)"
+            return 0
+        fi
+        echo
+        log "  ${INFO} 是否把 ~/.claude-mem 软链到自定义目录?(集中存储 / 多机共享场景)"
+        log "  ${DIM}     例:~/ai/claude-mem-plus    /Volumes/work/cmem    回车跳过${RESET}"
+        printf "  → 目标路径(回车跳过): "
+        read -r target
+        if [[ -z "$target" ]]; then
+            info "未输入路径,跳过软链"
+            return 0
+        fi
+    fi
+
+    # 解析 ~ 和相对路径
+    target="${target/#\~/$HOME}"
+    target="$(cd "$(dirname "$target")" 2>/dev/null && pwd)/$(basename "$target")"
+
+    local mem_home="$HOME/.claude-mem"
+
+    # 已经是单根软链且目标对,跳
+    if [[ -L "$mem_home" ]] && [[ "$(readlink "$mem_home")" == "$target" ]]; then
+        ok "~/.claude-mem → $target(已是单根软链)"
+        return 0
+    fi
+
+    # 要改动文件系统,先停 worker 防写入
+    info "停 worker(准备迁移数据)..."
+    claude-mem stop >/dev/null 2>&1 || true
+    sleep 1
+
+    mkdir -p "$target"
+
+    if [[ -d "$mem_home" && ! -L "$mem_home" ]]; then
+        # 真目录 → 把所有内容迁到 target,然后删空目录建软链
+        info "迁移 ~/.claude-mem 已有数据到 $target"
+        local entry name target_path
+        while IFS= read -r entry; do
+            name=$(basename "$entry")
+            target_path="$target/$name"
+            if [[ -L "$entry" ]]; then
+                command rm "$entry"
+            elif [[ -e "$target_path" ]]; then
+                if [[ -d "$entry" ]]; then
+                    command rsync -a "$entry/" "$target_path/" 2>/dev/null
+                    command rm -rf "$entry"
+                else
+                    command mv -f "$entry" "$target_path"
+                fi
+            else
+                command mv "$entry" "$target_path"
+            fi
+        done < <(find "$mem_home" -mindepth 1 -maxdepth 1)
+        command rmdir "$mem_home" 2>/dev/null || command rm -rf "$mem_home"
+    elif [[ -L "$mem_home" ]]; then
+        # 软链但指错 → 删了重建
+        command rm "$mem_home"
+    fi
+
+    ln -s "$target" "$mem_home"
+    ok "~/.claude-mem → $target(单根软链已建)"
+
+    # 同步 settings.json 里的 CLAUDE_MEM_DATA_DIR(防 worker update 把它重置)
+    if [[ -f "$target/settings.json" ]]; then
+        local cur_dir
+        cur_dir=$(command grep -oE '"CLAUDE_MEM_DATA_DIR": *"[^"]*"' "$target/settings.json" 2>/dev/null \
+                  | command sed -E 's/.*"([^"]*)"$/\1/')
+        if [[ "$cur_dir" != "$target" ]]; then
+            # macOS / GNU sed 通用:用 perl in-place
+            perl -i -pe "s|\"CLAUDE_MEM_DATA_DIR\": \"[^\"]*\"|\"CLAUDE_MEM_DATA_DIR\": \"$target\"|" "$target/settings.json"
+            info "settings.json 里 CLAUDE_MEM_DATA_DIR 已更新为 $target"
+        fi
+    fi
+}
+
 # ── 启动 worker ─────────────────────────────────────
 start_worker() {
     info "claude-mem start"
@@ -673,19 +774,22 @@ cmd_install() {
     ensure_bun
 
     if [[ "$PACKAGE_SOURCE" == "local" ]]; then
-        step "3/6 装 claude-mem(本地源码:$LOCAL_SRC)"
+        step "3/7 装 claude-mem(本地源码:$LOCAL_SRC)"
     else
-        step "3/6 装 claude-mem(源:$PACKAGE_SOURCE)"
+        step "3/7 装 claude-mem(源:$PACKAGE_SOURCE)"
     fi
     install_claude_mem
 
-    step "4/6 注册 claude-code hook"
+    step "4/7 注册 claude-code hook"
     register_hooks
 
-    step "5/6 按系统语言本地化 SKILL.md description"
+    step "5/7 按系统语言本地化 SKILL.md description"
     apply_skill_locale
 
-    step "6/6 启动 worker + 可选 sync 配置"
+    step "6/7 数据目录软链(可选)"
+    setup_data_symlink
+
+    step "7/7 启动 worker + 可选 sync 配置"
     start_worker
     sync_login_optional
 
@@ -710,5 +814,7 @@ case "$CMD" in
     install)   cmd_install ;;
     check)     cmd_check ;;
     uninstall) cmd_uninstall ;;
+    "")        # 不带子命令应该已经走 help 退出,这里是兜底
+               exec "$0" help ;;
     *)         fail "未知子命令 $CMD(用 $0 help 看用法)" ;;
 esac
