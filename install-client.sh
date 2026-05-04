@@ -767,10 +767,10 @@ cmd_install() {
     log "${BOLD}claude-mem 客户端安装${RESET}"
     log "${DIM}  支持:macOS / Ubuntu / Debian / Rocky / Fedora / Arch / Alpine${RESET}"
 
-    step "1/6 装 Node"
+    step "1/7 装 Node"
     ensure_node
 
-    step "2/6 装 Bun(worker 运行时)"
+    step "2/7 装 Bun(worker 运行时)"
     ensure_bun
 
     if [[ "$PACKAGE_SOURCE" == "local" ]]; then
