@@ -227,6 +227,7 @@ bash install-client.sh check     # 一键检查 node / bun / claude-mem / worker
 | [docs/USAGE.md](docs/USAGE.md) | ✅ 完整使用教程(sync / 共享 / 回收站 / CLI) |
 | [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | ✅ 故障排查(按症状) |
 | [PUBLISHING.md](PUBLISHING.md) | ✅ 发布流程(npm / 内部分发) |
+| 📘 [docs/skills-i18n/](docs/skills-i18n/) | ✅ 10 个 `/claude-mem:*` 命令的多语言操作手册 PDF（31 语言 + 英文，共 32 份） |
 | docs/SHARING.md | ⏳ 三种 mode 行为 + 8 个不变量(参见 [cmem-server/docs/PROJECT_SHARING.md](../cmem-server/docs/PROJECT_SHARING.md))|
 | docs/I18N.md | ⏳ 31 语言扩展(参见 src/ui/viewer/i18n/ 源码 + scripts/translate-i18n.ts) |
 | docs/CONTRIBUTING.md | ⏳ 待补 — 现阶段:fork → PR 到 zh-fork 分支 |

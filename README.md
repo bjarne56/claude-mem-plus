@@ -26,6 +26,7 @@
 > · [INSTALL](docs/INSTALL.md)
 > · [USAGE](docs/USAGE.md)
 > · [TROUBLESHOOTING](docs/TROUBLESHOOTING.md)
+> · 📘 **[Skill Manuals — 31 languages (PDF)](docs/skills-i18n/)**
 >
 > 👉 **Companion server (required for sync):**
 > **[bjarne56/cmem-server](https://github.com/bjarne56/cmem-server)**
