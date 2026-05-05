@@ -1011,6 +1011,49 @@ detect_system_lang() {
 # ── 在每个 SKILL.md 里 in-place 替换 frontmatter description: 为本机语言 ──
 # 缺翻译的 lang 默认保留英文(SKILL.md 自带的)。
 # JSON 由 build-hooks.js 复制到 plugin/skills/_descriptions.i18n.json。
+apply_mode_locale() {
+    # 按系统语言把 settings.json 的 CLAUDE_MEM_MODE 设成 code--<lang>(如 zh → code--zh)
+    # 让 claude-mem-plus 写 observation/summary 时用对应语言的 prompt
+    # en 默认 code,不动;无对应 mode 文件时也不动(防误设)
+    local lang="${1:-$(detect_system_lang)}"
+    if [[ "$lang" == "en" ]]; then
+        return 0
+    fi
+
+    if ! command -v jq >/dev/null 2>&1; then
+        warn "jq 未装,跳过 CLAUDE_MEM_MODE 本地化"
+        return 0
+    fi
+
+    # 检查至少一个 mode 文件存在(marketplace 路径)
+    local mode_file="$HOME/.claude/plugins/marketplaces/bjarne56/plugin/modes/code--$lang.json"
+    if [[ ! -f "$mode_file" ]]; then
+        info "无 code--$lang.json 模式文件,保留默认 CLAUDE_MEM_MODE=code"
+        return 0
+    fi
+
+    # 改 user settings.json 里的 CLAUDE_MEM_MODE(若 user 已自定义为别的就跳过,尊重 user)
+    local SF="$HOME/.claude-mem-plus/settings.json"
+    if [[ ! -f "$SF" ]]; then
+        return 0
+    fi
+    local cur new
+    cur=$(jq -r '.CLAUDE_MEM_MODE // "code"' "$SF" 2>/dev/null)
+    new="code--$lang"
+    # 只在当前是 'code'(default) 或已是同一 lang 时才更新,user 自定义为其他 mode 不动
+    if [[ "$cur" == "code" || "$cur" == "$new" ]]; then
+        if [[ "$cur" != "$new" ]]; then
+            local tmp="$SF.tmp.$$"
+            jq --arg m "$new" '.CLAUDE_MEM_MODE = $m' "$SF" > "$tmp" && mv "$tmp" "$SF"
+            ok "CLAUDE_MEM_MODE: $cur → $new(按系统语言)"
+        else
+            info "CLAUDE_MEM_MODE 已是 $new,跳过"
+        fi
+    else
+        info "CLAUDE_MEM_MODE = $cur(user 自定义),不动"
+    fi
+}
+
 apply_skill_locale() {
     local lang="${1:-$(detect_system_lang)}"
     if [[ "$lang" == "en" ]]; then
@@ -1628,8 +1671,9 @@ cmd_install() {
     step "4/7 注册 claude-code hook"
     register_hooks
 
-    step "5/7 按系统语言本地化 SKILL.md description"
+    step "5/7 按系统语言本地化 SKILL.md description + CLAUDE_MEM_MODE"
     apply_skill_locale
+    apply_mode_locale
 
     step "6/7 数据目录软链(可选)"
     setup_data_symlink
