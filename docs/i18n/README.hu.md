@@ -3,7 +3,7 @@
 ---
 <h1 align="center">
   <br>
-  <a href="https://github.com/thedotmack/claude-mem-plus">
+  <a href="https://github.com/bjarne56/claude-mem-plus-plus">
     <picture>
       <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/thedotmack/claude-mem-plus/main/docs/public/claude-mem-plus-logo-for-dark-mode.webp">
       <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/thedotmack/claude-mem-plus/main/docs/public/claude-mem-plus-logo-for-light-mode.webp">
@@ -76,7 +76,7 @@
 <br>
 
 <p align="center">
-  <a href="https://github.com/thedotmack/claude-mem-plus">
+  <a href="https://github.com/bjarne56/claude-mem-plus-plus">
     <picture>
       <img src="https://raw.githubusercontent.com/thedotmack/claude-mem-plus/main/docs/public/cm-preview.gif" alt="Claude-Mem Preview" width="800">
     </picture>
@@ -295,8 +295,8 @@ A teljes részletekért lásd a [LICENSE](LICENSE) fájlt.
 ## Támogatás
 
 - **Dokumentáció**: [docs/](docs/)
-- **Hibák**: [GitHub Issues](https://github.com/thedotmack/claude-mem-plus/issues)
-- **Tároló**: [github.com/thedotmack/claude-mem-plus](https://github.com/thedotmack/claude-mem-plus)
+- **Hibák**: [GitHub Issues](https://github.com/bjarne56/claude-mem-plus-plus/issues)
+- **Tároló**: [github.com/bjarne56/claude-mem-plus-plus](https://github.com/bjarne56/claude-mem-plus-plus)
 - **Szerző**: Alex Newman ([@thedotmack](https://github.com/thedotmack))
 
 ---

@@ -3,7 +3,7 @@
 ---
 <h1 align="center">
   <br>
-  <a href="https://github.com/thedotmack/claude-mem-plus">
+  <a href="https://github.com/bjarne56/claude-mem-plus-plus">
     <picture>
       <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/thedotmack/claude-mem-plus/main/docs/public/claude-mem-plus-logo-for-dark-mode.webp">
       <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/thedotmack/claude-mem-plus/main/docs/public/claude-mem-plus-logo-for-light-mode.webp">
@@ -77,7 +77,7 @@
 <br>
 
 <p align="center">
-  <a href="https://github.com/thedotmack/claude-mem-plus">
+  <a href="https://github.com/bjarne56/claude-mem-plus-plus">
     <picture>
       <img src="https://raw.githubusercontent.com/thedotmack/claude-mem-plus/main/docs/public/cm-preview.gif" alt="Claude-Mem Preview" width="800">
     </picture>
@@ -319,8 +319,8 @@ Tingnan ang [LICENSE](LICENSE) file para sa buong detalye.
 ## Suporta
 
 - **Dokumentasyon**: [docs/](docs/)
-- **Issues**: [GitHub Issues](https://github.com/thedotmack/claude-mem-plus/issues)
-- **Repository**: [github.com/thedotmack/claude-mem-plus](https://github.com/thedotmack/claude-mem-plus)
+- **Issues**: [GitHub Issues](https://github.com/bjarne56/claude-mem-plus-plus/issues)
+- **Repository**: [github.com/bjarne56/claude-mem-plus-plus](https://github.com/bjarne56/claude-mem-plus-plus)
 - **Author**: Alex Newman ([@thedotmack](https://github.com/thedotmack))
 
 ---

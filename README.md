@@ -4,7 +4,7 @@
 ═══════════════════════════════════════════════════════════════════════════════
 -->
 
-> **claude-mem-plus** is a fork of [thedotmack/claude-mem-plus](https://github.com/thedotmack/claude-mem-plus) v12.6.0 that adds:
+> **claude-mem-plus** is a fork of [thedotmack/claude-mem-plus](https://github.com/bjarne56/claude-mem-plus-plus) v12.6.0 that adds:
 >
 > - 🌐 **31-language viewer UI** with browser auto-detect + RTL support.
 > - 🌐 **31-language SKILL.md descriptions** — `install-client.sh` detects
@@ -48,7 +48,7 @@
 
 <h1 align="center">
   <br>
-  <a href="https://github.com/thedotmack/claude-mem-plus">
+  <a href="https://github.com/bjarne56/claude-mem-plus-plus">
     <picture>
       <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/thedotmack/claude-mem-plus/main/docs/public/claude-mem-plus-logo-for-dark-mode.webp">
       <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/thedotmack/claude-mem-plus/main/docs/public/claude-mem-plus-logo-for-light-mode.webp">
@@ -125,7 +125,7 @@
 <table align="center">
   <tr>
     <td align="center">
-      <a href="https://github.com/thedotmack/claude-mem-plus">
+      <a href="https://github.com/bjarne56/claude-mem-plus-plus">
         <picture>
           <img
             src="https://raw.githubusercontent.com/thedotmack/claude-mem-plus/main/docs/public/cm-preview.gif"
@@ -453,8 +453,8 @@ See the [LICENSE](LICENSE) file for full details.
 ## Support
 
 - **Documentation**: [docs/](docs/)
-- **Issues**: [GitHub Issues](https://github.com/thedotmack/claude-mem-plus/issues)
-- **Repository**: [github.com/thedotmack/claude-mem-plus](https://github.com/thedotmack/claude-mem-plus)
+- **Issues**: [GitHub Issues](https://github.com/bjarne56/claude-mem-plus-plus/issues)
+- **Repository**: [github.com/bjarne56/claude-mem-plus-plus](https://github.com/bjarne56/claude-mem-plus-plus)
 - **Official X Account**: [@Claude_Memory](https://x.com/Claude_Memory)
 - **Official Discord**: [Join Discord](https://discord.com/invite/J4wttp9vDu)
 - **Author**: Alex Newman ([@thedotmack](https://github.com/thedotmack))

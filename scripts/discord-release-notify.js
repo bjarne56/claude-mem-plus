@@ -52,7 +52,7 @@ function truncate(text, maxLength) {
 
 async function postToDiscord(webhookUrl, version, notes) {
   const cleanedNotes = notes ? cleanNotes(notes) : 'No release notes available.';
-  const repoUrl = 'https://github.com/thedotmack/claude-mem-plus';
+  const repoUrl = 'https://github.com/bjarne56/claude-mem-plus-plus';
 
   const payload = {
     embeds: [

@@ -137,7 +137,7 @@ export function Feed({
                 {t('feed.emptyAction.docs')}
               </a>
               <a
-                href="https://github.com/thedotmack/claude-mem-plus"
+                href="https://github.com/bjarne56/claude-mem-plus-plus"
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{

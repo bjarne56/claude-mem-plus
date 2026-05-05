@@ -1,7 +1,7 @@
 # Investigation Report: Issue #557 - Plugin Fails to Start
 
 **Date:** January 5, 2026
-**Issue:** [#557](https://github.com/thedotmack/claude-mem-plus/issues/557) - Plugin fails to start: settings.json not generated, worker throws module loader error
+**Issue:** [#557](https://github.com/bjarne56/claude-mem-plus-plus/issues/557) - Plugin fails to start: settings.json not generated, worker throws module loader error
 **Author:** Sheikh Abdur Raheem Ali (@sheikheddy)
 **Investigator:** Claude (Opus 4.5)
 

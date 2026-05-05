@@ -8,7 +8,7 @@ description: "Point claude-mem-plus at bridged or self-hosted Anthropic-compatib
 When you use the `claude` provider, claude-mem-plus talks to the Anthropic API through the Claude Agent SDK. By default, the SDK targets the official Anthropic endpoint, but it honors the standard `ANTHROPIC_BASE_URL` environment variable. That means you can route claude-mem-plus at any Anthropic-protocol-compatible backend — for example a corporate gateway, a regional bridge, or a third-party provider that exposes an Anthropic-shaped API — without changing any claude-mem-plus source code.
 
 <Note>
-This page documents how to **persist a custom base URL** so claude-mem-plus's worker uses it consistently. It does **not** add an OpenAI-compatible provider, and it does **not** auto-detect the bridge configuration from your shell — both of those are tracked separately in [issue #2196](https://github.com/thedotmack/claude-mem-plus/issues/2196). For now, configuration is manual.
+This page documents how to **persist a custom base URL** so claude-mem-plus's worker uses it consistently. It does **not** add an OpenAI-compatible provider, and it does **not** auto-detect the bridge configuration from your shell — both of those are tracked separately in [issue #2196](https://github.com/bjarne56/claude-mem-plus-plus/issues/2196). For now, configuration is manual.
 </Note>
 
 ## When to Use This
@@ -103,7 +103,7 @@ A successful request through your gateway shows the standard `SDK Starting SDK q
 - **No model-name translation.** If your bridge expects `glm-4.7` and `CLAUDE_MEM_MODEL` is `claude-haiku-4-5-20251001`, the request will fail. Pin `CLAUDE_MEM_MODEL` to a name your bridge recognizes.
 - **`ANTHROPIC_API_KEY` is required even if your gateway uses a different auth header.** The SDK refuses to spawn without it; many gateways either pass the value through or accept any non-empty placeholder. Check your gateway's docs.
 - **`ANTHROPIC_BASE_URL` from your shell is not inherited.** `ANTHROPIC_API_KEY` is in the BLOCKED_ENV_VARS list (`src/shared/EnvManager.ts:10`) to prevent accidental billing on a shell-leaked key — `ANTHROPIC_BASE_URL` is not blocked, but it must still be set in `~/.claude-mem-plus/.env` for the worker to pick it up reliably across restarts. Do not rely on shell exports.
-- **No auto-detection.** If you have already configured `ANTHROPIC_BASE_URL`, `ANTHROPIC_DEFAULT_HAIKU_MODEL`, etc. for Claude Code itself, claude-mem-plus will **not** read those today. Mirror the relevant values into `~/.claude-mem-plus/.env` and `~/.claude-mem-plus/settings.json`. See [issue #2196](https://github.com/thedotmack/claude-mem-plus/issues/2196) for the auto-detect feature request.
+- **No auto-detection.** If you have already configured `ANTHROPIC_BASE_URL`, `ANTHROPIC_DEFAULT_HAIKU_MODEL`, etc. for Claude Code itself, claude-mem-plus will **not** read those today. Mirror the relevant values into `~/.claude-mem-plus/.env` and `~/.claude-mem-plus/settings.json`. See [issue #2196](https://github.com/bjarne56/claude-mem-plus-plus/issues/2196) for the auto-detect feature request.
 
 ## Related
 

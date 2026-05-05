@@ -15,7 +15,7 @@ Give your Cursor AI persistent memory across sessions. Your agent remembers what
 
 ```bash
 # Clone and build
-git clone https://github.com/thedotmack/claude-mem-plus.git
+git clone https://github.com/bjarne56/claude-mem-plus-plus.git
 cd claude-mem-plus && bun install && bun run build
 
 # Interactive setup (configures provider + installs hooks)

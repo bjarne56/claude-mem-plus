@@ -9,7 +9,7 @@ assignees: ''
 
 ## Before submitting
 
-- [ ] I searched [existing issues](https://github.com/thedotmack/claude-mem-plus/issues) and confirmed this is not a duplicate
+- [ ] I searched [existing issues](https://github.com/bjarne56/claude-mem-plus-plus/issues) and confirmed this is not a duplicate
 
 ---
 
