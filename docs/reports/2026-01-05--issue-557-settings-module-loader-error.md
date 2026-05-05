@@ -272,12 +272,12 @@ if (typeof Bun === 'undefined') {
 
 2. **Manually test context-hook with Bun:**
    ```bash
-   bun ~/.claude/plugins/marketplaces/thedotmack/plugin/scripts/context-hook.js
+   bun ~/.claude/plugins/marketplaces/bjarne56/plugin/scripts/context-hook.js
    ```
 
 3. **Manually test context-hook with Node (should fail):**
    ```bash
-   node ~/.claude/plugins/marketplaces/thedotmack/plugin/scripts/context-hook.js
+   node ~/.claude/plugins/marketplaces/bjarne56/plugin/scripts/context-hook.js
    ```
 
 4. **Check if settings.json exists:**
@@ -287,7 +287,7 @@ if (typeof Bun === 'undefined') {
 
 5. **Verify worker can start:**
    ```bash
-   bun ~/.claude/plugins/marketplaces/thedotmack/plugin/scripts/worker-service.cjs start
+   bun ~/.claude/plugins/marketplaces/bjarne56/plugin/scripts/worker-service.cjs start
    ```
 
 ---
@@ -329,7 +329,7 @@ Until a fix is released, users can manually:
 
 3. **Start worker manually:**
    ```bash
-   bun ~/.claude/plugins/marketplaces/thedotmack/plugin/scripts/worker-service.cjs start
+   bun ~/.claude/plugins/marketplaces/bjarne56/plugin/scripts/worker-service.cjs start
    ```
 
 ---

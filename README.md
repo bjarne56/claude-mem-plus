@@ -1,10 +1,10 @@
 <!--
 ═══════════════════════════════════════════════════════════════════════════════
-  claude-mem-plus  —  fork of thedotmack/claude-mem-plus
+  claude-mem-plus  —  fork of bjarne56/claude-mem-plus
 ═══════════════════════════════════════════════════════════════════════════════
 -->
 
-> **claude-mem-plus** is a fork of [thedotmack/claude-mem-plus](https://github.com/bjarne56/claude-mem-plus-plus) v12.6.0 that adds:
+> **claude-mem-plus** is a fork of [bjarne56/claude-mem-plus](https://github.com/bjarne56/claude-mem-plus-plus) v12.6.0 that adds:
 >
 > - 🌐 **31-language viewer UI** with browser auto-detect + RTL support.
 > - 🌐 **31-language SKILL.md descriptions** — `install-client.sh` detects
@@ -50,9 +50,9 @@
   <br>
   <a href="https://github.com/bjarne56/claude-mem-plus-plus">
     <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/thedotmack/claude-mem-plus/main/docs/public/claude-mem-plus-logo-for-dark-mode.webp">
-      <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/thedotmack/claude-mem-plus/main/docs/public/claude-mem-plus-logo-for-light-mode.webp">
-      <img src="https://raw.githubusercontent.com/thedotmack/claude-mem-plus/main/docs/public/claude-mem-plus-logo-for-light-mode.webp" alt="Claude-Mem" width="400">
+      <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/bjarne56/claude-mem-plus/main/docs/public/claude-mem-plus-logo-for-dark-mode.webp">
+      <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/bjarne56/claude-mem-plus/main/docs/public/claude-mem-plus-logo-for-light-mode.webp">
+      <img src="https://raw.githubusercontent.com/bjarne56/claude-mem-plus/main/docs/public/claude-mem-plus-logo-for-light-mode.webp" alt="Claude-Mem" width="400">
     </picture>
   </a>
   <br>
@@ -105,7 +105,7 @@
   <a href="package.json">
     <img src="https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen.svg" alt="Node">
   </a>
-  <a href="https://github.com/thedotmack/awesome-claude-code">
+  <a href="https://github.com/bjarne56/awesome-claude-code">
     <img src="https://awesome.re/mentioned-badge.svg" alt="Mentioned in Awesome Claude Code">
   </a>
 </p>
@@ -113,9 +113,9 @@
 <p align="center">
   <a href="https://trendshift.io/repositories/15496" target="_blank">
     <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/thedotmack/claude-mem-plus/main/docs/public/trendshift-badge-dark.svg">
-      <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/thedotmack/claude-mem-plus/main/docs/public/trendshift-badge.svg">
-      <img src="https://raw.githubusercontent.com/thedotmack/claude-mem-plus/main/docs/public/trendshift-badge.svg" alt="thedotmack/claude-mem-plus | Trendshift" width="250" height="55"/>
+      <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/bjarne56/claude-mem-plus/main/docs/public/trendshift-badge-dark.svg">
+      <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/bjarne56/claude-mem-plus/main/docs/public/trendshift-badge.svg">
+      <img src="https://raw.githubusercontent.com/bjarne56/claude-mem-plus/main/docs/public/trendshift-badge.svg" alt="bjarne56/claude-mem-plus | Trendshift" width="250" height="55"/>
     </picture>
   </a>
 </p>
@@ -128,7 +128,7 @@
       <a href="https://github.com/bjarne56/claude-mem-plus-plus">
         <picture>
           <img
-            src="https://raw.githubusercontent.com/thedotmack/claude-mem-plus/main/docs/public/cm-preview.gif"
+            src="https://raw.githubusercontent.com/bjarne56/claude-mem-plus/main/docs/public/cm-preview.gif"
             alt="Claude-Mem Preview"
             width="500"
           >
@@ -136,19 +136,19 @@
       </a>
     </td>
     <td align="center">
-      <a href="https://www.star-history.com/#thedotmack/claude-mem-plus&Date">
+      <a href="https://www.star-history.com/#bjarne56/claude-mem-plus&Date">
         <picture>
           <source
             media="(prefers-color-scheme: dark)"
-            srcset="https://api.star-history.com/image?repos=thedotmack/claude-mem-plus&type=date&theme=dark&legend=top-left"
+            srcset="https://api.star-history.com/image?repos=bjarne56/claude-mem-plus&type=date&theme=dark&legend=top-left"
           />
           <source
             media="(prefers-color-scheme: light)"
-            srcset="https://api.star-history.com/image?repos=thedotmack/claude-mem-plus&type=date&legend=top-left"
+            srcset="https://api.star-history.com/image?repos=bjarne56/claude-mem-plus&type=date&legend=top-left"
           />
           <img
             alt="Star History Chart"
-            src="https://api.star-history.com/image?repos=thedotmack/claude-mem-plus&type=date&legend=top-left"
+            src="https://api.star-history.com/image?repos=bjarne56/claude-mem-plus&type=date&legend=top-left"
             width="500"
           />
         </picture>
@@ -195,7 +195,7 @@ npx claude-mem-plus install --ide opencode
 Or install from the plugin marketplace inside Claude Code:
 
 ```bash
-/plugin marketplace add thedotmack/claude-mem-plus
+/plugin marketplace add bjarne56/claude-mem-plus
 
 /plugin install claude-mem-plus
 ```
@@ -374,7 +374,7 @@ Edit your settings file at `~/.claude-mem-plus/settings.json`:
 Modes are defined in `plugin/modes/`. To see all available modes locally:
 
 ```bash
-ls ~/.claude/plugins/marketplaces/thedotmack/plugin/modes/
+ls ~/.claude/plugins/marketplaces/bjarne56/plugin/modes/
 ```
 
 #### Available Modes
@@ -413,7 +413,7 @@ See the **[Troubleshooting Guide](https://docs.claude-mem-plus.ai/troubleshootin
 Create comprehensive bug reports with the automated generator:
 
 ```bash
-cd ~/.claude/plugins/marketplaces/thedotmack
+cd ~/.claude/plugins/marketplaces/bjarne56
 npm run bug-report
 ```
 
@@ -435,7 +435,7 @@ See [Development Guide](https://docs.claude-mem-plus.ai/development) for contrib
 
 This project is licensed under the **GNU Affero General Public License v3.0** (AGPL-3.0).
 
-Copyright (C) 2025 Alex Newman (@thedotmack). All rights reserved.
+Copyright (C) 2025 Alex Newman (@bjarne56). All rights reserved.
 
 See the [LICENSE](LICENSE) file for full details.
 
@@ -457,7 +457,7 @@ See the [LICENSE](LICENSE) file for full details.
 - **Repository**: [github.com/bjarne56/claude-mem-plus-plus](https://github.com/bjarne56/claude-mem-plus-plus)
 - **Official X Account**: [@Claude_Memory](https://x.com/Claude_Memory)
 - **Official Discord**: [Join Discord](https://discord.com/invite/J4wttp9vDu)
-- **Author**: Alex Newman ([@thedotmack](https://github.com/thedotmack))
+- **Author**: Alex Newman ([@bjarne56](https://github.com/bjarne56))
 
 ---
 
@@ -467,4 +467,4 @@ See the [LICENSE](LICENSE) file for full details.
 
 ### What About $CMEM?
 
-$CMEM is a solana token created by a 3rd party without Claude-Mem's prior consent, but officially embraced by the creator of Claude-Mem (Alex Newman, @thedotmack). The token acts as a community catalyst for growth and a vehicle for bringing real-time agent data to the developers and knowledge workers that need it most. $CMEM: 2TsmuYUrsctE57VLckZBYEEzdokUF8j8e1GavekWBAGS
+$CMEM is a solana token created by a 3rd party without Claude-Mem's prior consent, but officially embraced by the creator of Claude-Mem (Alex Newman, @bjarne56). The token acts as a community catalyst for growth and a vehicle for bringing real-time agent data to the developers and knowledge workers that need it most. $CMEM: 2TsmuYUrsctE57VLckZBYEEzdokUF8j8e1GavekWBAGS

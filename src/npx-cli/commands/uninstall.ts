@@ -26,7 +26,7 @@ function removeMarketplaceDirectory(): boolean {
 }
 
 function removeCacheDirectory(): boolean {
-  const cacheDirectory = join(pluginsDirectory(), 'cache', 'thedotmack', 'claude-mem-plus');
+  const cacheDirectory = join(pluginsDirectory(), 'cache', 'bjarne56', 'claude-mem-plus');
   if (existsSync(cacheDirectory)) {
     rmSync(cacheDirectory, { recursive: true, force: true });
     return true;
@@ -36,16 +36,16 @@ function removeCacheDirectory(): boolean {
 
 function removeFromKnownMarketplaces(): void {
   const knownMarketplaces = readJsonSafe<Record<string, any>>(knownMarketplacesPath(), {});
-  if (knownMarketplaces['thedotmack']) {
-    delete knownMarketplaces['thedotmack'];
+  if (knownMarketplaces['bjarne56']) {
+    delete knownMarketplaces['bjarne56'];
     writeJsonFileAtomic(knownMarketplacesPath(), knownMarketplaces);
   }
 }
 
 function removeFromInstalledPlugins(): void {
   const installedPlugins = readJsonSafe<Record<string, any>>(installedPluginsPath(), {});
-  if (installedPlugins.plugins?.['claude-mem-plus@thedotmack']) {
-    delete installedPlugins.plugins['claude-mem-plus@thedotmack'];
+  if (installedPlugins.plugins?.['claude-mem-plus@bjarne56']) {
+    delete installedPlugins.plugins['claude-mem-plus@bjarne56'];
     writeJsonFileAtomic(installedPluginsPath(), installedPlugins);
   }
 }
@@ -83,8 +83,8 @@ function stripLegacyClaudeMemAlias(): void {
 
 function removeFromClaudeSettings(): void {
   const settings = readJsonSafe<Record<string, any>>(claudeSettingsPath(), {});
-  if (settings.enabledPlugins?.['claude-mem-plus@thedotmack'] !== undefined) {
-    delete settings.enabledPlugins['claude-mem-plus@thedotmack'];
+  if (settings.enabledPlugins?.['claude-mem-plus@bjarne56'] !== undefined) {
+    delete settings.enabledPlugins['claude-mem-plus@bjarne56'];
     writeJsonFileAtomic(claudeSettingsPath(), settings);
   }
 }
@@ -143,7 +143,7 @@ function removeStrayClaudeMemPaths(): number {
     }
   }
 
-  const pluginDataDir = join(home, '.claude', 'plugins', 'data', 'claude-mem-plus-thedotmack');
+  const pluginDataDir = join(home, '.claude', 'plugins', 'data', 'claude-mem-plus-bjarne56');
   if (existsSync(pluginDataDir)) {
     try {
       rmSync(pluginDataDir, { recursive: true, force: true });

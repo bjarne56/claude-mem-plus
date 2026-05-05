@@ -141,7 +141,7 @@ Build a beautiful, animated CLI installer for claude-mem-plus using `@clack/prom
 2. **`src/steps/welcome.ts`** — Welcome step:
    - `p.intro()` with styled title using picocolors: `" claude-mem-plus installer "`
    - Display version info via `p.log.info()`
-   - Check if already installed (detect `~/.claude-mem-plus/settings.json` and `~/.claude/plugins/marketplaces/thedotmack/`)
+   - Check if already installed (detect `~/.claude-mem-plus/settings.json` and `~/.claude/plugins/marketplaces/bjarne56/`)
    - If upgrade detected, `p.confirm()`: "claude-mem-plus is already installed. Upgrade?"
    - `p.select()` for install mode: Fresh Install vs Upgrade vs Configure Only
 
@@ -271,7 +271,7 @@ Build a beautiful, animated CLI installer for claude-mem-plus using `@clack/prom
      - **"Cloning claude-mem-plus repository"**: `git clone --depth 1 https://github.com/bjarne56/claude-mem-plus-plus.git` to temp dir
      - **"Installing dependencies"**: `npm install` in cloned repo
      - **"Building plugin"**: `npm run build` in cloned repo
-     - **"Registering plugin"**: Copy plugin files to `~/.claude/plugins/marketplaces/thedotmack/`
+     - **"Registering plugin"**: Copy plugin files to `~/.claude/plugins/marketplaces/bjarne56/`
        - Create marketplace.json, plugin.json structure
        - Register in `~/.claude/plugins/known_marketplaces.json`
        - Add to `~/.claude/plugins/installed_plugins.json`
@@ -294,7 +294,7 @@ Build a beautiful, animated CLI installer for claude-mem-plus using `@clack/prom
      - On failure: `spinner.error("Worker failed to start")`, show log path
 
 ### Verification
-- [ ] Plugin files exist at `~/.claude/plugins/marketplaces/thedotmack/`
+- [ ] Plugin files exist at `~/.claude/plugins/marketplaces/bjarne56/`
 - [ ] known_marketplaces.json updated
 - [ ] installed_plugins.json updated
 - [ ] settings.json has enabledPlugins entry

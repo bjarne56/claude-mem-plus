@@ -164,7 +164,7 @@ bash install-client.sh uninstall --keep-data
 ```bash
 claude-mem-plus stop
 npm uninstall -g claude-mem-plus
-rm -rf ~/.claude/plugins/marketplaces/thedotmack
+rm -rf ~/.claude/plugins/marketplaces/bjarne56
 rm -rf ~/.claude-mem-plus                    # 谨慎:丢所有 observation + 同步状态
 ```
 

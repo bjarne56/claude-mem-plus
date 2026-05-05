@@ -5,9 +5,9 @@
   <br>
   <a href="https://github.com/bjarne56/claude-mem-plus-plus">
     <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/thedotmack/claude-mem-plus/main/docs/public/claude-mem-plus-logo-for-dark-mode.webp">
-      <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/thedotmack/claude-mem-plus/main/docs/public/claude-mem-plus-logo-for-light-mode.webp">
-      <img src="https://raw.githubusercontent.com/thedotmack/claude-mem-plus/main/docs/public/claude-mem-plus-logo-for-light-mode.webp" alt="Claude-Mem" width="400">
+      <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/bjarne56/claude-mem-plus/main/docs/public/claude-mem-plus-logo-for-dark-mode.webp">
+      <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/bjarne56/claude-mem-plus/main/docs/public/claude-mem-plus-logo-for-light-mode.webp">
+      <img src="https://raw.githubusercontent.com/bjarne56/claude-mem-plus/main/docs/public/claude-mem-plus-logo-for-light-mode.webp" alt="Claude-Mem" width="400">
     </picture>
   </a>
   <br>
@@ -58,7 +58,7 @@
   <a href="package.json">
     <img src="https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen.svg" alt="Node">
   </a>
-  <a href="https://github.com/thedotmack/awesome-claude-code">
+  <a href="https://github.com/bjarne56/awesome-claude-code">
     <img src="https://awesome.re/mentioned-badge.svg" alt="Mentioned in Awesome Claude Code">
   </a>
 </p>
@@ -66,9 +66,9 @@
 <p align="center">
   <a href="https://trendshift.io/repositories/15496" target="_blank">
     <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/thedotmack/claude-mem-plus/main/docs/public/trendshift-badge-dark.svg">
-      <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/thedotmack/claude-mem-plus/main/docs/public/trendshift-badge.svg">
-      <img src="https://raw.githubusercontent.com/thedotmack/claude-mem-plus/main/docs/public/trendshift-badge.svg" alt="thedotmack/claude-mem-plus | Trendshift" width="250" height="55"/>
+      <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/bjarne56/claude-mem-plus/main/docs/public/trendshift-badge-dark.svg">
+      <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/bjarne56/claude-mem-plus/main/docs/public/trendshift-badge.svg">
+      <img src="https://raw.githubusercontent.com/bjarne56/claude-mem-plus/main/docs/public/trendshift-badge.svg" alt="bjarne56/claude-mem-plus | Trendshift" width="250" height="55"/>
     </picture>
   </a>
 </p>
@@ -78,7 +78,7 @@
 <p align="center">
   <a href="https://github.com/bjarne56/claude-mem-plus-plus">
     <picture>
-      <img src="https://raw.githubusercontent.com/thedotmack/claude-mem-plus/main/docs/public/cm-preview.gif" alt="Claude-Mem Preview" width="800">
+      <img src="https://raw.githubusercontent.com/bjarne56/claude-mem-plus/main/docs/public/cm-preview.gif" alt="Claude-Mem Preview" width="800">
     </picture>
   </a>
 </p>
@@ -104,7 +104,7 @@
 터미널에서 새 Claude Code 세션을 시작하고 다음 명령을 입력하세요:
 
 ```
-> /plugin marketplace add thedotmack/claude-mem-plus
+> /plugin marketplace add bjarne56/claude-mem-plus
 
 > /plugin install claude-mem-plus
 ```
@@ -255,7 +255,7 @@ Endless Mode 및 사용 방법에 대한 자세한 내용은 **[베타 기능 �
 자동화된 생성기로 포괄적인 버그 보고서를 작성하세요:
 
 ```bash
-cd ~/.claude/plugins/marketplaces/thedotmack
+cd ~/.claude/plugins/marketplaces/bjarne56
 npm run bug-report
 ```
 
@@ -277,7 +277,7 @@ npm run bug-report
 
 이 프로젝트는 **GNU Affero General Public License v3.0** (AGPL-3.0)에 따라 라이선스가 부여됩니다.
 
-Copyright (C) 2025 Alex Newman (@thedotmack). All rights reserved.
+Copyright (C) 2025 Alex Newman (@bjarne56). All rights reserved.
 
 전체 세부 정보는 [LICENSE](LICENSE) 파일을 참조하세요.
 
@@ -297,7 +297,7 @@ Copyright (C) 2025 Alex Newman (@thedotmack). All rights reserved.
 - **문서**: [docs/](docs/)
 - **이슈**: [GitHub Issues](https://github.com/bjarne56/claude-mem-plus-plus/issues)
 - **저장소**: [github.com/bjarne56/claude-mem-plus-plus](https://github.com/bjarne56/claude-mem-plus-plus)
-- **작성자**: Alex Newman ([@thedotmack](https://github.com/thedotmack))
+- **작성자**: Alex Newman ([@bjarne56](https://github.com/bjarne56))
 
 ---
 

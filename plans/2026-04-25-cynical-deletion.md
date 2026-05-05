@@ -2,7 +2,7 @@
 
 **Date:** 2026-04-25
 **Branch:** `claude-mem-plus-skill-invocation-and-github-issue-2139`
-**Source:** Triage of all 29 open issues for `thedotmack/claude-mem-plus` applied with delete-first lens.
+**Source:** Triage of all 29 open issues for `bjarne56/claude-mem-plus` applied with delete-first lens.
 
 ## Headline
 
@@ -293,7 +293,7 @@ Discovery showed multi-account is ~80% there: `DATA_DIR` is fully overridable, p
 3. **Item 4 — uninstall path coverage:** `src/npx-cli/commands/uninstall.ts` — add removal of:
    - `~/.npm/_npx/*/node_modules/claude-mem-plus`
    - `~/.cache/claude-cli-nodejs/*/mcp-logs-plugin-claude-mem-plus-*`
-   - `~/.claude/plugins/data/claude-mem-plus-thedotmack/`
+   - `~/.claude/plugins/data/claude-mem-plus-bjarne56/`
    - Cascade shutdown to chroma-mcp (call its shutdown endpoint or kill PID).
 4. **Item 6 — real port query:** `install.ts:545` — after `smart-install.js` completes, hit `http://127.0.0.1:<settingsPort>/api/health` and report the actually-bound port. If health fails, just print "worker not yet ready" and exit cleanly.
 5. **Item 5 — documentation:** Add to install summary output: "Close all Claude Code sessions before uninstalling, or `~/.claude-mem-plus` will be recreated by active hooks."

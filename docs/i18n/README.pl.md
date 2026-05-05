@@ -4,9 +4,9 @@
   <br>
   <a href="https://github.com/bjarne56/claude-mem-plus-plus">
     <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/thedotmack/claude-mem-plus/main/docs/public/claude-mem-plus-logo-for-dark-mode.webp">
-      <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/thedotmack/claude-mem-plus/main/docs/public/claude-mem-plus-logo-for-light-mode.webp">
-      <img src="https://raw.githubusercontent.com/thedotmack/claude-mem-plus/main/docs/public/claude-mem-plus-logo-for-light-mode.webp" alt="Claude-Mem" width="400">
+      <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/bjarne56/claude-mem-plus/main/docs/public/claude-mem-plus-logo-for-dark-mode.webp">
+      <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/bjarne56/claude-mem-plus/main/docs/public/claude-mem-plus-logo-for-light-mode.webp">
+      <img src="https://raw.githubusercontent.com/bjarne56/claude-mem-plus/main/docs/public/claude-mem-plus-logo-for-light-mode.webp" alt="Claude-Mem" width="400">
     </picture>
   </a>
   <br>
@@ -57,7 +57,7 @@
   <a href="package.json">
     <img src="https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen.svg" alt="Node">
   </a>
-  <a href="https://github.com/thedotmack/awesome-claude-code">
+  <a href="https://github.com/bjarne56/awesome-claude-code">
     <img src="https://awesome.re/mentioned-badge.svg" alt="Mentioned in Awesome Claude Code">
   </a>
 </p>
@@ -65,9 +65,9 @@
 <p align="center">
   <a href="https://trendshift.io/repositories/15496" target="_blank">
     <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/thedotmack/claude-mem-plus/main/docs/public/trendshift-badge-dark.svg">
-      <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/thedotmack/claude-mem-plus/main/docs/public/trendshift-badge.svg">
-      <img src="https://raw.githubusercontent.com/thedotmack/claude-mem-plus/main/docs/public/trendshift-badge.svg" alt="thedotmack/claude-mem-plus | Trendshift" width="250" height="55"/>
+      <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/bjarne56/claude-mem-plus/main/docs/public/trendshift-badge-dark.svg">
+      <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/bjarne56/claude-mem-plus/main/docs/public/trendshift-badge.svg">
+      <img src="https://raw.githubusercontent.com/bjarne56/claude-mem-plus/main/docs/public/trendshift-badge.svg" alt="bjarne56/claude-mem-plus | Trendshift" width="250" height="55"/>
     </picture>
   </a>
 </p>
@@ -77,7 +77,7 @@
 <p align="center">
   <a href="https://github.com/bjarne56/claude-mem-plus-plus">
     <picture>
-      <img src="https://raw.githubusercontent.com/thedotmack/claude-mem-plus/main/docs/public/cm-preview.gif" alt="Claude-Mem Preview" width="800">
+      <img src="https://raw.githubusercontent.com/bjarne56/claude-mem-plus/main/docs/public/cm-preview.gif" alt="Claude-Mem Preview" width="800">
     </picture>
   </a>
 </p>
@@ -103,7 +103,7 @@
 Uruchom nową sesję Claude Code w terminalu i wprowadź następujące polecenia:
 
 ```
-> /plugin marketplace add thedotmack/claude-mem-plus
+> /plugin marketplace add bjarne56/claude-mem-plus
 
 > /plugin install claude-mem-plus
 ```
@@ -254,7 +254,7 @@ Zobacz **[Przewodnik Rozwiązywania Problemów](https://docs.claude-mem-plus.ai/
 Twórz kompleksowe raporty błędów za pomocą automatycznego generatora:
 
 ```bash
-cd ~/.claude/plugins/marketplaces/thedotmack
+cd ~/.claude/plugins/marketplaces/bjarne56
 npm run bug-report
 ```
 
@@ -276,7 +276,7 @@ Zobacz [Przewodnik Rozwoju](https://docs.claude-mem-plus.ai/development) dla prz
 
 Ten projekt jest licencjonowany na podstawie **GNU Affero General Public License v3.0** (AGPL-3.0).
 
-Copyright (C) 2025 Alex Newman (@thedotmack). Wszelkie prawa zastrzeżone.
+Copyright (C) 2025 Alex Newman (@bjarne56). Wszelkie prawa zastrzeżone.
 
 Zobacz plik [LICENSE](LICENSE) dla pełnych szczegółów.
 
@@ -296,7 +296,7 @@ Zobacz plik [LICENSE](LICENSE) dla pełnych szczegółów.
 - **Dokumentacja**: [docs/](docs/)
 - **Problemy**: [GitHub Issues](https://github.com/bjarne56/claude-mem-plus-plus/issues)
 - **Repozytorium**: [github.com/bjarne56/claude-mem-plus-plus](https://github.com/bjarne56/claude-mem-plus-plus)
-- **Autor**: Alex Newman ([@thedotmack](https://github.com/thedotmack))
+- **Autor**: Alex Newman ([@bjarne56](https://github.com/bjarne56))
 
 ---
 

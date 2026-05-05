@@ -133,12 +133,12 @@ npx claude-mem-plus transcript watch         # Start transcript watcher
    - `npx claude-mem-plus search <query>` → hits `GET http://localhost:37777/api/search?q=<query>`
    - `npx claude-mem-plus transcript watch` → starts transcript watcher
 
-   **Runtime commands must check for installation first**: If plugin directory doesn't exist at `~/.claude/plugins/marketplaces/thedotmack/`, print "claude-mem-plus is not installed. Run: npx claude-mem-plus install" and exit.
+   **Runtime commands must check for installation first**: If plugin directory doesn't exist at `~/.claude/plugins/marketplaces/bjarne56/`, print "claude-mem-plus is not installed. Run: npx claude-mem-plus install" and exit.
 
 3. **The install flow** (fully replaces git clone + build):
    - Detect the npm package's own location (`import.meta.url` or `__dirname`)
-   - Copy `plugin/` from the npm package to `~/.claude/plugins/marketplaces/thedotmack/`
-   - Copy `plugin/` to `~/.claude/plugins/cache/thedotmack/claude-mem-plus/<version>/`
+   - Copy `plugin/` from the npm package to `~/.claude/plugins/marketplaces/bjarne56/`
+   - Copy `plugin/` to `~/.claude/plugins/cache/bjarne56/claude-mem-plus/<version>/`
    - Register marketplace in `~/.claude/plugins/known_marketplaces.json`
    - Register plugin in `~/.claude/plugins/installed_plugins.json`
    - Enable in `~/.claude/settings.json`

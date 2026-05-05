@@ -299,5 +299,5 @@ upstream 是 **AGPL-3.0**,fork 沿用。Publish 到 npm:
 - worker DatabaseManager 没跑 MigrationRunner
 
 ### Based on
-- upstream thedotmack/claude-mem-plus v12.4.9
+- upstream bjarne56/claude-mem-plus v12.4.9
 ```

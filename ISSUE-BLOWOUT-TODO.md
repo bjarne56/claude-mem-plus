@@ -35,8 +35,8 @@ Released: **v12.3.2** on 2026-04-19
    - CodeRabbit and Greptile post inline comments — read, fix, commit, push, reply
    - `claude-review` is a CI check — just needs to pass
    - CodeRabbit can take 5-10 min to process after each push
-3. When all reviews pass: `gh pr merge <PR#> --repo thedotmack/claude-mem-plus --squash --delete-branch --admin`
-4. Close resolved issues: `for issue in <numbers>; do gh issue close $issue --repo thedotmack/claude-mem-plus --comment "Fixed in PR #XXXX"; done`
+3. When all reviews pass: `gh pr merge <PR#> --repo bjarne56/claude-mem-plus --squash --delete-branch --admin`
+4. Close resolved issues: `for issue in <numbers>; do gh issue close $issue --repo bjarne56/claude-mem-plus --comment "Fixed in PR #XXXX"; done`
 5. Version bump:
    ```bash
    cd ~/Scripts/claude-mem-plus

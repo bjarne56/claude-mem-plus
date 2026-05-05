@@ -4,7 +4,7 @@
   "description": "claude-mem-plus fork with cmem-sync (cross-machine sync via self-hosted cmem-server), 31-language UI, soft-delete + trash, public registration page. Pairs with bjarne56/cmem-server.",
   "author": {
     "name": "Alex Newman (upstream) + bjarne56 (fork)",
-    "url": "https://github.com/thedotmack"
+    "url": "https://github.com/bjarne56"
   },
   "homepage": "https://github.com/bjarne56/claude-mem-plus#readme",
   "repository": "https://github.com/bjarne56/claude-mem-plus",

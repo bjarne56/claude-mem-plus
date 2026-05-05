@@ -35,7 +35,7 @@ When running Claude Code from a Windows drive root directory (e.g., `C:\`), the 
 1. Error message on Claude Code startup when cwd is `C:\`:
    ```
    error: Failed to fetch context: 400
-         at C:\Users\achau\.claude\plugins\cache\thedotmack\claude-mem-plus\9.0.0\scripts\user-message-hook.js:19:1339
+         at C:\Users\achau\.claude\plugins\cache\bjarne56\claude-mem-plus\9.0.0\scripts\user-message-hook.js:19:1339
    ```
 
 2. The error appears during the SessionStart hook phase

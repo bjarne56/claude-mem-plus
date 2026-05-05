@@ -587,7 +587,7 @@ describe('path validation in updateFolderClaudeMdFiles', () => {
     global.fetch = fetchMock;
 
     await updateFolderClaudeMdFiles(
-      ['PR #610 on thedotmack/CLAUDE.md'],
+      ['PR #610 on bjarne56/CLAUDE.md'],
       'test-project',
       37777,
       tempDir

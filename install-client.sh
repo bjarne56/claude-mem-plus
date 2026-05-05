@@ -27,7 +27,7 @@
 #
 # 标准路径:
 #   ~/.claude-mem-plus/                             数据目录(可改 CLAUDE_MEM_DATA_DIR)
-#   ~/.claude/plugins/marketplaces/thedotmack/      claude-code 插件
+#   ~/.claude/plugins/marketplaces/bjarne56/      claude-code 插件
 #   $(npm config get prefix)/bin/claude-mem-plus    全局 CLI
 
 set -uo pipefail
@@ -106,7 +106,7 @@ uninstall 选项:
 什么会被改(install):
   - npm 全局装 claude-mem-plus(node 必须先装好)
   - 创建 ~/.claude-mem-plus/(数据目录,~10 MB 起步)
-  - ~/.claude/plugins/marketplaces/thedotmack/(claude-code 插件,~6 MB)
+  - ~/.claude/plugins/marketplaces/bjarne56/(claude-code 插件,~6 MB)
   - ~/.claude-mem-plus/settings.json(检测系统语言写 CLAUDE_MEM_MODE)
   - 按系统语言本地化每个 SKILL.md 的 frontmatter description
     (31 种语言: zh / zh-tw / ja / ko / fr / de / es / it / pt / pt-br /
@@ -472,15 +472,15 @@ _kill_fork_chroma_mcp() {
 }
 
 # 清 fork 自己在 claude-code 配置里的注册(plugin / mcpServer)
-# 子脚本 claude-mem-un.sh 只清上游 'claude-mem@thedotmack',这里清 fork 'claude-mem-plus@thedotmack'
+# 子脚本 claude-mem-un.sh 只清上游 'claude-mem@bjarne56',这里清 fork 'claude-mem-plus@bjarne56'
 _clean_fork_plugin_registrations() {
     if ! command -v jq >/dev/null 2>&1; then
         warn "  jq 未安装,跳过 fork plugin 注册清理"
         return 0
     fi
     local files_keys=(
-        "$HOME/.claude/settings.json|enabledPlugins|claude-mem-plus@thedotmack"
-        "$HOME/.claude/plugins/installed_plugins.json|plugins|claude-mem-plus@thedotmack"
+        "$HOME/.claude/settings.json|enabledPlugins|claude-mem-plus@bjarne56"
+        "$HOME/.claude/plugins/installed_plugins.json|plugins|claude-mem-plus@bjarne56"
         "$HOME/.claude.json|mcpServers|claude-mem-plus"
     )
     local entry
@@ -546,7 +546,7 @@ _clean_claude_namespace_keys() {
 
 # 清空 plugin marketplace cache 父目录(子目录被删后空了就删)
 _cleanup_marketplace_cache_parent() {
-    local parent="$HOME/.claude/plugins/cache/thedotmack"
+    local parent="$HOME/.claude/plugins/cache/bjarne56"
     if [[ -d "$parent" ]] && [[ -z "$(ls -A "$parent" 2>/dev/null)" ]]; then
         command rmdir "$parent" 2>/dev/null && ok "  已删空 cache 父目录:$parent"
     fi
@@ -809,9 +809,9 @@ detect_and_remove_upstream() {
     _kill_stale_worker_processes
 
     # 6) 清旧版本 plugin cache(claude-code 缓存的多版本目录,留最新一个就够)
-    #    路径是 claude-code 自己生成的(基于 marketplace 名 thedotmack/claude-mem),
+    #    路径是 claude-code 自己生成的(基于 marketplace 名 bjarne56/claude-mem),
     #    跟 fork 包名无关,保留 claude-mem 字面量
-    local cache_root="$HOME/.claude/plugins/cache/thedotmack/claude-mem"
+    local cache_root="$HOME/.claude/plugins/cache/bjarne56/claude-mem"
     if [[ -d "$cache_root" ]]; then
         local versions
         versions=$(/bin/ls -1 "$cache_root" 2>/dev/null | command grep -E "^[0-9]+\.[0-9]+\.[0-9]+$" | sort -V)
@@ -947,7 +947,7 @@ register_hooks() {
     # 原因:fork install.ts 的 copyPluginToMarketplace 用 rmSync+cpSync 应该总是覆盖,
     # 但实测在某些情况下 marketplace plugin.json 可能残留旧 version,直接预删能保证
     # 下面 'claude-mem-plus install --ide' 一定从干净状态开始 copy
-    local mp_plugin="$HOME/.claude/plugins/marketplaces/thedotmack/plugin"
+    local mp_plugin="$HOME/.claude/plugins/marketplaces/bjarne56/plugin"
     if [[ -d "$mp_plugin" ]]; then
         info "预清理 marketplace plugin/(防旧版本残留)"
         command rm -rf "$mp_plugin"
@@ -1017,12 +1017,12 @@ apply_skill_locale() {
     local -a skills_dirs=()
     local cand
     # marketplace(plugin/ 下含 skills/_descriptions.i18n.json)
-    cand="$HOME/.claude/plugins/marketplaces/thedotmack/plugin/skills"
+    cand="$HOME/.claude/plugins/marketplaces/bjarne56/plugin/skills"
     if [[ -d "$cand" && -f "$cand/_descriptions.i18n.json" ]]; then
         skills_dirs+=("$cand")
     fi
     # cache 所有版本(留作多版本兼容;skills/ 直接在版本 root 下,没 plugin/ 中间层)
-    for cand in "$HOME/.claude/plugins/cache/thedotmack/claude-mem"/*/skills; do
+    for cand in "$HOME/.claude/plugins/cache/bjarne56/claude-mem"/*/skills; do
         if [[ -d "$cand" && -f "$cand/_descriptions.i18n.json" ]]; then
             # 防御:跳过软链(npm link 场景下 cache 不会是软链,但保险起见)
             [[ -L "$cand" ]] && continue
@@ -1421,7 +1421,7 @@ cmd_uninstall() {
     else
         warn "  未找到 $un_script;只清了 fork,上游残留请手动处理"
         # fallback 最小清理:只清 fork 自己的 marketplace
-        local plugin_dir="$HOME/.claude/plugins/marketplaces/thedotmack"
+        local plugin_dir="$HOME/.claude/plugins/marketplaces/bjarne56"
         if [[ -d "$plugin_dir" ]]; then
             local sz=$(command du -sh "$plugin_dir" 2>/dev/null | command awk '{print $1}')
             if [[ "$PURGE" -eq 1 ]] || _ask_yn "  fallback:删 $plugin_dir ($sz)?"; then
@@ -1477,7 +1477,7 @@ cmd_uninstall() {
     fi
 
     # 5c) marketplace plugin 目录(注意:_handle_legacy_residue 不动这,需要在这里处理)
-    local plugin_dir="$HOME/.claude/plugins/marketplaces/thedotmack"
+    local plugin_dir="$HOME/.claude/plugins/marketplaces/bjarne56"
     if [[ -d "$plugin_dir" ]] && [[ "$KEEP_DATA" -ne 1 ]]; then
         local psz
         psz=$(/usr/bin/du -sh "$plugin_dir" 2>/dev/null | command awk '{print $1}')
@@ -1487,8 +1487,8 @@ cmd_uninstall() {
     fi
 
     # 5c-2) fork plugin marketplace cache(claude-code 装 plugin 时拉下来的,可能很大)
-    # 子脚本 claude-mem-un.sh 只清 cache/thedotmack/claude-mem(上游),这里清 plus
-    local fork_cache_dir="$HOME/.claude/plugins/cache/thedotmack/claude-mem-plus"
+    # 子脚本 claude-mem-un.sh 只清 cache/bjarne56/claude-mem(上游),这里清 plus
+    local fork_cache_dir="$HOME/.claude/plugins/cache/bjarne56/claude-mem-plus"
     if [[ -d "$fork_cache_dir" ]] && [[ "$KEEP_DATA" -ne 1 ]]; then
         local fcsz
         fcsz=$(/usr/bin/du -sh "$fork_cache_dir" 2>/dev/null | command awk '{print $1}')
@@ -1498,7 +1498,7 @@ cmd_uninstall() {
     fi
 
     # 5d) 清 fork 自己在 claude-code 配置 JSON 里的注册
-    # 子脚本 claude-mem-un.sh 只清上游 'claude-mem@thedotmack',这里清 fork 'claude-mem-plus@thedotmack'
+    # 子脚本 claude-mem-un.sh 只清上游 'claude-mem@bjarne56',这里清 fork 'claude-mem-plus@bjarne56'
     _clean_fork_plugin_registrations
 
     # 5d-2) 清 ~/.claude.json 里所有 claude-mem-plus / claude-mem 命名空间残留

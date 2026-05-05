@@ -61,7 +61,7 @@ Claude-mem supports running multiple isolated profiles on the same machine (e.g.
 
 - **Source**: `<project-root>/src/`
 - **Built Plugin**: `<project-root>/plugin/`
-- **Installed Plugin**: `~/.claude/plugins/marketplaces/thedotmack/`
+- **Installed Plugin**: `~/.claude/plugins/marketplaces/bjarne56/`
 - **Database**: `~/.claude-mem-plus/claude-mem.db`
 - **Chroma**: `~/.claude-mem-plus/chroma/`
 

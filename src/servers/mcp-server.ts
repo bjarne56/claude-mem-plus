@@ -598,13 +598,13 @@ function checkMarketplaceMarker(): void {
   try {
     const home = homedir();
     const marketplaceCandidates = [
-      resolve(home, '.claude', 'plugins', 'marketplaces', 'thedotmack'),
-      resolve(home, '.config', 'claude', 'plugins', 'marketplaces', 'thedotmack'),
+      resolve(home, '.claude', 'plugins', 'marketplaces', 'bjarne56'),
+      resolve(home, '.config', 'claude', 'plugins', 'marketplaces', 'bjarne56'),
     ];
     const present = marketplaceCandidates.some(p => p && existsSync(p));
     const cacheCandidates = [
-      resolve(home, '.claude', 'plugins', 'cache', 'thedotmack', 'claude-mem-plus'),
-      resolve(home, '.config', 'claude', 'plugins', 'cache', 'thedotmack', 'claude-mem-plus'),
+      resolve(home, '.claude', 'plugins', 'cache', 'bjarne56', 'claude-mem-plus'),
+      resolve(home, '.config', 'claude', 'plugins', 'cache', 'bjarne56', 'claude-mem-plus'),
     ];
     const cachePresent = cacheCandidates.some(p => p && existsSync(p));
     const cacheRoot = cacheCandidates[0];
@@ -612,7 +612,7 @@ function checkMarketplaceMarker(): void {
     if (!present && cachePresent) {
       logger.error(
         'SYSTEM',
-        'claude-mem-plus MCP started but no marketplace directory was found at ~/.claude/plugins/marketplaces/thedotmack or the XDG equivalent. The IDE plugin loader needs that directory to fire claude-mem-plus hooks (SessionStart, PostToolUse, Stop, etc.). Without it, MCP search will work but no new memories will be captured. To self-heal, run: node ~/.claude/plugins/cache/thedotmack/claude-mem-plus/*/scripts/smart-install.js (or reinstall the plugin from the marketplace).',
+        'claude-mem-plus MCP started but no marketplace directory was found at ~/.claude/plugins/marketplaces/bjarne56 or the XDG equivalent. The IDE plugin loader needs that directory to fire claude-mem-plus hooks (SessionStart, PostToolUse, Stop, etc.). Without it, MCP search will work but no new memories will be captured. To self-heal, run: node ~/.claude/plugins/cache/bjarne56/claude-mem-plus/*/scripts/smart-install.js (or reinstall the plugin from the marketplace).',
         { marketplaceCandidates, cacheRoot }
       );
     }

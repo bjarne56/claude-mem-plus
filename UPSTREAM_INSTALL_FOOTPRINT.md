@@ -34,11 +34,11 @@
 ### B. Claude Code 插件系统(~/.claude/)
 | 路径 | 类型 | 写入位置(install.ts 行号) |
 |---|---|---|
-| `~/.claude/plugins/marketplaces/thedotmack/` | 目录 | `copyPluginToMarketplace` (`src/npx-cli/commands/install.ts:495`) |
-| `~/.claude/plugins/cache/thedotmack/claude-mem-plus/<version>/` | 目录 | `copyPluginToCache` (`install.ts:527`) |
-| `~/.claude/plugins/installed_plugins.json` | JSON 修改 | `registerPlugin` 写入 `plugins['claude-mem-plus@thedotmack']` (`install.ts:106`) |
-| `~/.claude/plugins/known_marketplaces.json` | JSON 修改 | `registerMarketplace` 写入 `thedotmack` key (`install.ts:89`) |
-| `~/.claude/settings.json` | JSON 修改 | `enablePluginInClaudeSettings` 写入 `enabledPlugins['claude-mem-plus@thedotmack'] = true` (`install.ts:128`) |
+| `~/.claude/plugins/marketplaces/bjarne56/` | 目录 | `copyPluginToMarketplace` (`src/npx-cli/commands/install.ts:495`) |
+| `~/.claude/plugins/cache/bjarne56/claude-mem-plus/<version>/` | 目录 | `copyPluginToCache` (`install.ts:527`) |
+| `~/.claude/plugins/installed_plugins.json` | JSON 修改 | `registerPlugin` 写入 `plugins['claude-mem-plus@bjarne56']` (`install.ts:106`) |
+| `~/.claude/plugins/known_marketplaces.json` | JSON 修改 | `registerMarketplace` 写入 `bjarne56` key (`install.ts:89`) |
+| `~/.claude/settings.json` | JSON 修改 | `enablePluginInClaudeSettings` 写入 `enabledPlugins['claude-mem-plus@bjarne56'] = true` (`install.ts:128`) |
 
 ### C. claude-mem-plus 数据目录(~/.claude-mem-plus/)
 | 路径 | 类型 | 说明 |
@@ -105,7 +105,7 @@
 |---|---|
 | `~/.npm/_npx/<hash>/node_modules/claude-mem-plus/` | npx 临时缓存(若曾经 `npx claude-mem-plus` 跑过) |
 | `~/.cache/claude-cli-nodejs/*/mcp-logs-plugin-claude-mem-plus-*` | claude-code 内的 MCP 日志 |
-| `~/.claude/plugins/data/claude-mem-plus-thedotmack/` | claude-code 插件 data 目录 |
+| `~/.claude/plugins/data/claude-mem-plus-bjarne56/` | claude-code 插件 data 目录 |
 | `~/.bashrc` / `~/.zshrc` / Windows PowerShell profile | `alias claude-mem-plus=` 行(legacy 入口) |
 
 ## 四、卸载脚本 `claude-mem-un.sh` 的覆盖矩阵
@@ -137,6 +137,6 @@
 3. **fork 兼容性** — 上游用 `~/.claude-mem-plus`(legacy),fork 用 `~/.claude-mem-plus`。
    主机上若 fork 已装,**绝不能** `npm i -g claude-mem-plus` 到主机:
    - `/usr/local/bin/claude-mem-plus` 不冲突(名字不同),但 fork 也注册过 `claude-mem-plus` 命令名时会覆盖
-   - 两者共用 `~/.claude/plugins/marketplaces/thedotmack/`(因为 fork 没改 marketplace key)→ 互相覆盖
-   - 两者共用 `~/.claude/settings.json` 的 `enabledPlugins['claude-mem-plus@thedotmack']`
+   - 两者共用 `~/.claude/plugins/marketplaces/bjarne56/`(因为 fork 没改 marketplace key)→ 互相覆盖
+   - 两者共用 `~/.claude/settings.json` 的 `enabledPlugins['claude-mem-plus@bjarne56']`
 4. **JSON 修改用 atomic write**(`writeJsonFileAtomic`),所以可以放心 jq 编辑后 mv。
