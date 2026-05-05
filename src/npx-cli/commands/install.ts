@@ -547,6 +547,66 @@ function runNpmInstallInMarketplace(): void {
   });
 }
 
+// 升级 user 现有 settings.json 里的过期 claude-mem 路径/值到 claude-mem-plus
+// 场景:用户之前装过上游 claude-mem 或 fork plus 改名前的旧版,settings.json 里
+// 留着旧字面值。mergeSettings 不覆盖已存在 key,所以这些过期字段不会自动更新 →
+// install 流程开头主动迁移一次,把过期值升级到 plus 命名。
+// 修复字段:
+//   - CLAUDE_MEM_OPENROUTER_APP_NAME: "claude-mem" → "claude-mem-plus"
+//   - CLAUDE_MEM_TRANSCRIPTS_CONFIG_PATH: 含 "/.claude-mem/" 的替换为 "/.claude-mem-plus/"
+//   - CLAUDE_MEM_DATA_DIR: 含 "/.claude-mem"(末尾或后接 /) 的替换为 "/.claude-mem-plus"
+//                         (排除已经是 -plus 的 + user 自定义路径如 ~/ai/claude-mem)
+function migrateLegacySettings(): void {
+  const path = USER_SETTINGS_PATH;
+  if (!existsSync(path)) return;
+
+  let current: Record<string, unknown>;
+  try {
+    const raw = readFileSync(path, 'utf-8');
+    const parsed = JSON.parse(raw);
+    if (parsed && typeof parsed === 'object' && parsed.env && typeof parsed.env === 'object') {
+      current = parsed.env;
+    } else if (parsed && typeof parsed === 'object') {
+      current = parsed;
+    } else {
+      return;
+    }
+  } catch {
+    return; // 损坏的 settings 由 mergeSettings 后续处理
+  }
+
+  const fixed: string[] = [];
+
+  // 1) OPENROUTER_APP_NAME:exact match 'claude-mem'
+  if (current.CLAUDE_MEM_OPENROUTER_APP_NAME === 'claude-mem') {
+    current.CLAUDE_MEM_OPENROUTER_APP_NAME = 'claude-mem-plus';
+    fixed.push('CLAUDE_MEM_OPENROUTER_APP_NAME');
+  }
+
+  // 2) TRANSCRIPTS_CONFIG_PATH:含 "/.claude-mem/"(后接 /,确保不是 -plus)
+  const tcp = current.CLAUDE_MEM_TRANSCRIPTS_CONFIG_PATH;
+  if (typeof tcp === 'string' && /\/\.claude-mem\//.test(tcp) && !/\.claude-mem-plus/.test(tcp)) {
+    current.CLAUDE_MEM_TRANSCRIPTS_CONFIG_PATH = tcp.replace(/\/\.claude-mem\//g, '/.claude-mem-plus/');
+    fixed.push('CLAUDE_MEM_TRANSCRIPTS_CONFIG_PATH');
+  }
+
+  // 3) DATA_DIR:精确末尾 "/.claude-mem"(home 默认上游路径),不动 user 自定义路径(~/ai/...)
+  const dd = current.CLAUDE_MEM_DATA_DIR;
+  if (typeof dd === 'string' && /\/\.claude-mem$/.test(dd) && !/\.claude-mem-plus/.test(dd)) {
+    current.CLAUDE_MEM_DATA_DIR = dd.replace(/\/\.claude-mem$/, '/.claude-mem-plus');
+    fixed.push('CLAUDE_MEM_DATA_DIR');
+  }
+
+  if (fixed.length === 0) return;
+
+  try {
+    writeFileSync(path, JSON.stringify(current, null, 2), 'utf-8');
+    log.info(`Migrated ${fixed.length} legacy claude-mem settings to claude-mem-plus: ${fixed.join(', ')}`);
+  } catch (error: unknown) {
+    console.warn('[install] migrateLegacySettings write failed:', error instanceof Error ? error.message : String(error));
+  }
+}
+
 function mergeSettings(updates: Record<string, string>): boolean {
   const path = USER_SETTINGS_PATH;
   try {
@@ -731,6 +791,10 @@ export async function runInstallCommand(options: InstallOptions = {}): Promise<v
   } else {
     console.log('claude-mem-plus install');
   }
+
+  // 早期迁移:把 user 现有 settings.json 里的过期 claude-mem 字面升级到 plus
+  // 这条必须在任何 mergeSettings 调用之前(避免读到旧值再写回)
+  migrateLegacySettings();
   const marketplaceDir = marketplaceDirectory();
   const alreadyInstalled = existsSync(join(marketplaceDir, 'plugin', '.claude-plugin', 'plugin.json'));
 
