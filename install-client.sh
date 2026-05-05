@@ -1131,15 +1131,18 @@ setup_data_symlink() {
 
     # 没显式给路径 → 看要不要交互问
     if [[ -z "$target" ]]; then
-        if [[ "$NO_SYMLINK_PROMPT" -eq 1 ]] || [[ ! -t 0 ]]; then
-            info "跳过数据目录软链(未指定 --data-dir 也无 TTY 输入)"
+        # 检测可用 TTY:看 /dev/tty 可读,而不是 [[ -t 0 ]](stdin 可能被前面的子命令
+        # 如 claude-mem-plus install 消耗到 EOF 状态,导致 [[ -t 0 ]] 误判)
+        if [[ "$NO_SYMLINK_PROMPT" -eq 1 ]] || [[ ! -r /dev/tty ]]; then
+            info "跳过数据目录软链(--no-data-prompt 或无 /dev/tty 可用)"
             return 0
         fi
         echo
         log "  ${INFO} 是否把 ~/.claude-mem-plus 软链到自定义目录?(集中存储 / 多机共享场景)"
         log "  ${DIM}     例:~/ai/claude-mem-plus    /Volumes/work/cmem    回车跳过${RESET}"
         printf "  → 目标路径(回车跳过): "
-        read -r target
+        # 显式从 /dev/tty 读,绕开 stdin 可能被子命令消耗的状态
+        read -r target </dev/tty
         if [[ -z "$target" ]]; then
             info "未输入路径,跳过软链"
             return 0
