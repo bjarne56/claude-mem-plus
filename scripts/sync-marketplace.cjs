@@ -167,6 +167,19 @@ try {
 
   console.log('\x1b[32m%s\x1b[0m', 'Sync complete!');
 
+  // 重新跑 SKILL.md 本地化:rsync 把仓库英文版 SKILL.md 覆盖到 marketplace,
+  // 调 install-client.sh localize 重新按系统语言 patch 翻译。
+  // 没有这步,每次 sync 后 user 在 claude-code 看到的 skill description 都是英文。
+  try {
+    const installClient = path.join(__dirname, '..', 'install-client.sh');
+    if (require('fs').existsSync(installClient)) {
+      console.log('\n🌐 Re-localize SKILL.md description (按系统语言)...');
+      execSync(`"${installClient}" localize`, { stdio: 'inherit' });
+    }
+  } catch (e) {
+    console.log('\x1b[33m%s\x1b[0m', `ℹ SKILL.md 本地化跳过(${e.message});手动跑: ./install-client.sh localize`);
+  }
+
   console.log('\n🔄 Triggering worker restart...');
   const http = require('http');
   const dataDir = process.env.CLAUDE_MEM_DATA_DIR || path.join(os.homedir(), '.claude-mem-plus');
