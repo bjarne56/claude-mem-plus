@@ -52,7 +52,7 @@ step() { echo; log "${BOLD}${BLUE}▶ $*${RESET}"; }
 # 防止用户误操作直接装。
 CMD=""
 case "${1:-}" in
-    install|check|uninstall|localize) CMD="$1"; shift ;;
+    install|check|uninstall|localize|ensure-docker) CMD="$1"; shift ;;
     ""|-h|--help|help)
         cat <<USAGE
 claude-mem-plus 客户端 — 安装 / 检查 / 卸载
@@ -679,6 +679,65 @@ _cleanup_stale_data_dir() {
         info "  $target 只剩 stale 文件,清理"
         command rm -rf "$target" && ok "  $target 已清"
     fi
+}
+
+# ── docker 自助:检查 + 装 Docker Desktop(macOS) ────
+# fork 自家的 docker harness / 探测镜像 / chroma 容器化部署都需要 docker。
+# 用户没装时 install-client.sh 会自动调 cmd_ensure_docker() 提供引导。
+_check_docker() {
+    if ! command -v docker &>/dev/null; then
+        warn "docker 未装"
+        return 1
+    fi
+    if ! docker info >/dev/null 2>&1; then
+        warn "Docker 守护进程没跑"
+        return 1
+    fi
+    return 0
+}
+
+cmd_ensure_docker() {
+    if _check_docker; then
+        ok "docker 就绪($(docker --version 2>/dev/null | head -1))"
+        return 0
+    fi
+    case "$(uname -s)" in
+        Darwin)
+            if [[ ! -d /Applications/Docker.app ]]; then
+                if command -v brew &>/dev/null; then
+                    info "装 Docker Desktop(brew cask)"
+                    brew install --cask docker 2>&1 | tail -3
+                else
+                    fail "brew 未装,自己装:https://www.docker.com/products/docker-desktop"
+                fi
+            else
+                ok "Docker Desktop 已装"
+            fi
+            if ! docker info >/dev/null 2>&1; then
+                info "启动 Docker Desktop"
+                open -a Docker
+                local i
+                for i in {1..60}; do
+                    if docker info >/dev/null 2>&1; then
+                        ok "Docker daemon 就绪($i 秒)"
+                        return 0
+                    fi
+                    sleep 1
+                done
+                warn "60 秒守护进程还没起,看 Docker 菜单栏图标"
+                return 1
+            fi
+            ok "Docker 已运行"
+            ;;
+        Linux)
+            warn "Linux 自动装 docker:见 https://docs.docker.com/engine/install/"
+            return 1
+            ;;
+        *)
+            warn "未知 OS,docker 自助不支持"
+            return 1
+            ;;
+    esac
 }
 
 # ── 清理 docker 资源(容器 + 镜像 + host 数据卷)──
@@ -1724,11 +1783,12 @@ cmd_localize() {
 # dispatch
 # ═══════════════════════════════════════════════════════════════
 case "$CMD" in
-    install)   cmd_install ;;
-    check)     cmd_check ;;
-    uninstall) cmd_uninstall ;;
-    localize)  cmd_localize ;;
-    "")        # 不带子命令应该已经走 help 退出,这里是兜底
-               exec "$0" help ;;
-    *)         fail "未知子命令 $CMD(用 $0 help 看用法)" ;;
+    install)       cmd_install ;;
+    check)         cmd_check ;;
+    uninstall)     cmd_uninstall ;;
+    localize)      cmd_localize ;;
+    ensure-docker) cmd_ensure_docker ;;
+    "")            # 不带子命令应该已经走 help 退出,这里是兜底
+                   exec "$0" help ;;
+    *)             fail "未知子命令 $CMD(用 $0 help 看用法)" ;;
 esac
