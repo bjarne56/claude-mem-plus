@@ -547,6 +547,29 @@ function runNpmInstallInMarketplace(): void {
   });
 }
 
+// Fresh install 时写完整 defaults 到 settings.json
+// 当前 mergeSettings 只补特定 key(PROVIDER/MODEL 等),如果 settings.json 不存在就只生成
+// 这几个字段,其他 64 个默认只在内存里。导致新装的 user 看不到完整默认配置(尤其是
+// 这次调整的 9 个 default),不利于"开箱即用"体验。
+// 修复:install 入口先看 settings.json 是否存在,不存在就用源码 DEFAULTS 整体写一份。
+function ensureFreshSettingsExist(): void {
+  const path = USER_SETTINGS_PATH;
+  if (existsSync(path)) {
+    return; // 已存在,不动 user 自定义值
+  }
+  const defaults = SettingsDefaultsManager.getAllDefaults();
+  const dir = dirname(path);
+  if (!existsSync(dir)) {
+    mkdirSync(dir, { recursive: true });
+  }
+  try {
+    writeFileSync(path, JSON.stringify(defaults, null, 2), 'utf-8');
+    log.info(`Generated fresh settings.json with defaults: ${path}`);
+  } catch (error: unknown) {
+    console.warn('[install] ensureFreshSettingsExist write failed:', error instanceof Error ? error.message : String(error));
+  }
+}
+
 // 升级 user 现有 settings.json 里的过期 claude-mem 路径/值到 claude-mem-plus
 // 场景:用户之前装过上游 claude-mem 或 fork plus 改名前的旧版,settings.json 里
 // 留着旧字面值。mergeSettings 不覆盖已存在 key,所以这些过期字段不会自动更新 →
@@ -791,6 +814,10 @@ export async function runInstallCommand(options: InstallOptions = {}): Promise<v
   } else {
     console.log('claude-mem-plus install');
   }
+
+  // Fresh install 写完整 defaults(64 key 全集),让 user 看到所有可调字段
+  // 必须在 mergeSettings(只补几个 key)前面,否则那个会先建残缺 settings.json
+  ensureFreshSettingsExist();
 
   // 早期迁移:把 user 现有 settings.json 里的过期 claude-mem 字面升级到 plus
   // 这条必须在任何 mergeSettings 调用之前(避免读到旧值再写回)
