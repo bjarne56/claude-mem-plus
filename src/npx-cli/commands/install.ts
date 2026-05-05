@@ -499,6 +499,7 @@ function copyPluginToMarketplace(): void {
   ensureDirectoryExists(marketplaceDir);
 
   const allowedTopLevelEntries = [
+    '.claude-plugin',  // ← marketplace.json 必须在这,否则 claude-code 识别不到 plugin 列表
     'plugin',
     'package.json',
     'package-lock.json',
