@@ -313,7 +313,9 @@ describe('SettingsDefaultsManager', () => {
     });
 
     it('should return false for non-"true" string', () => {
-      expect(SettingsDefaultsManager.getBool('CLAUDE_MEM_CONTEXT_SHOW_LAST_MESSAGE')).toBe(false);
+      // fork c4f3ca69 把 SHOW_LAST_MESSAGE 默认改为 'true' 以提升首装体验,
+      // 改用默认仍为 'false' 的 FOLDER_USE_LOCAL_MD 验证 getBool 的 false 分支。
+      expect(SettingsDefaultsManager.getBool('CLAUDE_MEM_FOLDER_USE_LOCAL_MD')).toBe(false);
     });
   });
 

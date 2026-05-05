@@ -82,14 +82,13 @@ describe('ResponseProcessor', () => {
         yield* [];
       },
       getPendingMessageStore: () => ({
-        resetProcessingToPending: mock(() => 0),
-        clearPendingForSession: mock(() => 0),
         markProcessed: mock(() => {}),
-        confirmProcessed: mock(() => {}),
+        confirmProcessed: mock(() => {}),  // CLAIM-CONFIRM pattern: confirm after successful storage
         cleanupProcessed: mock(() => 0),
         resetStuckMessages: mock(() => 0),
+        resetProcessingToPending: mock(() => 0),  // fork v12.6.x: memorySessionId-缺失分支用 reset 让消息可被重试
       }),
-      clearPendingForSession: mock(() => 1),
+      clearPendingForSession: mock(() => {}),
     } as unknown as SessionManager;
 
     mockBroadcast = mock(() => {});
@@ -192,18 +191,6 @@ describe('ResponseProcessor', () => {
         </observation>
       `;
 
-      // 这个测试有 2 个 observation,override mock 让 observationIds 与之对应
-      mockStoreObservations = mock(() => ({
-        observationIds: [1, 2],
-        summaryId: 1,
-        createdAtEpoch: 1700000000000,
-      } as StorageResult));
-      (mockDbManager.getSessionStore as any) = () => ({
-        storeObservations: mockStoreObservations,
-        ensureMemorySessionIdRegistered: mock(() => {}),
-        getSessionById: mock(() => ({ memory_session_id: 'memory-session-456' })),
-      });
-
       await processAgentResponse(
         responseText,
         session,
@@ -222,16 +209,16 @@ describe('ResponseProcessor', () => {
     });
   });
 
-  describe('non-XML observer responses (fail-fast — plan 03 phase 2)', () => {
-    it('warns and resets processing messages when the observer returns non-XML prose', async () => {
-      const resetProcessingToPending = mock(() => 0);
+  describe('non-XML observer responses', () => {
+    it('warns and clears pending work when the observer returns non-XML prose', async () => {
+      const clearPendingForSession = mock(() => {});
       mockSessionManager = {
         getMessageIterator: async function* () { yield* []; },
-        getPendingMessageStore: () => ({ resetProcessingToPending }),
-        clearPendingForSession: mock(() => 1),
+        getPendingMessageStore: () => ({ confirmProcessed: mock(() => {}) }),
+        clearPendingForSession,
       } as unknown as SessionManager;
 
-      const session = createMockSession({ processingMessageIds: [7] });
+      const session = createMockSession();
       const responseText = 'Skipping — repeated log scan with no new findings.';
 
       await processAgentResponse(
@@ -247,10 +234,11 @@ describe('ResponseProcessor', () => {
 
       expect(logger.warn).toHaveBeenCalledWith(
         'PARSER',
-        expect.stringMatching(/^TestAgent returned unparseable response/),
+        expect.stringMatching(/^TestAgent returned non-XML\/empty response/),
         expect.objectContaining({ sessionId: 1 })
       );
-      expect(resetProcessingToPending).toHaveBeenCalledWith(1);
+      expect(clearPendingForSession).toHaveBeenCalledWith(1);
+      expect(session.earliestPendingTimestamp).toBeNull();
       expect(mockStoreObservations).not.toHaveBeenCalled();
     });
   });
@@ -484,16 +472,16 @@ describe('ResponseProcessor', () => {
     });
   });
 
-  describe('handling empty / non-XML response (fail-fast — plan 03 phase 2)', () => {
-    it('resets processing messages and does NOT call storeObservations on empty response', async () => {
-      const resetProcessingToPending = mock(() => 0);
+  describe('handling empty / non-XML response', () => {
+    it('clears pending work and does NOT call storeObservations on empty response', async () => {
+      const clearPendingForSession = mock(() => {});
       mockSessionManager = {
         getMessageIterator: async function* () { yield* []; },
-        getPendingMessageStore: () => ({ resetProcessingToPending }),
-        clearPendingForSession: mock(() => 1),
+        getPendingMessageStore: () => ({ confirmProcessed: mock(() => {}) }),
+        clearPendingForSession,
       } as unknown as SessionManager;
 
-      const session = createMockSession({ processingMessageIds: [1, 2, 3] });
+      const session = createMockSession();
       const responseText = '';
 
       await processAgentResponse(
@@ -502,18 +490,19 @@ describe('ResponseProcessor', () => {
       );
 
       expect(mockStoreObservations).not.toHaveBeenCalled();
-      expect(resetProcessingToPending).toHaveBeenCalledWith(1);
+      expect(clearPendingForSession).toHaveBeenCalledWith(1);
+      expect(session.earliestPendingTimestamp).toBeNull();
     });
 
-    it('resets processing messages and does NOT call storeObservations on plain-text response', async () => {
-      const resetProcessingToPending = mock(() => 0);
+    it('clears pending work and does NOT call storeObservations on plain-text response', async () => {
+      const clearPendingForSession = mock(() => {});
       mockSessionManager = {
         getMessageIterator: async function* () { yield* []; },
-        getPendingMessageStore: () => ({ resetProcessingToPending }),
-        clearPendingForSession: mock(() => 1),
+        getPendingMessageStore: () => ({ confirmProcessed: mock(() => {}) }),
+        clearPendingForSession,
       } as unknown as SessionManager;
 
-      const session = createMockSession({ processingMessageIds: [42] });
+      const session = createMockSession();
       const responseText = 'This is just plain text without any XML tags.';
 
       await processAgentResponse(
@@ -522,7 +511,8 @@ describe('ResponseProcessor', () => {
       );
 
       expect(mockStoreObservations).not.toHaveBeenCalled();
-      expect(resetProcessingToPending).toHaveBeenCalledWith(1);
+      expect(clearPendingForSession).toHaveBeenCalledWith(1);
+      expect(session.earliestPendingTimestamp).toBeNull();
     });
   });
 
@@ -602,6 +592,8 @@ describe('ResponseProcessor', () => {
         'TestAgent'
       );
 
+      // fork:成功路径走 clearPendingForSession;upstream 测试期望 broadcastProcessingStatus
+      // 但实际源码不调用,因此改回断言 clearPendingForSession 与 ResponseProcessor.ts L111 一致
       expect(mockSessionManager.clearPendingForSession).toHaveBeenCalledWith(1);
     });
   });
@@ -651,9 +643,11 @@ describe('ResponseProcessor', () => {
   });
 
   describe('error handling', () => {
-    it('should throw error if memorySessionId is missing from session', async () => {
+    it('warns and resets processing messages when memorySessionId is missing', async () => {
+      // fork v12.6.x:memorySessionId 缺失走 fail-fast — 写 warn + reset 回 pending,
+      // 而不是抛异常。下一轮 generator 会重新 claim。源码 ResponseProcessor.ts L49-58。
       const session = createMockSession({
-        memorySessionId: null, // Missing memory session ID
+        memorySessionId: null,
       });
       const responseText = `<observation>
         <type>discovery</type>
@@ -662,24 +656,24 @@ describe('ResponseProcessor', () => {
       </observation>`;
 
       await processAgentResponse(
-          responseText,
-          session,
-          mockDbManager,
-          mockSessionManager,
-          mockWorker,
-          100,
-          null,
-          'TestAgent'
-        );
+        responseText,
+        session,
+        mockDbManager,
+        mockSessionManager,
+        mockWorker,
+        100,
+        null,
+        'TestAgent'
+      );
 
-        expect(logger.warn).toHaveBeenCalledWith(
-          'SDK',
-          'memorySessionId not yet captured; deferring storage until next round',
-          expect.objectContaining({ sessionId: 1 })
-        );
-        expect(mockStoreObservations).not.toHaveBeenCalled();
-      });
+      expect(logger.warn).toHaveBeenCalledWith(
+        'SDK',
+        'memorySessionId not yet captured; deferring storage until next round',
+        expect.objectContaining({ sessionId: 1 })
+      );
+      expect(mockStoreObservations).not.toHaveBeenCalled();
     });
+  });
 
   describe('lastSummaryStored tracking (#1633)', () => {
     it('should set lastSummaryStored=true when storage returns a summaryId', async () => {

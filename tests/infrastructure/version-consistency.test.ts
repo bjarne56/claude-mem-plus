@@ -15,7 +15,8 @@ describe('Version Consistency', () => {
 
     const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'));
     expect(packageJson.version).toBeDefined();
-    expect(packageJson.version).toMatch(/^\d+\.\d+\.\d+$/);
+    // fork 用 semver pre-release(如 12.6.5-plus.1)区分上游/fork 版本
+    expect(packageJson.version).toMatch(/^\d+\.\d+\.\d+(-[a-zA-Z0-9.]+)?$/);
 
     rootVersion = packageJson.version;
   });
@@ -34,7 +35,7 @@ describe('Version Consistency', () => {
 
     const pluginJson = JSON.parse(readFileSync(pluginJsonPath, 'utf-8'));
     expect(pluginJson.version).toBeDefined();
-    expect(pluginJson.version).toMatch(/^\d+\.\d+\.\d+$/);
+    expect(pluginJson.version).toMatch(/^\d+\.\d+\.\d+(-[a-zA-Z0-9.]+)?$/);
     // plugin.json 和 marketplace.json 必须使用相同版本
     const pluginVersion = pluginJson.version;
 
@@ -91,9 +92,11 @@ describe('Version Consistency', () => {
   });
 
   it('should validate version format is semver compliant', () => {
-    expect(rootVersion).toMatch(/^\d+\.\d+\.\d+$/);
-    
-    const [major, minor, patch] = rootVersion.split('.').map(Number);
+    expect(rootVersion).toMatch(/^\d+\.\d+\.\d+(-[a-zA-Z0-9.]+)?$/);
+
+    // 取数字主干部分(剥离 prerelease)解析 major/minor/patch
+    const numericCore = rootVersion.split('-')[0];
+    const [major, minor, patch] = numericCore.split('.').map(Number);
     expect(major).toBeGreaterThanOrEqual(0);
     expect(minor).toBeGreaterThanOrEqual(0);
     expect(patch).toBeGreaterThanOrEqual(0);

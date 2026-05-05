@@ -1,6 +1,6 @@
 {
   "name": "claude-mem-plus",
-  "version": "12.6.1",
+  "version": "12.6.5-plus.1",
   "description": "claude-mem-plus fork with cmem-sync (cross-machine sync via self-hosted cmem-server), 31-language UI, soft-delete + trash, public registration page. Pairs with bjarne56/cmem-server.",
   "keywords": [
     "claude",

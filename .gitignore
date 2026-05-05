@@ -47,6 +47,8 @@ claude-opus-4-7+claude-mem-plus.*.json
 logs/run_evaluation/
 .venv-swebench/
 .docker-blowout-data/
+.scratch/
+docker/install-test/
 
 # bun-test sloc-guard cache (test-local, do not commit)
 **/.sloc-guard.toml
