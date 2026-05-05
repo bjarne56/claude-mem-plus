@@ -72,7 +72,7 @@ export class SettingsDefaultsManager {
     CLAUDE_MEM_CONTEXT_OBSERVATIONS: '50',
     CLAUDE_MEM_WORKER_PORT: String(37700 + ((process.getuid?.() ?? 77) % 100)),
     CLAUDE_MEM_WORKER_HOST: '127.0.0.1',
-    CLAUDE_MEM_SKIP_TOOLS: 'ListMcpResourcesTool,SlashCommand,Skill,TodoWrite,AskUserQuestion',
+    CLAUDE_MEM_SKIP_TOOLS: 'ListMcpResourcesTool,SlashCommand,Skill,TodoWrite,AskUserQuestion,Bash',
     CLAUDE_MEM_PROVIDER: 'claude',  // Default to Claude
     CLAUDE_MEM_CLAUDE_AUTH_METHOD: 'cli',  // Default to CLI subscription billing (not API key)
     CLAUDE_MEM_GEMINI_API_KEY: '',  // Empty by default, can be set via UI or env
@@ -91,9 +91,9 @@ export class SettingsDefaultsManager {
     CLAUDE_MEM_PYTHON_VERSION: '3.13',
     CLAUDE_CODE_PATH: '', // Empty means auto-detect via 'which claude'
     CLAUDE_MEM_MODE: 'code', // Default mode profile
-    CLAUDE_MEM_CONTEXT_SHOW_READ_TOKENS: 'false',
-    CLAUDE_MEM_CONTEXT_SHOW_WORK_TOKENS: 'false',
-    CLAUDE_MEM_CONTEXT_SHOW_SAVINGS_AMOUNT: 'false',
+    CLAUDE_MEM_CONTEXT_SHOW_READ_TOKENS: 'true',
+    CLAUDE_MEM_CONTEXT_SHOW_WORK_TOKENS: 'true',
+    CLAUDE_MEM_CONTEXT_SHOW_SAVINGS_AMOUNT: 'true',
     CLAUDE_MEM_CONTEXT_SHOW_SAVINGS_PERCENT: 'true',
     // Display Configuration
     // [zh-fork] 默认从 0 → 5:0 = 全部只显示标题(省 token 但 Claude 不知细节)
@@ -102,10 +102,10 @@ export class SettingsDefaultsManager {
     CLAUDE_MEM_CONTEXT_FULL_FIELD: 'narrative',
     CLAUDE_MEM_CONTEXT_SESSION_COUNT: '10',
     CLAUDE_MEM_CONTEXT_SHOW_LAST_SUMMARY: 'true',
-    CLAUDE_MEM_CONTEXT_SHOW_LAST_MESSAGE: 'false',
+    CLAUDE_MEM_CONTEXT_SHOW_LAST_MESSAGE: 'true',
     CLAUDE_MEM_CONTEXT_SHOW_TERMINAL_OUTPUT: 'true',
     CLAUDE_MEM_WELCOME_HINT_ENABLED: 'true',
-    CLAUDE_MEM_FOLDER_CLAUDEMD_ENABLED: 'false',
+    CLAUDE_MEM_FOLDER_CLAUDEMD_ENABLED: 'true',
     CLAUDE_MEM_FOLDER_USE_LOCAL_MD: 'false',  // When true, writes to CLAUDE.local.md instead of CLAUDE.md
     CLAUDE_MEM_TRANSCRIPTS_ENABLED: 'true',
     CLAUDE_MEM_TRANSCRIPTS_CONFIG_PATH: join(homedir(), '.claude-mem-plus', 'transcript-watch.json'),
@@ -113,7 +113,7 @@ export class SettingsDefaultsManager {
     CLAUDE_MEM_HOOK_FAIL_LOUD_THRESHOLD: '3',  // Plan 05 Phase 8 — escalate to exit code 2 after N consecutive worker-unreachable hook invocations
     CLAUDE_MEM_EXCLUDED_PROJECTS: '',  // Comma-separated glob patterns for excluded project paths
     CLAUDE_MEM_FOLDER_MD_EXCLUDE: '[]',  // JSON array of folder paths to exclude from CLAUDE.md generation
-    CLAUDE_MEM_SEMANTIC_INJECT: 'false',             // Inject relevant past observations on every UserPromptSubmit (experimental, disabled by default)
+    CLAUDE_MEM_SEMANTIC_INJECT: 'true',             // Inject relevant past observations on every UserPromptSubmit (experimental, disabled by default)
     CLAUDE_MEM_SEMANTIC_INJECT_LIMIT: '5',           // Top-N most relevant observations to inject per prompt
     CLAUDE_MEM_TIER_ROUTING_ENABLED: 'true',         // Route observations to models by complexity
     CLAUDE_MEM_TIER_SIMPLE_MODEL: 'haiku', // Portable tier alias — works across Direct API, Bedrock, Vertex, Azure (see #1463)
@@ -126,7 +126,7 @@ export class SettingsDefaultsManager {
     CLAUDE_MEM_CHROMA_API_KEY: '',
     CLAUDE_MEM_CHROMA_TENANT: 'default_tenant',
     CLAUDE_MEM_CHROMA_DATABASE: 'default_database',
-    CLAUDE_MEM_TELEGRAM_ENABLED: 'true',
+    CLAUDE_MEM_TELEGRAM_ENABLED: 'false',
     CLAUDE_MEM_TELEGRAM_BOT_TOKEN: '',
     CLAUDE_MEM_TELEGRAM_CHAT_ID: '',
     CLAUDE_MEM_TELEGRAM_TRIGGER_TYPES: 'security_alert',
