@@ -186,7 +186,7 @@ export function WelcomeCard({ onDismiss }: WelcomeCardProps) {
         <DismissButton onClick={handleDismiss} />
 
         <header className="welcome-modal-header">
-          <img className="welcome-modal-logo" src="claude-mem-plus-logo-stylized.png" alt="" width="96" height="96" />
+          <img className="welcome-modal-logo" src="claude-mem-logo-stylized.png" alt="" width="96" height="96" />
           <h2 id="welcome-modal-title">Welcome to claude-mem-plus</h2>
           <p>Persistent memory for Claude Code.</p>
         </header>

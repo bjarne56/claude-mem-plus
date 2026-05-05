@@ -16,7 +16,7 @@ export function useSpinningFavicon(isProcessing: boolean) {
 
     if (!imageRef.current) {
       imageRef.current = new Image();
-      imageRef.current.src = 'claude-mem-plus-logomark.webp';
+      imageRef.current.src = 'claude-mem-logomark.webp';
     }
 
     if (!originalFaviconRef.current) {
