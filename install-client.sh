@@ -1037,7 +1037,7 @@ apply_skill_locale() {
         skills_dirs+=("$cand")
     fi
     # cache 所有版本(留作多版本兼容;skills/ 直接在版本 root 下,没 plugin/ 中间层)
-    for cand in "$HOME/.claude/plugins/cache/bjarne56/claude-mem"/*/skills; do
+    for cand in "$HOME/.claude/plugins/cache/bjarne56/claude-mem-plus"/*/skills; do
         if [[ -d "$cand" && -f "$cand/_descriptions.i18n.json" ]]; then
             # 防御:跳过软链(npm link 场景下 cache 不会是软链,但保险起见)
             [[ -L "$cand" ]] && continue
