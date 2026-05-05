@@ -1,6 +1,6 @@
 ---
 title: "Gemini CLI Setup"
-description: "Add persistent memory to Gemini CLI with claude-mem"
+description: "Add persistent memory to Gemini CLI with claude-mem-plus"
 ---
 
 # Gemini CLI Setup
@@ -21,10 +21,10 @@ Gemini CLI starts every session from scratch. Claude-mem changes that by capturi
 
 ## Installation
 
-### Step 1: Install claude-mem
+### Step 1: Install claude-mem-plus
 
 ```bash
-npx claude-mem install
+npx claude-mem-plus install
 ```
 
 The installer will:
@@ -46,8 +46,8 @@ Claude-mem needs an AI provider to extract observations from your sessions. Choo
     2. Add it to your settings:
 
     ```bash
-    mkdir -p ~/.claude-mem
-    cat > ~/.claude-mem/settings.json << 'EOF'
+    mkdir -p ~/.claude-mem-plus
+    cat > ~/.claude-mem-plus/settings.json << 'EOF'
     {
       "CLAUDE_MEM_PROVIDER": "gemini",
       "CLAUDE_MEM_GEMINI_API_KEY": "YOUR_API_KEY"
@@ -63,8 +63,8 @@ Claude-mem needs an AI provider to extract observations from your sessions. Choo
     If you have a Claude API key:
 
     ```bash
-    mkdir -p ~/.claude-mem
-    cat > ~/.claude-mem/settings.json << 'EOF'
+    mkdir -p ~/.claude-mem-plus
+    cat > ~/.claude-mem-plus/settings.json << 'EOF'
     {
       "CLAUDE_MEM_PROVIDER": "claude"
     }
@@ -80,8 +80,8 @@ Claude-mem needs an AI provider to extract observations from your sessions. Choo
     For access to 100+ models:
 
     ```bash
-    mkdir -p ~/.claude-mem
-    cat > ~/.claude-mem/settings.json << 'EOF'
+    mkdir -p ~/.claude-mem-plus
+    cat > ~/.claude-mem-plus/settings.json << 'EOF'
     {
       "CLAUDE_MEM_PROVIDER": "openrouter",
       "CLAUDE_MEM_OPENROUTER_API_KEY": "YOUR_KEY"
@@ -95,10 +95,10 @@ Claude-mem needs an AI provider to extract observations from your sessions. Choo
 
 ```bash
 # Check worker is running
-npx claude-mem status
+npx claude-mem-plus status
 
-# Check hooks are installed — look for claude-mem entries
-cat ~/.gemini/settings.json | grep claude-mem
+# Check hooks are installed — look for claude-mem-plus entries
+cat ~/.gemini/settings.json | grep claude-mem-plus
 ```
 
 Open http://localhost:37777 to see the memory viewer.
@@ -111,7 +111,7 @@ Launch Gemini CLI normally. Claude-mem works in the background:
 gemini
 ```
 
-On session start, you'll see claude-mem context injected with your recent observations and project history.
+On session start, you'll see claude-mem-plus context injected with your recent observations and project history.
 
 ## What gets captured
 
@@ -138,40 +138,40 @@ Three model-level hooks (BeforeModel, AfterModel, BeforeToolSelection) are inten
    ```bash
    cat ~/.gemini/settings.json
    ```
-   You should see entries like `"SessionStart"`, `"AfterTool"`, etc. with claude-mem commands.
+   You should see entries like `"SessionStart"`, `"AfterTool"`, etc. with claude-mem-plus commands.
 
 2. Restart Gemini CLI after installation.
 
 3. Re-run the installer:
    ```bash
-   npx claude-mem install
+   npx claude-mem-plus install
    ```
 
 ### Worker not running
 
 ```bash
 # Check status
-npx claude-mem status
+npx claude-mem-plus status
 
 # View logs
-npx claude-mem logs
+npx claude-mem-plus logs
 
 # Restart worker
-npx claude-mem restart
+npx claude-mem-plus restart
 ```
 
 ### No context appearing at session start
 
 1. Ensure the worker is running (check http://localhost:37777)
 2. You need at least one previous session with observations for context to appear
-3. Check your AI provider is configured in `~/.claude-mem/settings.json`
+3. Check your AI provider is configured in `~/.claude-mem-plus/settings.json`
 
 ### Raw escape codes in output
 
-If you see characters like `[31m` or `[0m` in the session context, your claude-mem version may need updating:
+If you see characters like `[31m` or `[0m` in the session context, your claude-mem-plus version may need updating:
 
 ```bash
-npx claude-mem install
+npx claude-mem-plus install
 ```
 
 This was fixed in v10.6.3+ — the Gemini CLI adapter now strips ANSI color codes automatically.
@@ -179,7 +179,7 @@ This was fixed in v10.6.3+ — the Gemini CLI adapter now strips ANSI color code
 ## Uninstalling
 
 ```bash
-npx claude-mem uninstall
+npx claude-mem-plus uninstall
 ```
 
 This removes hooks from `~/.gemini/settings.json` and cleans up `~/.gemini/GEMINI.md`.

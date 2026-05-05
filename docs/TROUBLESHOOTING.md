@@ -8,7 +8,7 @@
 
 ## 安装阶段
 
-### `claude-mem: command not found`
+### `claude-mem-plus: command not found`
 
 **根因**:npm 全局 bin 不在 PATH。
 
@@ -23,7 +23,7 @@ npm config get prefix                                     # 看 npm 装哪
 export PATH="$(npm config get prefix)/bin:$PATH"
 ```
 
-新开 shell 验证 `which claude-mem` 有结果。
+新开 shell 验证 `which claude-mem-plus` 有结果。
 
 ### `EACCES: permission denied, mkdir '/usr/local/lib/node_modules/...'`
 
@@ -43,7 +43,7 @@ warn  node v16.x.x 太旧(需 ≥ 18)
 
 ### `Unknown command: sync`
 
-**根因**:全局装的是 upstream `claude-mem`,本 fork(`claude-mem-plus`)才有 sync 子命令。
+**根因**:全局装的是 upstream `claude-mem-plus`,本 fork(`claude-mem-plus`)才有 sync 子命令。
 
 **修**:
 
@@ -59,7 +59,7 @@ bash install-client.sh install --git https://github.com/bjarne56/claude-mem-plus
 
 # 选 4:开发模式 npm link(在 fork 仓库根)
 cd /path/to/claude-mem-plus && npm link
-which claude-mem    # 应指向 fork 路径(注意 bin 名仍是 claude-mem)
+which claude-mem-plus    # 应指向 fork 路径(注意 bin 名仍是 claude-mem-plus)
 ```
 
 ---
@@ -80,17 +80,17 @@ lsof -nP -iTCP:37701 -sTCP:LISTEN
 
 # 选 1:杀掉占用方(如果是孤儿 worker)
 kill <PID>
-claude-mem start
+claude-mem-plus start
 
 # 选 2:换端口
 export CLAUDE_MEM_WORKER_PORT=37810
-claude-mem start
+claude-mem-plus start
 ```
 
 ### PID 文件存在但进程死了
 
 ```
-⚠ PID 文件存在但进程死了(可清:rm ~/.claude-mem/worker.pid 或 claude-mem start)
+⚠ PID 文件存在但进程死了(可清:rm ~/.claude-mem-plus/worker.pid 或 claude-mem-plus start)
 ```
 
 **根因**:worker 之前 OOM/crash,PID 文件没清。
@@ -98,8 +98,8 @@ claude-mem start
 **修**:
 
 ```bash
-rm ~/.claude-mem/worker.pid
-claude-mem start
+rm ~/.claude-mem-plus/worker.pid
+claude-mem-plus start
 ```
 
 ### viewer 空白 / blank
@@ -122,8 +122,8 @@ claude-mem start
 **修**:
 
 ```bash
-claude-mem sync logout
-claude-mem sync login --server <URL>
+claude-mem-plus sync logout
+claude-mem-plus sync login --server <URL>
 ```
 
 或在 viewer SyncSettingsModal 重登。
@@ -138,7 +138,7 @@ claude-mem sync login --server <URL>
 
 ```bash
 # 看 worker log
-tail -f ~/.claude-mem/logs/worker-$(date +%Y-%m-%d).log
+tail -f ~/.claude-mem-plus/logs/worker-$(date +%Y-%m-%d).log
 
 # 常见原因:server 在 brute-force 限速里(60 req/min/IP),等 1 分钟再试
 ```
@@ -159,7 +159,7 @@ tail -f ~/.claude-mem/logs/worker-$(date +%Y-%m-%d).log
 
 **根因**:`/admin/login` 是管理员登录,本来就不该有邀请码。
 
-**修**:邀请码用在 `/register` 公开注册页(本 fork server 端已加),或用 `claude-mem sync register --invite-code <CODE>`。
+**修**:邀请码用在 `/register` 公开注册页(本 fork server 端已加),或用 `claude-mem-plus sync register --invite-code <CODE>`。
 
 ### "注册页显示注册已关闭"
 
@@ -182,10 +182,10 @@ tail -f ~/.claude-mem/logs/worker-$(date +%Y-%m-%d).log
 # Cmd-Shift-R (Mac) / Ctrl-F5 (Linux)
 
 # 2. 看 settings.json 是不是真的更新
-cat ~/.claude-mem/settings.json | grep CLAUDE_MEM_MODE
+cat ~/.claude-mem-plus/settings.json | grep CLAUDE_MEM_MODE
 
 # 3. 看 worker log 有没有 i18n 相关 error
-tail -f ~/.claude-mem/logs/worker-*.log | grep -i i18n
+tail -f ~/.claude-mem-plus/logs/worker-*.log | grep -i i18n
 ```
 
 ### 某语言显示 fallback 的 English
@@ -198,7 +198,7 @@ tail -f ~/.claude-mem/logs/worker-*.log | grep -i i18n
 
 ## 数据 / 性能
 
-### `~/.claude-mem/claude-mem.db` 占用过大(>100 MB)
+### `~/.claude-mem-plus/claude-mem.db` 占用过大(>100 MB)
 
 **根因**:历史 observation 累积 + chroma 向量。
 
@@ -206,14 +206,14 @@ tail -f ~/.claude-mem/logs/worker-*.log | grep -i i18n
 
 ```bash
 # 看分布
-du -sh ~/.claude-mem/*
+du -sh ~/.claude-mem-plus/*
 
 # 清旧的(>30 天的 observation 进 trash)
-claude-mem trim --older-than 30d --dry-run    # 先看会清啥
-claude-mem trim --older-than 30d              # 实清
+claude-mem-plus trim --older-than 30d --dry-run    # 先看会清啥
+claude-mem-plus trim --older-than 30d              # 实清
 
 # vacuum 释放磁盘
-sqlite3 ~/.claude-mem/claude-mem.db "VACUUM;"
+sqlite3 ~/.claude-mem-plus/claude-mem.db "VACUUM;"
 ```
 
 ### worker CPU 100%
@@ -224,10 +224,10 @@ sqlite3 ~/.claude-mem/claude-mem.db "VACUUM;"
 
 ```bash
 # 暂停 AI processing(只继续 hook 收集)
-claude-mem worker --pause-ai-processing
+claude-mem-plus worker --pause-ai-processing
 
 # 看 worker log 找 root cause
-tail -100 ~/.claude-mem/logs/worker-*.log | grep -iE 'error|fail|retry'
+tail -100 ~/.claude-mem-plus/logs/worker-*.log | grep -iE 'error|fail|retry'
 ```
 
 ---
@@ -242,17 +242,17 @@ tail -100 ~/.claude-mem/logs/worker-*.log | grep -iE 'error|fail|retry'
 
 ```bash
 # 重注册
-claude-mem install --ide claude-code --force
+claude-mem-plus install --ide claude-code --force
 
 # 看 claude-code 配置
-cat ~/.claude/settings.json | grep claude-mem
+cat ~/.claude/settings.json | grep claude-mem-plus
 ```
 
 ### Windows Terminal tab 不停增长
 
 **根因**:hook 用 exit 1 / 2 让 Windows Terminal 不关 tab。
 
-**修**:claude-mem 用 exit 0 + 错误进 stderr → Windows Terminal 会正常关 tab。如果还有这问题,升级到最新 fork。
+**修**:claude-mem-plus 用 exit 0 + 错误进 stderr → Windows Terminal 会正常关 tab。如果还有这问题,升级到最新 fork。
 
 ---
 
@@ -261,8 +261,8 @@ cat ~/.claude/settings.json | grep claude-mem
 ```bash
 # 1. 收集诊断信息
 bash install-client.sh check > /tmp/cmem-check.txt 2>&1
-cp ~/.claude-mem/logs/worker-$(date +%Y-%m-%d).log /tmp/cmem-worker.log
-cp ~/.claude-mem/settings.json /tmp/cmem-settings.json
+cp ~/.claude-mem-plus/logs/worker-$(date +%Y-%m-%d).log /tmp/cmem-worker.log
+cp ~/.claude-mem-plus/settings.json /tmp/cmem-settings.json
 
 # 2. 提 issue 时附上这三个文件
 # 注意:settings.json 可能有 sync token,check 里也有 server URL,公开前打码
@@ -276,11 +276,11 @@ cp ~/.claude-mem/settings.json /tmp/cmem-settings.json
 |---|---|---|
 | node | v18+ | 装 / 升 node |
 | bun | 任意版本 | `curl -fsSL https://bun.sh/install \| bash` |
-| claude-mem CLI | 有 + 版本号 | `npm install -g <package>` |
+| claude-mem-plus CLI | 有 + 版本号 | `npm install -g <package>` |
 | sync 子命令 | 支持 | 装 fork(见上方"Unknown command: sync") |
-| 数据目录 | 存在 | `claude-mem start` 会自建 |
+| 数据目录 | 存在 | `claude-mem-plus start` 会自建 |
 | settings.json | 存在 | 同上 |
 | claude-mem.db | 存在 | 同上 |
-| worker daemon | PID 存活 | `claude-mem start` |
+| worker daemon | PID 存活 | `claude-mem-plus start` |
 | /api/sync/state | 响应 ok | 看 worker log |
-| claude-code hook | 配置里有 | `claude-mem install --ide claude-code` |
+| claude-code hook | 配置里有 | `claude-mem-plus install --ide claude-code` |

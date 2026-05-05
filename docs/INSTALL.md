@@ -1,6 +1,6 @@
 # 安装指南
 
-适用于 **claude-mem-plus**(claude-mem 的 fork,带 cmem-sync / 31 语言 / 回收站 / 删除 / 公开注册页)。
+适用于 **claude-mem-plus**(claude-mem-plus 的 fork,带 cmem-sync / 31 语言 / 回收站 / 删除 / 公开注册页)。
 
 > 想找 **cmem-server 服务端**?见独立仓库 [bjarne56/cmem-server](https://github.com/bjarne56/cmem-server)。
 > client + server 是两个仓库,**必须配对使用**才能跨机器同步与共享。
@@ -15,9 +15,9 @@
 | fork / 内部分发 / 开源版本 | [tarball 安装](#2-tarball-安装) |
 | 开发者本地改代码 | [git 源码安装](#3-git-源码安装) |
 | **本 fork**(claude-mem-plus,有 sync / i18n / trash) | `npm install -g claude-mem-plus` |
-| 上游 npm 包(无 sync,普通 claude-mem) | `npm install -g claude-mem`(注意:跟本 fork bin 同名 `claude-mem`,**不能并存**) |
+| 上游 npm 包(无 sync,普通 claude-mem-plus) | `npm install -g claude-mem-plus`(注意:跟本 fork bin 同名 `claude-mem-plus`,**不能并存**) |
 
-所有路线最终结果等价 — 都装到 npm 全局 bin,数据目录在 `~/.claude-mem/`。
+所有路线最终结果等价 — 都装到 npm 全局 bin,数据目录在 `~/.claude-mem-plus/`。
 
 ---
 
@@ -38,7 +38,7 @@
 
 ```bash
 # 默认装上游 npm 包
-curl -sSL https://raw.githubusercontent.com/<your-org>/claude-mem/zh-fork/install-client.sh | bash
+curl -sSL https://raw.githubusercontent.com/<your-org>/claude-mem-plus/zh-fork/install-client.sh | bash
 
 # 装完立即连一台 cmem-server(可选)
 curl -sSL .../install-client.sh | bash -s install --server https://cmem.example.com
@@ -49,10 +49,10 @@ curl -sSL .../install-client.sh | bash -s install --server https://cmem.example.
 1. 检测 OS → 装 Node 22 (brew / apt / dnf / pacman / apk / nvm fallback)
 2. 装 Bun (brew / 官方 install.sh)
 3. `npm install -g claude-mem-plus`(或 `--package <other-name>` 切换到其他 fork)
-4. `claude-mem install --ide claude-code` 注册 SessionStart / PostToolUse 等 hook
-5. `claude-mem start` 启动 worker daemon (port 37700+uid%100)
-6. 检测系统语言 → 写入 `~/.claude-mem/settings.json` 的 `CLAUDE_MEM_MODE`
-7. 可选:`claude-mem sync login --server <URL>` 连服务器
+4. `claude-mem-plus install --ide claude-code` 注册 SessionStart / PostToolUse 等 hook
+5. `claude-mem-plus start` 启动 worker daemon (port 37700+uid%100)
+6. 检测系统语言 → 写入 `~/.claude-mem-plus/settings.json` 的 `CLAUDE_MEM_MODE`
+7. 可选:`claude-mem-plus sync login --server <URL>` 连服务器
 
 ---
 
@@ -64,25 +64,25 @@ curl -sSL .../install-client.sh | bash -s install --server https://cmem.example.
 
 ```bash
 npm run pack:release
-# 产出 dist/claude-mem-<version>.tgz + .sha256 + install-client.sh + RELEASE_MANIFEST.txt
+# 产出 dist/claude-mem-plus-<version>.tgz + .sha256 + install-client.sh + RELEASE_MANIFEST.txt
 ```
 
 **用户安装**(任何机器):
 
 ```bash
 # 单文件本地装
-bash install-client.sh install --tarball file:///path/to/claude-mem-12.4.9.tgz
+bash install-client.sh install --tarball file:///path/to/claude-mem-plus-12.4.9.tgz
 
 # 或托管到 server 后远程装(适合给客户/团队)
 curl -sSL https://your-host/install-client.sh \
-  | bash -s install --tarball https://your-host/claude-mem-12.4.9.tgz \
+  | bash -s install --tarball https://your-host/claude-mem-plus-12.4.9.tgz \
                     --server https://cmem.example.com
 ```
 
 校验完整性:
 
 ```bash
-shasum -a 256 -c claude-mem-12.4.9.tgz.sha256
+shasum -a 256 -c claude-mem-plus-12.4.9.tgz.sha256
 ```
 
 ---
@@ -92,17 +92,17 @@ shasum -a 256 -c claude-mem-12.4.9.tgz.sha256
 适合开发者(改代码 + 立即试)。
 
 ```bash
-git clone https://github.com/<your-org>/claude-mem.git
-cd claude-mem
+git clone https://github.com/<your-org>/claude-mem-plus.git
+cd claude-mem-plus
 git checkout zh-fork
 npm install
 npm run build
-npm link              # 把本地代码 symlink 到全局,'claude-mem' 命令立即指向当前仓库
+npm link              # 把本地代码 symlink 到全局,'claude-mem-plus' 命令立即指向当前仓库
 
 # 验证
-which claude-mem      # 应该指向 ~/.nvm/.../bin/claude-mem -> $(pwd)/dist/npx-cli/index.js
-claude-mem --version
-claude-mem sync --help    # 本 fork 才有这个子命令
+which claude-mem-plus      # 应该指向 ~/.nvm/.../bin/claude-mem-plus -> $(pwd)/dist/npx-cli/index.js
+claude-mem-plus --version
+claude-mem-plus sync --help    # 本 fork 才有这个子命令
 ```
 
 改完源码:
@@ -131,14 +131,14 @@ bash install-client.sh check
 ```
 ✓ node v22.22.0 (≥ 18)
 ✓ bun 1.3.13
-✓ claude-mem 12.4.9
+✓ claude-mem-plus 12.4.9
 ✓ 支持 sync 子命令(本 fork)
-✓ 数据目录存在: ~/.claude-mem
+✓ 数据目录存在: ~/.claude-mem-plus
 ✓ settings.json 存在
 ✓ claude-mem.db (13M)
 ✓ worker 运行中 (PID 12345)
 ✓ /api/sync/state 响应 ok (端口 37701)
-✓ claude-code 配置里看到 claude-mem hook 引用
+✓ claude-code 配置里看到 claude-mem-plus hook 引用
 ━━━ 全部通过 ━━━
 ```
 
@@ -150,7 +150,7 @@ bash install-client.sh check
 
 ```bash
 bash install-client.sh uninstall
-# 交互式问要不要清 ~/.claude-mem 和 marketplace 插件
+# 交互式问要不要清 ~/.claude-mem-plus 和 marketplace 插件
 
 # 或一刀切清干净
 bash install-client.sh uninstall --purge
@@ -162,10 +162,10 @@ bash install-client.sh uninstall --keep-data
 手动等价命令:
 
 ```bash
-claude-mem stop
+claude-mem-plus stop
 npm uninstall -g claude-mem-plus
 rm -rf ~/.claude/plugins/marketplaces/thedotmack
-rm -rf ~/.claude-mem                    # 谨慎:丢所有 observation + 同步状态
+rm -rf ~/.claude-mem-plus                    # 谨慎:丢所有 observation + 同步状态
 ```
 
 ---
@@ -176,14 +176,14 @@ rm -rf ~/.claude-mem                    # 谨慎:丢所有 observation + 同步�
 
 ```bash
 # work profile
-export CLAUDE_MEM_DATA_DIR="$HOME/.claude-mem-work"
+export CLAUDE_MEM_DATA_DIR="$HOME/.claude-mem-plus-work"
 export CLAUDE_MEM_WORKER_PORT=37800
-claude-mem start
+claude-mem-plus start
 
 # personal profile(另一个 shell)
-export CLAUDE_MEM_DATA_DIR="$HOME/.claude-mem-personal"
+export CLAUDE_MEM_DATA_DIR="$HOME/.claude-mem-plus-personal"
 export CLAUDE_MEM_WORKER_PORT=37801
-claude-mem start
+claude-mem-plus start
 ```
 
 每个 profile 完全隔离:db / chroma / logs / sync_state / settings 都在自己的目录。
@@ -192,16 +192,16 @@ claude-mem start
 
 ## 7. Docker / 容器
 
-claude-mem 客户端**没有官方 Docker 镜像**(它是常驻在用户 dev 机器上的)。如果你想 contain 化:
+claude-mem-plus 客户端**没有官方 Docker 镜像**(它是常驻在用户 dev 机器上的)。如果你想 contain 化:
 
 ```dockerfile
 FROM node:22-bookworm
 RUN npm install -g claude-mem-plus  # 或 --tarball <内部 url>
 RUN curl -fsSL https://bun.sh/install | bash
 ENV PATH="/root/.bun/bin:$PATH"
-VOLUME /root/.claude-mem
+VOLUME /root/.claude-mem-plus
 EXPOSE 37777
-CMD ["claude-mem", "start", "--foreground"]
+CMD ["claude-mem-plus", "start", "--foreground"]
 ```
 
 但更常见做法是 **客户端裸装在 dev 机器,只把 cmem-server 容器化**。
@@ -212,7 +212,7 @@ CMD ["claude-mem", "start", "--foreground"]
 
 ```bash
 # 跟随 npm
-npm update -g claude-mem
+npm update -g claude-mem-plus
 
 # 或重跑 install 脚本(幂等)
 bash install-client.sh install
@@ -221,7 +221,7 @@ bash install-client.sh install
 升级 fork 跟上游同步:
 
 ```bash
-cd /path/to/your/claude-mem-fork
+cd /path/to/your/claude-mem-plus-fork
 git fetch origin
 git checkout zh-fork
 git merge origin/main      # 处理冲突

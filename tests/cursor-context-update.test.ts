@@ -30,10 +30,10 @@ describe('Cursor Context Update', () => {
       expect(existsSync(rulesDir)).toBe(true);
     });
 
-    it('creates claude-mem-context.mdc file', () => {
+    it('creates claude-mem-plus-context.mdc file', () => {
       writeContextFile(workspacePath, 'test context');
 
-      const rulesFile = join(workspacePath, '.cursor', 'rules', 'claude-mem-context.mdc');
+      const rulesFile = join(workspacePath, '.cursor', 'rules', 'claude-mem-plus-context.mdc');
       expect(existsSync(rulesFile)).toBe(true);
     });
 
@@ -75,13 +75,13 @@ describe('Cursor Context Update', () => {
       writeContextFile(workspacePath, 'test');
 
       const content = readContextFile(workspacePath);
-      expect(content).toContain("Use claude-mem's MCP search tools for more detailed queries");
+      expect(content).toContain("Use claude-mem-plus's MCP search tools for more detailed queries");
     });
 
     it('uses atomic write (no temp file left behind)', () => {
       writeContextFile(workspacePath, 'test context');
 
-      const tempFile = join(workspacePath, '.cursor', 'rules', 'claude-mem-context.mdc.tmp');
+      const tempFile = join(workspacePath, '.cursor', 'rules', 'claude-mem-plus-context.mdc.tmp');
       expect(existsSync(tempFile)).toBe(false);
     });
 

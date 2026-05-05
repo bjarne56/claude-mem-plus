@@ -36,14 +36,14 @@ src/ui/viewer.html
 
 plugin/.cli-installed
 
-plugin/scripts/claude-mem
+plugin/scripts/claude-mem-plus
 
 CONTRIB_NOTES.md
 
-.docker-claude-mem-data/
+.docker-claude-mem-plus-data/
 
 evals/swebench/runs/
-claude-opus-4-7+claude-mem.*.json
+claude-opus-4-7+claude-mem-plus.*.json
 logs/run_evaluation/
 .venv-swebench/
 .docker-blowout-data/

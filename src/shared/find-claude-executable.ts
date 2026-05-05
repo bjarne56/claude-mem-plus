@@ -161,6 +161,6 @@ export function findClaudeExecutable(logComponent: string = 'SDK'): string {
   throw new Error(
     'Claude executable not found. Please either:\n' +
     '1. Add "claude" to your system PATH, or\n' +
-    '2. Set CLAUDE_CODE_PATH in ~/.claude-mem/settings.json'
+    '2. Set CLAUDE_CODE_PATH in ~/.claude-mem-plus/settings.json'
   );
 }

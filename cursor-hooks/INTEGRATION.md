@@ -2,7 +2,7 @@
 
 ## Overview
 
-This integration connects claude-mem's persistent memory system to Cursor's hook system, enabling:
+This integration connects claude-mem-plus's persistent memory system to Cursor's hook system, enabling:
 - Automatic capture of agent actions (MCP tools, shell commands, file edits)
 - Context retrieval from past sessions
 - Session summarization for future reference
@@ -78,7 +78,7 @@ beforeSubmitPrompt hook fires
 session-init.sh
     ├─ Extract conversation_id, project name
     ├─ POST /api/sessions/init
-    └─ Initialize session in claude-mem
+    └─ Initialize session in claude-mem-plus
     ↓
 context-inject.sh
     ├─ GET /api/context/inject?project=...
@@ -96,7 +96,7 @@ afterMCPExecution / afterShellExecution hook fires
     ↓
 save-observation.sh
     ├─ Extract tool_name, tool_input, tool_response
-    ├─ Map to claude-mem observation format
+    ├─ Map to claude-mem-plus observation format
     ├─ POST /api/sessions/observations
     └─ Store observation in database
 ```
@@ -168,7 +168,7 @@ session-summary.sh
 ## Configuration
 
 ### Worker Settings
-Located in `~/.claude-mem/settings.json`:
+Located in `~/.claude-mem-plus/settings.json`:
 - `CLAUDE_MEM_WORKER_PORT` (default: 37777)
 - `CLAUDE_MEM_WORKER_HOST` (default: 127.0.0.1)
 
@@ -197,7 +197,7 @@ Located in `hooks.json`:
 ## Limitations
 
 1. **Context Injection**: Cursor's `beforeSubmitPrompt` doesn't support prompt modification. Context must be retrieved via:
-   - MCP tools (claude-mem provides search tools)
+   - MCP tools (claude-mem-plus provides search tools)
    - Manual retrieval from web viewer
    - Future: Agent SDK integration
 

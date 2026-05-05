@@ -438,10 +438,10 @@ export class OpenRouterProvider {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${apiKey}`,
-            'HTTP-Referer': siteUrl || 'https://github.com/thedotmack/claude-mem',
-            'X-Title': appName || 'claude-mem',
+            'HTTP-Referer': siteUrl || 'https://github.com/thedotmack/claude-mem-plus',
+            'X-Title': appName || 'claude-mem-plus',
             'Content-Type': 'application/json',
-            ...(priorRequestId ? { 'x-claude-mem-prior-request-id': priorRequestId } : {}),
+            ...(priorRequestId ? { 'x-claude-mem-plus-prior-request-id': priorRequestId } : {}),
           },
           body: JSON.stringify({
             model,
@@ -530,7 +530,7 @@ export class OpenRouterProvider {
     const model = settings.CLAUDE_MEM_OPENROUTER_MODEL || 'xiaomi/mimo-v2-flash:free';
 
     const siteUrl = settings.CLAUDE_MEM_OPENROUTER_SITE_URL || '';
-    const appName = settings.CLAUDE_MEM_OPENROUTER_APP_NAME || 'claude-mem';
+    const appName = settings.CLAUDE_MEM_OPENROUTER_APP_NAME || 'claude-mem-plus';
 
     return { apiKey, model, siteUrl, appName };
   }

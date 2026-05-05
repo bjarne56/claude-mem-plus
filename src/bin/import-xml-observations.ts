@@ -36,7 +36,7 @@ interface TimestampMapping {
 }
 
 function buildTimestampMap(): TimestampMapping {
-  const transcriptDir = join(homedir(), '.claude', 'projects', '-Users-alexnewman-Scripts-claude-mem');
+  const transcriptDir = join(homedir(), '.claude', 'projects', '-Users-alexnewman-Scripts-claude-mem-plus');
   const map: TimestampMapping = {};
 
   console.log(`Reading transcript files from ${transcriptDir}...`);

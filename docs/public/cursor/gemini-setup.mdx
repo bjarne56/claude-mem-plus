@@ -28,8 +28,8 @@ This guide walks you through setting up Claude-Mem in Cursor using Google's Gemi
 
 ```bash
 # Clone the repository
-git clone https://github.com/thedotmack/claude-mem.git
-cd claude-mem
+git clone https://github.com/thedotmack/claude-mem-plus.git
+cd claude-mem-plus
 
 # Install dependencies
 bun install
@@ -61,10 +61,10 @@ Create the settings file manually:
 
 ```bash
 # Create settings directory
-mkdir -p ~/.claude-mem
+mkdir -p ~/.claude-mem-plus
 
 # Create settings file with Gemini configuration
-cat > ~/.claude-mem/settings.json << 'EOF'
+cat > ~/.claude-mem-plus/settings.json << 'EOF'
 {
   "CLAUDE_MEM_PROVIDER": "gemini",
   "CLAUDE_MEM_GEMINI_API_KEY": "YOUR_GEMINI_API_KEY"
@@ -140,7 +140,7 @@ You'll still use the free quota but with much higher rate limits.
 Ensure your settings file exists and has the correct format:
 
 ```bash
-cat ~/.claude-mem/settings.json
+cat ~/.claude-mem-plus/settings.json
 ```
 
 Should output something like:

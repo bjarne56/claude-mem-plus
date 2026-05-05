@@ -11,7 +11,15 @@ interface ContextSettingsModalProps {
   onSave: (settings: Settings) => void;
   isSaving: boolean;
   saveStatus: string;
+  // 项目重命名:成功 resolve,失败 throw(由本组件内状态行展示错误)
+  onRenameProject?: (oldName: string, newName: string) => Promise<void>;
 }
+
+type RenameState =
+  | { kind: 'idle' }
+  | { kind: 'pending' }
+  | { kind: 'ok'; msg: string }
+  | { kind: 'err'; msg: string };
 
 function CollapsibleSection({
   title,
@@ -121,9 +129,13 @@ export function ContextSettingsModal({
   onSave,
   isSaving,
   saveStatus,
+  onRenameProject,
 }: ContextSettingsModalProps) {
   const { t } = useI18n();
   const [formState, setFormState] = useState<Settings>(settings);
+  const [renameOld, setRenameOld] = useState('');
+  const [renameNew, setRenameNew] = useState('');
+  const [renameState, setRenameState] = useState<RenameState>({ kind: 'idle' });
 
   useEffect(() => {
     setFormState(settings);
@@ -155,6 +167,36 @@ export function ContextSettingsModal({
     const newValue = currentValue === 'true' ? 'false' : 'true';
     updateSetting(key, newValue);
   }, [formState, updateSetting]);
+
+  const handleRename = useCallback(async () => {
+    const oldName = renameOld.trim();
+    const newName = renameNew.trim();
+    if (!oldName) {
+      setRenameState({ kind: 'err', msg: t('settings.rename.errPickProject') });
+      return;
+    }
+    if (!newName) {
+      setRenameState({ kind: 'err', msg: t('settings.rename.errEmptyNew') });
+      return;
+    }
+    if (newName === oldName) {
+      setRenameState({ kind: 'err', msg: t('settings.rename.errSameName') });
+      return;
+    }
+    if (!onRenameProject) {
+      setRenameState({ kind: 'err', msg: t('settings.rename.errNoHandler') });
+      return;
+    }
+    setRenameState({ kind: 'pending' });
+    try {
+      await onRenameProject(oldName, newName);
+      setRenameState({ kind: 'ok', msg: t('settings.rename.ok', { old: oldName, new: newName }) });
+      setRenameOld(newName);
+      setRenameNew('');
+    } catch (err) {
+      setRenameState({ kind: 'err', msg: err instanceof Error ? err.message : String(err) });
+    }
+  }, [renameOld, renameNew, onRenameProject, t]);
 
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
@@ -393,9 +435,9 @@ export function ContextSettingsModal({
                   <FormField label={t('settings.field.appName')} tooltip={t('settings.field.appNameTip')}>
                     <input
                       type="text"
-                      value={formState.CLAUDE_MEM_OPENROUTER_APP_NAME || 'claude-mem'}
+                      value={formState.CLAUDE_MEM_OPENROUTER_APP_NAME || 'claude-mem-plus'}
                       onChange={(e) => updateSetting('CLAUDE_MEM_OPENROUTER_APP_NAME', e.target.value)}
-                      placeholder="claude-mem"
+                      placeholder="claude-mem-plus"
                     />
                   </FormField>
                 </>
@@ -427,6 +469,72 @@ export function ContextSettingsModal({
                   onChange={() => toggleBoolean('CLAUDE_MEM_CONTEXT_SHOW_LAST_MESSAGE')}
                 />
               </div>
+            </CollapsibleSection>
+
+            <CollapsibleSection
+              title={t('settings.section.projects')}
+              description={t('settings.section.projectsDesc')}
+              defaultOpen={false}
+            >
+              <FormField
+                label={t('settings.rename.oldLabel')}
+                tooltip={t('settings.rename.oldTip')}
+              >
+                <select
+                  value={renameOld}
+                  onChange={(e) => {
+                    setRenameOld(e.target.value);
+                    setRenameState({ kind: 'idle' });
+                  }}
+                  disabled={projects.length === 0 || renameState.kind === 'pending'}
+                >
+                  <option value="">{t('settings.rename.pick')}</option>
+                  {projects.map((p) => (
+                    <option key={p} value={p}>{p}</option>
+                  ))}
+                </select>
+              </FormField>
+              <FormField
+                label={t('settings.rename.newLabel')}
+                tooltip={t('settings.rename.newTip')}
+              >
+                <input
+                  type="text"
+                  value={renameNew}
+                  maxLength={200}
+                  placeholder={t('settings.rename.newPlaceholder')}
+                  onChange={(e) => {
+                    setRenameNew(e.target.value);
+                    setRenameState({ kind: 'idle' });
+                  }}
+                  disabled={renameState.kind === 'pending'}
+                />
+              </FormField>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 8, flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  className="save-btn"
+                  onClick={handleRename}
+                  disabled={
+                    renameState.kind === 'pending' ||
+                    !renameOld ||
+                    !renameNew.trim() ||
+                    renameNew.trim() === renameOld
+                  }
+                >
+                  {renameState.kind === 'pending'
+                    ? t('settings.rename.busy')
+                    : t('settings.rename.btn')}
+                </button>
+                {renameState.kind !== 'idle' && renameState.kind !== 'pending' && (
+                  <span className={renameState.kind === 'ok' ? 'success' : 'error'}>
+                    {renameState.msg}
+                  </span>
+                )}
+              </div>
+              <p style={{ marginTop: 12, fontSize: 12, opacity: 0.7, lineHeight: 1.5 }}>
+                {t('settings.rename.note')}
+              </p>
             </CollapsibleSection>
           </div>
         </div>

@@ -10,7 +10,7 @@ Claude-mem is a Claude Code plugin providing persistent memory across sessions. 
 
 **Worker Service** (`src/services/worker-service.ts`) - Express API on the per-user worker port (default `37700 + (uid % 100)`, configurable via `CLAUDE_MEM_WORKER_PORT`), Bun-managed, handles AI processing asynchronously
 
-**Database** (`src/services/sqlite/`) - SQLite3 at `~/.claude-mem/claude-mem.db`
+**Database** (`src/services/sqlite/`) - SQLite3 at `~/.claude-mem-plus/claude-mem.db`
 
 **Search Skill** (`plugin/skills/mem-search/SKILL.md`) - HTTP API for searching past work, auto-invoked when users ask about history
 
@@ -35,16 +35,16 @@ npm run build-and-sync        # Build, sync to marketplace, restart worker
 
 ## Configuration
 
-Settings are managed in `~/.claude-mem/settings.json`. The file is auto-created with defaults on first run.
+Settings are managed in `~/.claude-mem-plus/settings.json`. The file is auto-created with defaults on first run.
 
 ## Multi-account
 
 Claude-mem supports running multiple isolated profiles on the same machine (e.g. work vs personal accounts) via environment variables. No CLI subcommand needed — set the env vars in the shell where you run Claude Code.
 
-- **Switch profiles per shell:** Set `CLAUDE_MEM_DATA_DIR=<path>` and every claude-mem path (database, chroma, logs, settings.json, worker.pid, transcripts config) derives from it. Example:
+- **Switch profiles per shell:** Set `CLAUDE_MEM_DATA_DIR=<path>` and every claude-mem-plus path (database, chroma, logs, settings.json, worker.pid, transcripts config) derives from it. Example:
 
   ```bash
-  export CLAUDE_MEM_DATA_DIR="$HOME/.claude-mem-work"
+  export CLAUDE_MEM_DATA_DIR="$HOME/.claude-mem-plus-work"
   ```
 
 - **Port collisions are auto-handled:** The default worker port is `37700 + (uid % 100)`, so two different OS users on the same box get different ports for free. If you want fixed ports per profile (e.g. you run two profiles as the same UID), set `CLAUDE_MEM_WORKER_PORT` too:
@@ -62,8 +62,8 @@ Claude-mem supports running multiple isolated profiles on the same machine (e.g.
 - **Source**: `<project-root>/src/`
 - **Built Plugin**: `<project-root>/plugin/`
 - **Installed Plugin**: `~/.claude/plugins/marketplaces/thedotmack/`
-- **Database**: `~/.claude-mem/claude-mem.db`
-- **Chroma**: `~/.claude-mem/chroma/`
+- **Database**: `~/.claude-mem-plus/claude-mem.db`
+- **Chroma**: `~/.claude-mem-plus/chroma/`
 
 ## Exit Code Strategy
 
@@ -85,7 +85,7 @@ See `private/context/claude-code/exit-codes.md` for full hook behavior matrix.
 
 ## Documentation
 
-**Public Docs**: https://docs.claude-mem.ai (Mintlify)
+**Public Docs**: https://docs.claude-mem-plus.ai (Mintlify)
 **Source**: `docs/public/` - MDX files, edit `docs.json` for navigation
 **Deploy**: Auto-deploys from GitHub on push to main
 

@@ -1,7 +1,7 @@
 # Plan — Fix MCP Semantic Search
 
 **Branch:** `fix/stop-hook-observer-leakage`
-**Repo:** `<repo-root>` (e.g. `$HOME/.superset/worktrees/claude-mem/vivacious-teeth`)
+**Repo:** `<repo-root>` (e.g. `$HOME/.superset/worktrees/claude-mem-plus/vivacious-teeth`)
 
 ## Up-front: about "use a damn MCP library"
 
@@ -32,7 +32,7 @@ From `ChromaSync.ts` and `ChromaMcpManager.ts`:
 - Do not import `chromadb` or any embedding library — the architecture deliberately avoids them.
 - Do not catch errors and substitute a static "install uv" string. Surface the real `error.message` (with the category that produced it).
 - Do not make `isHealthy()` block the request path — keep it cheap; do the deep probe in a *separate* `/api/chroma/diagnose` endpoint or as an opt-in flag.
-- Do not "fix" `new ChromaSync('claude-mem')` at `ChromaSync.ts:870`. That is correct: the codebase intentionally uses one shared collection `cm__claude-mem` with `project` in document metadata. Sub-agent #1's claim that this is a worktree-scoping bug was wrong; sub-agent #2 confirmed the design.
+- Do not "fix" `new ChromaSync('claude-mem-plus')` at `ChromaSync.ts:870`. That is correct: the codebase intentionally uses one shared collection `cm__claude-mem-plus` with `project` in document metadata. Sub-agent #1's claim that this is a worktree-scoping bug was wrong; sub-agent #2 confirmed the design.
 
 ### Files in scope
 
@@ -54,16 +54,16 @@ The fix's content depends on which failure mode is live. Do this first.
 ### 1a. Read recent logs
 
 ```bash
-ls -lt ~/.claude-mem/logs/ | head -5
+ls -lt ~/.claude-mem-plus/logs/ | head -5
 # pick the most recent file, then:
-grep -E 'CHROMA_SYNC|CHROMA_MCP|SEARCH' ~/.claude-mem/logs/<latest>.log | tail -200
+grep -E 'CHROMA_SYNC|CHROMA_MCP|SEARCH' ~/.claude-mem-plus/logs/<latest>.log | tail -200
 ```
 
 Look for, in order of likelihood:
 
 - `CHROMA_SYNC` `Query failed` — captures the actual exception from `chroma_query_documents`. Note the error message text — this tells us whether it's:
   - *embedding-side* (e.g. "No module named 'onnxruntime'", OpenAI API key missing, model download failure)
-  - *collection-side* (e.g. "Collection cm__claude-mem does not exist" — would mean backfill never ran for this worktree)
+  - *collection-side* (e.g. "Collection cm__claude-mem-plus does not exist" — would mean backfill never ran for this worktree)
   - *connection-side* (already reported as `ChromaUnavailableError`)
 - `CHROMA_MCP` `Health check failed` or `Transport error during "chroma_query_documents"`
 - `SEARCH` `ChromaDB semantic search failed, falling back to FTS5 keyword search` (`SearchManager.ts:303`) — confirms the path; the attached error is the smoking gun.
@@ -78,15 +78,15 @@ curl -s http://localhost:37777/api/chroma/status | jq .
 curl -s 'http://localhost:37777/api/search?query=observer&limit=3' | jq .
 
 # If the response contains the lying string, immediately:
-tail -100 ~/.claude-mem/logs/<latest>.log
+tail -100 ~/.claude-mem-plus/logs/<latest>.log
 ```
 
 ### 1c. Probe chroma-mcp directly via the MCP tool
 
-The MCP tool the user can call is `mcp__plugin_claude-mem_mcp-search__list_corpora`, but that hits corpora JSON files (separate from Chroma). To probe the Chroma side specifically, run the curl above; if you want a cleaner signal, add this temporary script:
+The MCP tool the user can call is `mcp__plugin_claude-mem-plus_mcp-search__list_corpora`, but that hits corpora JSON files (separate from Chroma). To probe the Chroma side specifically, run the curl above; if you want a cleaner signal, add this temporary script:
 
 ```bash
-# Quick Chroma probe — count docs in cm__claude-mem
+# Quick Chroma probe — count docs in cm__claude-mem-plus
 node -e "
   fetch('http://localhost:37777/api/chroma/status').then(r=>r.json()).then(console.log)
 "
@@ -138,7 +138,7 @@ Change shape (do not copy verbatim — match existing types):
 Delete the hardcoded "Install uv" string. Replace `formatChromaFailureMessage(): string` with `formatChromaFailureMessage(reason: { message: string; isConnectionError: boolean }): string` that returns one of two messages:
 
 - **Connection error** → "Semantic search is offline (Chroma MCP unreachable: `${reason.message}`). Falling back to keyword search; results may be incomplete. Run `/api/chroma/status?deep=1` to diagnose."
-- **Other** → "Semantic search failed: `${reason.message}`. Falling back to keyword search; results may be incomplete. Check `~/.claude-mem/logs/` for the CHROMA_SYNC entry. Run `/api/chroma/status?deep=1` for a deeper probe."
+- **Other** → "Semantic search failed: `${reason.message}`. Falling back to keyword search; results may be incomplete. Check `~/.claude-mem-plus/logs/` for the CHROMA_SYNC entry. Run `/api/chroma/status?deep=1` for a deeper probe."
 
 No mention of `uv` unless the underlying error mentions it.
 
@@ -171,7 +171,7 @@ async probeSemanticSearch(): Promise<{
 }> {
   // 1. connect (callTool already lazy-connects; failure here surfaces as "list" failure)
   // 2. chroma_list_collections — same as isHealthy
-  // 3. chroma_query_documents against the canonical cm__claude-mem collection
+  // 3. chroma_query_documents against the canonical cm__claude-mem-plus collection
   //    with a trivial query (e.g., "ping") and n_results: 1
   // Catch each stage separately so the result carries the failing stage.
 }
@@ -179,7 +179,7 @@ async probeSemanticSearch(): Promise<{
 
 Use the *same* tool names used elsewhere (`chroma_list_collections`, `chroma_query_documents`) — those are the documented chroma-mcp tools per `ChromaSync.ts:103,499,772`. Do not invent new tool names.
 
-If the canonical collection doesn't exist, that itself is a useful diagnostic — return `{ ok: false, stage: 'query', error: 'collection cm__claude-mem missing or empty' }`.
+If the canonical collection doesn't exist, that itself is a useful diagnostic — return `{ ok: false, stage: 'query', error: 'collection cm__claude-mem-plus missing or empty' }`.
 
 ### 3b. Wire it into `/api/chroma/status?deep=1`
 
@@ -202,13 +202,13 @@ Add a tiny note in the response body: `"deep": false` so callers know whether to
 
 **Pre-condition:** Phase 1 done. Write the diagnosis here:
 
-> **Diagnosis (2026-04-25):** `connection-error` — chroma-mcp subprocess tool-call timeout. Every `chroma_query_documents` / `chroma_add_documents` / `chroma_get_documents` call hits `MCP error -32001: Request timed out`, after which the subprocess "closes unexpectedly" and enters reconnect backoff. No Python-side ImportError/onnxruntime/key-missing in logs (chroma-mcp stderr isn't piped into the worker log — separate gap). Proximate cause: `~/.claude-mem/chroma/chroma.sqlite3` is **7.3 GB** with hundreds of orphan `cm__test-project-*` collections; the persistent-client startup/index hydration exceeds the MCP SDK's default per-request timeout (~2s observed). Canonical `cm__claude-mem` collection exists. **Branch: 4c.** Concrete fix levers: (1) raise per-tool-call timeout for chroma in `ChromaMcpManager`, (2) GC orphan test-project collections to shrink the persistent dir, (3) capture chroma-mcp subprocess stderr into the worker log so future failures are diagnosable without guesswork.
+> **Diagnosis (2026-04-25):** `connection-error` — chroma-mcp subprocess tool-call timeout. Every `chroma_query_documents` / `chroma_add_documents` / `chroma_get_documents` call hits `MCP error -32001: Request timed out`, after which the subprocess "closes unexpectedly" and enters reconnect backoff. No Python-side ImportError/onnxruntime/key-missing in logs (chroma-mcp stderr isn't piped into the worker log — separate gap). Proximate cause: `~/.claude-mem-plus/chroma/chroma.sqlite3` is **7.3 GB** with hundreds of orphan `cm__test-project-*` collections; the persistent-client startup/index hydration exceeds the MCP SDK's default per-request timeout (~2s observed). Canonical `cm__claude-mem-plus` collection exists. **Branch: 4c.** Concrete fix levers: (1) raise per-tool-call timeout for chroma in `ChromaMcpManager`, (2) GC orphan test-project collections to shrink the persistent dir, (3) capture chroma-mcp subprocess stderr into the worker log so future failures are diagnosable without guesswork.
 
 Branch the fix on the diagnosis:
 
 ### 4a. If "collection empty for this project" (likely if list_corpora returned 4 corpora that don't include this worktree's project)
 
-The collection `cm__claude-mem` exists but has no documents for the current `project` metadata. Backfill is fire-and-forget at startup (`worker-service.ts:496-501`) and may have failed silently or never run for this worktree.
+The collection `cm__claude-mem-plus` exists but has no documents for the current `project` metadata. Backfill is fire-and-forget at startup (`worker-service.ts:496-501`) and may have failed silently or never run for this worktree.
 
 Add a manual backfill trigger and run it:
 
@@ -220,7 +220,7 @@ Add a manual backfill trigger and run it:
 
 This is a `chroma-mcp` (Python) configuration issue, not JS. Common causes:
 
-- `chroma-mcp` defaults to a local ONNX embedder; if the ONNX model didn't download (offline first run), every query fails. Fix: `uvx chroma-mcp --client-type persistent --data-dir ~/.claude-mem/chroma/` once interactively to trigger the download, then restart the worker.
+- `chroma-mcp` defaults to a local ONNX embedder; if the ONNX model didn't download (offline first run), every query fails. Fix: `uvx chroma-mcp --client-type persistent --data-dir ~/.claude-mem-plus/chroma/` once interactively to trigger the download, then restart the worker.
 - If an OpenAI embedding function was selected via env var, `OPENAI_API_KEY` may be missing.
 
 Inspect `chroma-mcp` startup logs and stderr (the worker's logger should be capturing the subprocess stderr; if not, that's a separate bug — capture it).
@@ -229,7 +229,7 @@ Inspect `chroma-mcp` startup logs and stderr (the worker's logger should be capt
 
 The `uvx chroma-mcp` subprocess is dying. `ChromaMcpManager` should already auto-reconnect (line 30 backoff). If it's not, look at supervisor exit-handler logic. This is a process-lifecycle bug, not a search bug.
 
-### 4d. If "collection cm__claude-mem missing"
+### 4d. If "collection cm__claude-mem-plus missing"
 
 `ensureCollectionExists()` at `ChromaSync.ts:96-119` should idempotently create it. If it's missing in production, `ensureCollectionExists` may be guarded by a stale `this.collectionCreated` flag without DB confirmation. Force-call `chroma_create_collection` once on worker boot (not per-query) and persist the canonical name in the collection list returned by health check.
 
@@ -237,7 +237,7 @@ The `uvx chroma-mcp` subprocess is dying. `ChromaMcpManager` should already auto
 
 - [ ] After fix, `/api/chroma/status?deep=1` returns `ok:true, stage:'done'` with non-zero latency.
 - [ ] `curl 'http://localhost:37777/api/search?query=observer&limit=3'` returns at least one result hydrated from SQLite.
-- [ ] `mcp__plugin_claude-mem_mcp-search__search` (the MCP tool) returns results — not the lying message.
+- [ ] `mcp__plugin_claude-mem-plus_mcp-search__search` (the MCP tool) returns results — not the lying message.
 
 ---
 
@@ -263,7 +263,7 @@ curl -s 'http://localhost:37777/api/chroma/status?deep=1' | jq .
 Then call the MCP tool the same way the user originally did:
 
 ```text
-mcp__plugin_claude-mem_mcp-search__search({ query: "observer prompt leakage", limit: 3 })
+mcp__plugin_claude-mem-plus_mcp-search__search({ query: "observer prompt leakage", limit: 3 })
 ```
 
 Expect: a populated `index` with IDs, not an error string.

@@ -319,7 +319,7 @@ describe('Hook Lifecycle - stderr Suppression (#1181)', () => {
     const handler = getEventHandler('unknown-event-type');
     await handler.execute({ sessionId: 'test', cwd: '/tmp' });
 
-    const dispatcherStderr = stderrOutput.filter(s => s.includes('[claude-mem] Unknown event'));
+    const dispatcherStderr = stderrOutput.filter(s => s.includes('[claude-mem-plus] Unknown event'));
     expect(dispatcherStderr).toHaveLength(0);
   });
 });
@@ -346,7 +346,7 @@ describe('hookCommand - stderr suppression', () => {
     expect(hookCommandSource).toContain("logger.error('HOOK'");
     expect(hookCommandSource).toContain("process.stderr.write = (() => true)");
     expect(hookCommandSource).toContain("process.stderr.write = originalStderrWrite");
-    expect(hookCommandSource).not.toContain("console.error(`[claude-mem]");
+    expect(hookCommandSource).not.toContain("console.error(`[claude-mem-plus]");
     expect(hookCommandSource).not.toContain("console.error(`Hook error:");
   });
 });

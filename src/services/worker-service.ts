@@ -287,7 +287,7 @@ export class WorkerService implements WorkerRef {
     this.server.registerRoutes(new DataRoutes(this.paginationHelper, this.dbManager, this.sessionManager, this.sseBroadcaster, this, this.startTime));
     this.server.registerRoutes(new SettingsRoutes(this.settingsManager));
     this.server.registerRoutes(new LogsRoutes());
-    this.server.registerRoutes(new MemoryRoutes(this.dbManager, 'claude-mem'));
+    this.server.registerRoutes(new MemoryRoutes(this.dbManager, 'claude-mem-plus'));
     // 软删除路由(项目/会话/单条 observation) + 回收站 CRUD,软删到 trash_* 影子表
     this.server.registerRoutes(new DeleteRoutes(this.dbManager, this.sseBroadcaster));
     // cmem-sync client 路由(/api/sync/*)— localhost-only,token 在主库 sync_state 表
@@ -905,7 +905,7 @@ async function main() {
       const platform = process.argv[3];
       const event = process.argv[4];
       if (!platform || !event) {
-        console.error('Usage: claude-mem hook <platform> <event>');
+        console.error('Usage: claude-mem-plus hook <platform> <event>');
         console.error('Platforms: claude-code, cursor, gemini-cli, raw');
         console.error('Events: context, session-init, observation, summarize, user-message');
         process.exit(1);

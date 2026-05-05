@@ -6,7 +6,7 @@ import { createProcessRegistry } from '../../src/supervisor/process-registry.js'
 import { runShutdownCascade } from '../../src/supervisor/shutdown.js';
 
 function makeTempDir(): string {
-  return path.join(tmpdir(), `claude-mem-shutdown-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+  return path.join(tmpdir(), `claude-mem-plus-shutdown-${Date.now()}-${Math.random().toString(36).slice(2)}`);
 }
 
 const tempDirs: string[] = [];

@@ -77,7 +77,7 @@ All free models support:
 | `CLAUDE_MEM_OPENROUTER_MAX_CONTEXT_MESSAGES` | number | `20` | Max messages in conversation history |
 | `CLAUDE_MEM_OPENROUTER_MAX_TOKENS` | number | `100000` | Token budget safety limit |
 | `CLAUDE_MEM_OPENROUTER_SITE_URL` | string | — | Optional: URL for analytics attribution |
-| `CLAUDE_MEM_OPENROUTER_APP_NAME` | string | `claude-mem` | Optional: App name for analytics |
+| `CLAUDE_MEM_OPENROUTER_APP_NAME` | string | `claude-mem-plus` | Optional: App name for analytics |
 
 ### Using the Settings UI
 
@@ -91,7 +91,7 @@ Settings are applied immediately—no restart required.
 
 ### Manual Configuration
 
-Edit `~/.claude-mem/settings.json`:
+Edit `~/.claude-mem-plus/settings.json`:
 
 ```json
 {
@@ -189,7 +189,7 @@ You can switch between providers at any time:
 
 ## Error Behavior
 
-If OpenRouter errors, claude-mem logs the failure and re-throws so the message stays pending for later retry. There is no Claude SDK fallback — earlier docs claimed automatic Claude fallback, but the wiring was never actually engaged in production (#2087). To switch providers, change `CLAUDE_MEM_PROVIDER` in settings.
+If OpenRouter errors, claude-mem-plus logs the failure and re-throws so the message stays pending for later retry. There is no Claude SDK fallback — earlier docs claimed automatic Claude fallback, but the wiring was never actually engaged in production (#2087). To switch providers, change `CLAUDE_MEM_PROVIDER` in settings.
 
 **Throwing conditions:**
 - Rate limiting (HTTP 429)
@@ -227,7 +227,7 @@ This enables:
 ### "OpenRouter API key not configured"
 
 Either:
-- Set `CLAUDE_MEM_OPENROUTER_API_KEY` in `~/.claude-mem/settings.json`, or
+- Set `CLAUDE_MEM_OPENROUTER_API_KEY` in `~/.claude-mem-plus/settings.json`, or
 - Set the `OPENROUTER_API_KEY` environment variable
 
 ### Rate Limiting
@@ -267,8 +267,8 @@ OpenRouter uses an OpenAI-compatible REST API:
 **Headers**:
 ```
 Authorization: Bearer {apiKey}
-HTTP-Referer: https://github.com/thedotmack/claude-mem
-X-Title: claude-mem
+HTTP-Referer: https://github.com/thedotmack/claude-mem-plus
+X-Title: claude-mem-plus
 Content-Type: application/json
 ```
 

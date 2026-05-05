@@ -15,7 +15,7 @@ import {
   type PidInfo
 } from '../../src/services/infrastructure/index.js';
 
-const DATA_DIR = path.join(homedir(), '.claude-mem');
+const DATA_DIR = path.join(homedir(), '.claude-mem-plus');
 const PID_FILE = path.join(DATA_DIR, 'worker.pid');
 
 describe('GracefulShutdown', () => {
@@ -53,7 +53,7 @@ describe('GracefulShutdown', () => {
   describe('performGracefulShutdown', () => {
     // Timeout bumped to 15s. performGracefulShutdown calls
     // getSupervisor().stop() which runs runShutdownCascade against the real
-    // ~/.claude-mem/supervisor.json registry. If the developer has a live
+    // ~/.claude-mem-plus/supervisor.json registry. If the developer has a live
     // worker + chroma-mcp registered, the cascade SIGTERMs/SIGKILLs them
     // and waits up to ~5–6s for them to exit, which sails past the default
     // 5000ms test timeout. The other shutdown tests below are unaffected

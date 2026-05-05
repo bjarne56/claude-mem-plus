@@ -496,7 +496,7 @@ NEVER fetch full details without filtering first. 10x token savings.`,
 
 const server = new Server(
   {
-    name: 'claude-mem',
+    name: 'claude-mem-plus',
     version: packageVersion,
   },
   {
@@ -603,8 +603,8 @@ function checkMarketplaceMarker(): void {
     ];
     const present = marketplaceCandidates.some(p => p && existsSync(p));
     const cacheCandidates = [
-      resolve(home, '.claude', 'plugins', 'cache', 'thedotmack', 'claude-mem'),
-      resolve(home, '.config', 'claude', 'plugins', 'cache', 'thedotmack', 'claude-mem'),
+      resolve(home, '.claude', 'plugins', 'cache', 'thedotmack', 'claude-mem-plus'),
+      resolve(home, '.config', 'claude', 'plugins', 'cache', 'thedotmack', 'claude-mem-plus'),
     ];
     const cachePresent = cacheCandidates.some(p => p && existsSync(p));
     const cacheRoot = cacheCandidates[0];
@@ -612,7 +612,7 @@ function checkMarketplaceMarker(): void {
     if (!present && cachePresent) {
       logger.error(
         'SYSTEM',
-        'claude-mem MCP started but no marketplace directory was found at ~/.claude/plugins/marketplaces/thedotmack or the XDG equivalent. The IDE plugin loader needs that directory to fire claude-mem hooks (SessionStart, PostToolUse, Stop, etc.). Without it, MCP search will work but no new memories will be captured. To self-heal, run: node ~/.claude/plugins/cache/thedotmack/claude-mem/*/scripts/smart-install.js (or reinstall the plugin from the marketplace).',
+        'claude-mem-plus MCP started but no marketplace directory was found at ~/.claude/plugins/marketplaces/thedotmack or the XDG equivalent. The IDE plugin loader needs that directory to fire claude-mem-plus hooks (SessionStart, PostToolUse, Stop, etc.). Without it, MCP search will work but no new memories will be captured. To self-heal, run: node ~/.claude/plugins/cache/thedotmack/claude-mem-plus/*/scripts/smart-install.js (or reinstall the plugin from the marketplace).',
         { marketplaceCandidates, cacheRoot }
       );
     }

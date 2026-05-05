@@ -6,7 +6,7 @@ import { join, basename, dirname } from 'path';
 import { existsSync, copyFileSync } from 'fs';
 import { spawnSync } from 'child_process';
 
-const DB_PATH = join(homedir(), '.claude-mem', 'claude-mem.db');
+const DB_PATH = join(homedir(), '.claude-mem-plus', 'claude-mem.db');
 const APPLY = process.argv.includes('--apply');
 
 type Classification =

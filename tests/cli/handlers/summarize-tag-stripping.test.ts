@@ -5,7 +5,7 @@ import { join } from 'path';
 mock.module('../../../src/shared/SettingsDefaultsManager.js', () => ({
   SettingsDefaultsManager: {
     get: (key: string) => {
-      if (key === 'CLAUDE_MEM_DATA_DIR') return join(homedir(), '.claude-mem');
+      if (key === 'CLAUDE_MEM_DATA_DIR') return join(homedir(), '.claude-mem-plus');
       return '';
     },
     getInt: () => 0,
@@ -134,7 +134,7 @@ describe('summarizeHandler — privacy tag stripping', () => {
 
   const taggedPayloads: Array<[string, string]> = [
     ['<private>', '<private>SECRET-PRIVATE</private>'],
-    ['<claude-mem-context>', '<claude-mem-context>SECRET-CTX</claude-mem-context>'],
+    ['<claude-mem-plus-context>', '<claude-mem-plus-context>SECRET-CTX</claude-mem-plus-context>'],
     ['<system-instruction>', '<system-instruction>SECRET-SI-DASH</system-instruction>'],
     ['<system_instruction>', '<system_instruction>SECRET-SI-UNDER</system_instruction>'],
     ['<persisted-output>', '<persisted-output>SECRET-PO</persisted-output>'],

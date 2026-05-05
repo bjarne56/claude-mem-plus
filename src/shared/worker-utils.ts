@@ -346,7 +346,7 @@ function recordWorkerUnreachable(): number {
   const threshold = getFailLoudThreshold();
   if (next.consecutiveFailures >= threshold) {
     process.stderr.write(
-      `claude-mem worker unreachable for ${next.consecutiveFailures} consecutive hooks.\n`
+      `claude-mem-plus worker unreachable for ${next.consecutiveFailures} consecutive hooks.\n`
     );
     process.exit(HOOK_EXIT_CODES.BLOCKING_ERROR);
   }
@@ -359,7 +359,7 @@ function resetWorkerFailureCounter(): void {
   writeHookFailureStateAtomic({ consecutiveFailures: 0, lastFailureAt: 0 });
 }
 
-const WORKER_FALLBACK_BRAND: unique symbol = Symbol.for('claude-mem/worker-fallback');
+const WORKER_FALLBACK_BRAND: unique symbol = Symbol.for('claude-mem-plus/worker-fallback');
 
 export type WorkerFallback =
   | { continue: true; [WORKER_FALLBACK_BRAND]: true }

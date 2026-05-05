@@ -13,7 +13,7 @@ Pull the user toward this single moment: **open the viewer in a browser, do anyt
 - **Settings defaults:** `src/shared/SettingsDefaultsManager.ts:70-131`. Merge logic at `loadFromFile()` lines 161-205 — missing keys auto-pick up new defaults, explicit values are respected. Forward-compatible.
 - **`CLAUDE_MEM_WELCOME_HINT_ENABLED` already defaults to `'true'`** (`SettingsDefaultsManager.ts:104`). Single reader at `SearchRoutes.ts:294`. Goal 5 from the brief is already done — we replace "flip the default" with "pin it with a regression test."
 - **Timing line, identical wording everywhere:** `Memory injection starts on your second session in a project.`
-- **Privacy line, identical wording everywhere:** `Everything stays in ~/.claude-mem on this machine.`
+- **Privacy line, identical wording everywhere:** `Everything stays in ~/.claude-mem-plus on this machine.`
 
 ---
 
@@ -70,7 +70,7 @@ Discovery already completed. Allowed APIs and signatures established:
 1. Create `src/services/worker/onboarding-explainer.md` — single canonical content. ~150 words, three sections:
    - **What it does:** Every Read/Edit/Bash Claude makes turns into a compressed observation. Observations get summarized at session end. Relevant ones get auto-injected into future prompts.
    - **When it kicks in:** Memory injection starts on your second session in a project. *(verbatim timing line)*
-   - **Where data lives:** Everything stays in ~/.claude-mem on this machine. *(verbatim privacy line)*
+   - **Where data lives:** Everything stays in ~/.claude-mem-plus on this machine. *(verbatim privacy line)*
 
 2. Add new route `GET /api/onboarding/explainer` in `src/services/worker/http/routes/SearchRoutes.ts`:
    - Read the markdown file at boot (cache like `cachedSkillMd` pattern in `Server.ts:18-33`).
@@ -80,7 +80,7 @@ Discovery already completed. Allowed APIs and signatures established:
 3. Create `plugin/skills/how-it-works/SKILL.md`:
    - Copy frontmatter shape from `plugin/skills/mem-search/SKILL.md:1-4`.
    - `name: how-it-works`
-   - `description: Explain how claude-mem captures observations, when memory injection kicks in, and where data lives. Use when the user asks "how does claude-mem work?" or "what is this thing doing?".`
+   - `description: Explain how claude-mem-plus captures observations, when memory injection kicks in, and where data lives. Use when the user asks "how does claude-mem-plus work?" or "what is this thing doing?".`
    - Body: same content as the markdown explainer (or fetch `/api/onboarding/explainer` at runtime).
    - Wire into `scripts/build-hooks.js` verification list (lines 336-348) so build fails if the file is missing.
 
@@ -106,7 +106,7 @@ Discovery already completed. Allowed APIs and signatures established:
 1. Rewrite `WELCOME_HINT_TEMPLATE` at `src/services/worker/http/routes/SearchRoutes.ts:14-27`. Target:
 
    ```
-   # claude-mem status
+   # claude-mem-plus status
 
    This project has no memory yet. The current session will seed it; subsequent sessions will receive auto-injected context for relevant past work.
 
@@ -163,10 +163,10 @@ Discovery already completed. Allowed APIs and signatures established:
      ${pc.cyan('B.')} Front-load it: open Claude Code and run ${pc.bold('/learn-codebase')} to ingest the whole repo (~5 min, optional).
 
    Memory injection starts on your second session in a project.
-   Everything stays in ${pc.cyan('~/.claude-mem')} on this machine.
+   Everything stays in ${pc.cyan('~/.claude-mem-plus')} on this machine.
 
    ${pc.dim('How it works: /how-it-works   ·   Disable first-session hint: CLAUDE_MEM_WELCOME_HINT_ENABLED=false')}
-   ${pc.dim('Note: close all Claude Code sessions before uninstalling, or ~/.claude-mem will be recreated by active hooks.')}
+   ${pc.dim('Note: close all Claude Code sessions before uninstalling, or ~/.claude-mem-plus will be recreated by active hooks.')}
    ```
 
    Worker-not-ready branch: keep the existing `pc.yellow('!')` warning + retry hint, then append the same "First success" / "Two paths" / timing / privacy lines (substituting `workerPort` for `actualPort`).
@@ -180,8 +180,8 @@ Discovery already completed. Allowed APIs and signatures established:
 ### Verification
 
 - `npm run build` succeeds.
-- Manual interactive run: `npx claude-mem install` in a fresh dir shows the new Next Steps block inside the clack box.
-- Manual non-interactive run: `CI=true npx claude-mem install` (or pipe through cat) shows the same content with 2-space indent and no clack boxes.
+- Manual interactive run: `npx claude-mem-plus install` in a fresh dir shows the new Next Steps block inside the clack box.
+- Manual non-interactive run: `CI=true npx claude-mem-plus install` (or pipe through cat) shows the same content with 2-space indent and no clack boxes.
 - Update `tests/install-non-tty.test.ts` regex assertions to match the new strings (existing pattern: `expect(installSource).toContain(...)`).
 
 ### Anti-pattern guards
@@ -244,7 +244,7 @@ Discovery already completed. Allowed APIs and signatures established:
    If a stats fetch hook doesn't already exist, add one (`useStats()` at `src/ui/viewer/hooks/useStats.ts`) that polls `/api/stats` on mount and on each new SSE observation.
 
 2. **WelcomeCard.tsx rewrite** (`src/ui/viewer/components/WelcomeCard.tsx`):
-   - Bump localStorage key to `claude-mem-welcome-dismissed-v2` (keep helpers in same file). v1 dismissals should NOT carry over — the card is meaningfully different.
+   - Bump localStorage key to `claude-mem-plus-welcome-dismissed-v2` (keep helpers in same file). v1 dismissals should NOT carry over — the card is meaningfully different.
    - Branch on `observationCount === 0`:
      - **Empty state:**
        - Headline: "No observations yet."
@@ -252,7 +252,7 @@ Discovery already completed. Allowed APIs and signatures established:
        - Live status row with a `<span class="welcome-card-status-dot" data-connected={isConnected ? 'true' : 'false'} />` and label "Connected to worker · waiting for activity" / "Reconnecting…" based on `isConnected`.
        - Footer: "How it works" link + dismiss button (existing behavior).
      - **Has-data state:**
-       - Headline: "claude-mem"
+       - Headline: "claude-mem-plus"
        - Body: "Persistent memory across Claude Code sessions."
        - Stat row: `${observationCount} observations · ${projectCount} projects · since ${formatDate(firstObservationAt)}`.
        - Two example prompts (cut from four):
@@ -302,7 +302,7 @@ Discovery already completed. Allowed APIs and signatures established:
    # expect 3+ matches
    ```
 
-2. Same for the privacy line (`Everything stays in ~/.claude-mem on this machine.`).
+2. Same for the privacy line (`Everything stays in ~/.claude-mem-plus on this machine.`).
 
 3. Confirm `/how-it-works` slash reference appears in install.ts and SearchRoutes.ts; SKILL.md exists at `plugin/skills/how-it-works/SKILL.md`.
 
@@ -325,8 +325,8 @@ Discovery already completed. Allowed APIs and signatures established:
 
 1. Fresh install:
    ```bash
-   rm -rf ~/.claude-mem
-   npx claude-mem install
+   rm -rf ~/.claude-mem-plus
+   npx claude-mem-plus install
    ```
    Verify: install Next Steps shows the new "Two paths" + first-success + timing + privacy + `/how-it-works` block.
 

@@ -44,7 +44,7 @@ function stripHardcodedDirname(filePath) {
 }
 
 async function buildHooks() {
-  console.log('🔨 Building claude-mem hooks and worker service...\n');
+  console.log('🔨 Building claude-mem-plus hooks and worker service...\n');
 
   try {
     const packageJson = JSON.parse(fs.readFileSync('package.json', 'utf-8'));
@@ -65,10 +65,10 @@ async function buildHooks() {
 
     console.log('\n📦 Generating plugin package.json...');
     const pluginPackageJson = {
-      name: 'claude-mem-plugin',
+      name: 'claude-mem-plus-plugin',
       version: version,
       private: true,
-      description: 'Runtime dependencies for claude-mem bundled hooks',
+      description: 'Runtime dependencies for claude-mem-plus bundled hooks',
       type: 'module',
       dependencies: {
         'zod': '^4.3.6',

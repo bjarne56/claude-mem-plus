@@ -3,11 +3,11 @@
 ---
 <h1 align="center">
   <br>
-  <a href="https://github.com/thedotmack/claude-mem">
+  <a href="https://github.com/thedotmack/claude-mem-plus">
     <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/thedotmack/claude-mem/main/docs/public/claude-mem-logo-for-dark-mode.webp">
-      <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/thedotmack/claude-mem/main/docs/public/claude-mem-logo-for-light-mode.webp">
-      <img src="https://raw.githubusercontent.com/thedotmack/claude-mem/main/docs/public/claude-mem-logo-for-light-mode.webp" alt="Claude-Mem" width="400">
+      <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/thedotmack/claude-mem-plus/main/docs/public/claude-mem-plus-logo-for-dark-mode.webp">
+      <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/thedotmack/claude-mem-plus/main/docs/public/claude-mem-plus-logo-for-light-mode.webp">
+      <img src="https://raw.githubusercontent.com/thedotmack/claude-mem-plus/main/docs/public/claude-mem-plus-logo-for-light-mode.webp" alt="Claude-Mem" width="400">
     </picture>
   </a>
   <br>
@@ -66,9 +66,9 @@
 <p align="center">
   <a href="https://trendshift.io/repositories/15496" target="_blank">
     <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/thedotmack/claude-mem/main/docs/public/trendshift-badge-dark.svg">
-      <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/thedotmack/claude-mem/main/docs/public/trendshift-badge.svg">
-      <img src="https://raw.githubusercontent.com/thedotmack/claude-mem/main/docs/public/trendshift-badge.svg" alt="thedotmack/claude-mem | Trendshift" width="250" height="55"/>
+      <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/thedotmack/claude-mem-plus/main/docs/public/trendshift-badge-dark.svg">
+      <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/thedotmack/claude-mem-plus/main/docs/public/trendshift-badge.svg">
+      <img src="https://raw.githubusercontent.com/thedotmack/claude-mem-plus/main/docs/public/trendshift-badge.svg" alt="thedotmack/claude-mem-plus | Trendshift" width="250" height="55"/>
     </picture>
   </a>
 </p>
@@ -76,9 +76,9 @@
 <br>
 
 <p align="center">
-  <a href="https://github.com/thedotmack/claude-mem">
+  <a href="https://github.com/thedotmack/claude-mem-plus">
     <picture>
-      <img src="https://raw.githubusercontent.com/thedotmack/claude-mem/main/docs/public/cm-preview.gif" alt="Claude-Mem Preview" width="800">
+      <img src="https://raw.githubusercontent.com/thedotmack/claude-mem-plus/main/docs/public/cm-preview.gif" alt="Claude-Mem Preview" width="800">
     </picture>
   </a>
 </p>
@@ -104,9 +104,9 @@
 Spusťte nové sezení Claude Code v terminálu a zadejte následující příkazy:
 
 ```
-> /plugin marketplace add thedotmack/claude-mem
+> /plugin marketplace add thedotmack/claude-mem-plus
 
-> /plugin install claude-mem
+> /plugin install claude-mem-plus
 ```
 
 Restartujte Claude Code. Kontext z předchozích sezení se automaticky objeví v nových sezeních.
@@ -128,35 +128,35 @@ Restartujte Claude Code. Kontext z předchozích sezení se automaticky objeví 
 
 ## Dokumentace
 
-📚 **[Zobrazit kompletní dokumentaci](https://docs.claude-mem.ai/)** - Procházet na oficiálních stránkách
+📚 **[Zobrazit kompletní dokumentaci](https://docs.claude-mem-plus.ai/)** - Procházet na oficiálních stránkách
 
 ### Začínáme
 
-- **[Průvodce instalací](https://docs.claude-mem.ai/installation)** - Rychlý start a pokročilá instalace
-- **[Průvodce použitím](https://docs.claude-mem.ai/usage/getting-started)** - Jak Claude-Mem funguje automaticky
-- **[Vyhledávací nástroje](https://docs.claude-mem.ai/usage/search-tools)** - Dotazujte se na historii projektu pomocí přirozeného jazyka
-- **[Beta funkce](https://docs.claude-mem.ai/beta-features)** - Vyzkoušejte experimentální funkce jako Endless Mode
+- **[Průvodce instalací](https://docs.claude-mem-plus.ai/installation)** - Rychlý start a pokročilá instalace
+- **[Průvodce použitím](https://docs.claude-mem-plus.ai/usage/getting-started)** - Jak Claude-Mem funguje automaticky
+- **[Vyhledávací nástroje](https://docs.claude-mem-plus.ai/usage/search-tools)** - Dotazujte se na historii projektu pomocí přirozeného jazyka
+- **[Beta funkce](https://docs.claude-mem-plus.ai/beta-features)** - Vyzkoušejte experimentální funkce jako Endless Mode
 
 ### Osvědčené postupy
 
-- **[Context Engineering](https://docs.claude-mem.ai/context-engineering)** - Principy optimalizace kontextu AI agenta
-- **[Postupné odhalování](https://docs.claude-mem.ai/progressive-disclosure)** - Filozofie strategie přípravy kontextu Claude-Mem
+- **[Context Engineering](https://docs.claude-mem-plus.ai/context-engineering)** - Principy optimalizace kontextu AI agenta
+- **[Postupné odhalování](https://docs.claude-mem-plus.ai/progressive-disclosure)** - Filozofie strategie přípravy kontextu Claude-Mem
 
 ### Architektura
 
-- **[Přehled](https://docs.claude-mem.ai/architecture/overview)** - Systémové komponenty a tok dat
-- **[Evoluce architektury](https://docs.claude-mem.ai/architecture-evolution)** - Cesta z v3 na v5
-- **[Architektura háčků](https://docs.claude-mem.ai/hooks-architecture)** - Jak Claude-Mem používá lifecycle hooks
-- **[Reference háčků](https://docs.claude-mem.ai/architecture/hooks)** - Vysvětlení 7 hook skriptů
-- **[Worker Service](https://docs.claude-mem.ai/architecture/worker-service)** - HTTP API a správa Bun
-- **[Databáze](https://docs.claude-mem.ai/architecture/database)** - SQLite schéma a FTS5 vyhledávání
-- **[Architektura vyhledávání](https://docs.claude-mem.ai/architecture/search-architecture)** - Hybridní vyhledávání s vektorovou databází Chroma
+- **[Přehled](https://docs.claude-mem-plus.ai/architecture/overview)** - Systémové komponenty a tok dat
+- **[Evoluce architektury](https://docs.claude-mem-plus.ai/architecture-evolution)** - Cesta z v3 na v5
+- **[Architektura háčků](https://docs.claude-mem-plus.ai/hooks-architecture)** - Jak Claude-Mem používá lifecycle hooks
+- **[Reference háčků](https://docs.claude-mem-plus.ai/architecture/hooks)** - Vysvětlení 7 hook skriptů
+- **[Worker Service](https://docs.claude-mem-plus.ai/architecture/worker-service)** - HTTP API a správa Bun
+- **[Databáze](https://docs.claude-mem-plus.ai/architecture/database)** - SQLite schéma a FTS5 vyhledávání
+- **[Architektura vyhledávání](https://docs.claude-mem-plus.ai/architecture/search-architecture)** - Hybridní vyhledávání s vektorovou databází Chroma
 
 ### Konfigurace a vývoj
 
-- **[Konfigurace](https://docs.claude-mem.ai/configuration)** - Proměnné prostředí a nastavení
-- **[Vývoj](https://docs.claude-mem.ai/development)** - Sestavení, testování, přispívání
-- **[Řešení problémů](https://docs.claude-mem.ai/troubleshooting)** - Běžné problémy a řešení
+- **[Konfigurace](https://docs.claude-mem-plus.ai/configuration)** - Proměnné prostředí a nastavení
+- **[Vývoj](https://docs.claude-mem-plus.ai/development)** - Sestavení, testování, přispívání
+- **[Řešení problémů](https://docs.claude-mem-plus.ai/troubleshooting)** - Běžné problémy a řešení
 
 ---
 
@@ -171,7 +171,7 @@ Restartujte Claude Code. Kontext z předchozích sezení se automaticky objeví 
 5. **mem-search dovednost** - Dotazy v přirozeném jazyce s postupným odhalováním
 6. **Chroma vektorová databáze** - Hybridní sémantické + klíčové vyhledávání pro inteligentní vyhledávání kontextu
 
-Podrobnosti najdete v [Přehledu architektury](https://docs.claude-mem.ai/architecture/overview).
+Podrobnosti najdete v [Přehledu architektury](https://docs.claude-mem-plus.ai/architecture/overview).
 
 ---
 
@@ -206,7 +206,7 @@ Claude-Mem poskytuje inteligentní vyhledávání prostřednictvím dovednosti m
 "Co se dělo, když jsme přidávali viewer UI?"
 ```
 
-Podrobné příklady najdete v [Průvodci vyhledávacími nástroji](https://docs.claude-mem.ai/usage/search-tools).
+Podrobné příklady najdete v [Průvodci vyhledávacími nástroji](https://docs.claude-mem-plus.ai/usage/search-tools).
 
 ---
 
@@ -214,7 +214,7 @@ Podrobné příklady najdete v [Průvodci vyhledávacími nástroji](https://doc
 
 Claude-Mem nabízí **beta kanál** s experimentálními funkcemi jako **Endless Mode** (biomimetická architektura paměti pro prodloužená sezení). Přepínejte mezi stabilní a beta verzí z webového rozhraní na http://localhost:37777 → Settings.
 
-Podrobnosti o Endless Mode a jak jej vyzkoušet najdete v **[Dokumentaci beta funkcí](https://docs.claude-mem.ai/beta-features)**.
+Podrobnosti o Endless Mode a jak jej vyzkoušet najdete v **[Dokumentaci beta funkcí](https://docs.claude-mem-plus.ai/beta-features)**.
 
 ---
 
@@ -230,15 +230,15 @@ Podrobnosti o Endless Mode a jak jej vyzkoušet najdete v **[Dokumentaci beta fu
 
 ## Konfigurace
 
-Nastavení jsou spravována v `~/.claude-mem/settings.json` (automaticky vytvořeno s výchozími hodnotami při prvním spuštění). Konfigurujte AI model, port workeru, datový adresář, úroveň logování a nastavení vkládání kontextu.
+Nastavení jsou spravována v `~/.claude-mem-plus/settings.json` (automaticky vytvořeno s výchozími hodnotami při prvním spuštění). Konfigurujte AI model, port workeru, datový adresář, úroveň logování a nastavení vkládání kontextu.
 
-Všechna dostupná nastavení a příklady najdete v **[Průvodci konfigurací](https://docs.claude-mem.ai/configuration)**.
+Všechna dostupná nastavení a příklady najdete v **[Průvodci konfigurací](https://docs.claude-mem-plus.ai/configuration)**.
 
 ---
 
 ## Vývoj
 
-Podrobné pokyny k sestavení, testování a pracovnímu postupu pro přispívání najdete v **[Průvodci vývojem](https://docs.claude-mem.ai/development)**.
+Podrobné pokyny k sestavení, testování a pracovnímu postupu pro přispívání najdete v **[Průvodci vývojem](https://docs.claude-mem-plus.ai/development)**.
 
 ---
 
@@ -246,7 +246,7 @@ Podrobné pokyny k sestavení, testování a pracovnímu postupu pro přispívá
 
 Pokud zaznamenáváte problémy, popište problém Claude a dovednost troubleshoot automaticky diagnostikuje a poskytne opravy.
 
-Běžné problémy a řešení najdete v **[Průvodci řešením problémů](https://docs.claude-mem.ai/troubleshooting)**.
+Běžné problémy a řešení najdete v **[Průvodci řešením problémů](https://docs.claude-mem-plus.ai/troubleshooting)**.
 
 ---
 
@@ -269,7 +269,7 @@ Příspěvky jsou vítány! Prosím:
 4. Aktualizujte dokumentaci
 5. Odešlete Pull Request
 
-Pracovní postup pro přispívání najdete v [Průvodci vývojem](https://docs.claude-mem.ai/development).
+Pracovní postup pro přispívání najdete v [Průvodci vývojem](https://docs.claude-mem-plus.ai/development).
 
 ---
 
@@ -295,8 +295,8 @@ Copyright (C) 2025 Alex Newman (@thedotmack). Všechna práva vyhrazena.
 ## Podpora
 
 - **Dokumentace**: [docs/](docs/)
-- **Problémy**: [GitHub Issues](https://github.com/thedotmack/claude-mem/issues)
-- **Repositář**: [github.com/thedotmack/claude-mem](https://github.com/thedotmack/claude-mem)
+- **Problémy**: [GitHub Issues](https://github.com/thedotmack/claude-mem-plus/issues)
+- **Repositář**: [github.com/thedotmack/claude-mem-plus](https://github.com/thedotmack/claude-mem-plus)
 - **Autor**: Alex Newman ([@thedotmack](https://github.com/thedotmack))
 
 ---

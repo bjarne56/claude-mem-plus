@@ -18,7 +18,7 @@ Claude-Mem works automatically once installed. No manual intervention required!
 
 ### What Gets Captured
 
-Every time Claude uses a tool, claude-mem captures it:
+Every time Claude uses a tool, claude-mem-plus captures it:
 
 - **Read** - File reads and content access
 - **Write** - New file creation
@@ -123,13 +123,13 @@ npm run publish:npm
 
 ## Viewing Stored Context
 
-Context is stored in SQLite database at `~/.claude-mem/claude-mem.db`.
+Context is stored in SQLite database at `~/.claude-mem-plus/claude-mem.db`.
 
 Query the database directly:
 
 ```bash
 # Open database
-sqlite3 ~/.claude-mem/claude-mem.db
+sqlite3 ~/.claude-mem-plus/claude-mem.db
 
 # View recent sessions
 SELECT session_id, project, created_at, status

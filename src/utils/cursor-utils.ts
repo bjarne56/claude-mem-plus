@@ -62,7 +62,7 @@ export function unregisterCursorProject(registryFile: string, projectName: strin
 
 export function writeContextFile(workspacePath: string, context: string): void {
   const rulesDir = join(workspacePath, '.cursor', 'rules');
-  const rulesFile = join(rulesDir, 'claude-mem-context.mdc');
+  const rulesFile = join(rulesDir, 'claude-mem-plus-context.mdc');
   const tempFile = `${rulesFile}.tmp`;
 
   mkdirSync(rulesDir, { recursive: true });
@@ -74,12 +74,12 @@ description: "Claude-mem context from past sessions (auto-updated)"
 
 # Memory Context from Past Sessions
 
-The following context is from claude-mem, a persistent memory system that tracks your coding sessions.
+The following context is from claude-mem-plus, a persistent memory system that tracks your coding sessions.
 
 ${context}
 
 ---
-*Updated after last session. Use claude-mem's MCP search tools for more detailed queries.*
+*Updated after last session. Use claude-mem-plus's MCP search tools for more detailed queries.*
 `;
 
   writeFileSync(tempFile, content);
@@ -87,7 +87,7 @@ ${context}
 }
 
 export function readContextFile(workspacePath: string): string | null {
-  const rulesFile = join(workspacePath, '.cursor', 'rules', 'claude-mem-context.mdc');
+  const rulesFile = join(workspacePath, '.cursor', 'rules', 'claude-mem-plus-context.mdc');
   if (!existsSync(rulesFile)) return null;
   return readFileSync(rulesFile, 'utf-8');
 }
@@ -112,7 +112,7 @@ export function configureCursorMcp(mcpJsonPath: string, mcpServerScriptPath: str
     }
   }
 
-  config.mcpServers['claude-mem'] = {
+  config.mcpServers['claude-mem-plus'] = {
     command: 'node',
     args: [mcpServerScriptPath]
   };
@@ -125,8 +125,8 @@ export function removeMcpConfig(mcpJsonPath: string): void {
 
   try {
     const config: CursorMcpConfig = JSON.parse(readFileSync(mcpJsonPath, 'utf-8'));
-    if (config.mcpServers && config.mcpServers['claude-mem']) {
-      delete config.mcpServers['claude-mem'];
+    if (config.mcpServers && config.mcpServers['claude-mem-plus']) {
+      delete config.mcpServers['claude-mem-plus'];
       writeFileSync(mcpJsonPath, JSON.stringify(config, null, 2));
     }
   } catch (e) {

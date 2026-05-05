@@ -1,9 +1,9 @@
 ---
 name: how-it-works
-description: Explain how claude-mem captures observations, when memory injection kicks in, and where data lives. Use when the user asks "how does claude-mem work?" or "what is this thing doing?".
+description: Explain how claude-mem-plus captures observations, when memory injection kicks in, and where data lives. Use when the user asks "how does claude-mem-plus work?" or "what is this thing doing?".
 ---
 
-# How claude-mem works
+# How claude-mem-plus works
 
 ## What it does
 
@@ -17,6 +17,6 @@ The first session in a fresh project seeds memory; subsequent sessions receive a
 
 ## Where data lives
 
-Everything stays in ~/.claude-mem on this machine.
+Everything stays in ~/.claude-mem-plus on this machine.
 
-Nothing leaves your machine except calls to whichever AI provider you configured for compression (Claude / OpenRouter / Gemini). The SQLite database, vector index, logs, and settings all live under that directory and are removed cleanly on `npx claude-mem uninstall`.
+Nothing leaves your machine except calls to whichever AI provider you configured for compression (Claude / OpenRouter / Gemini). The SQLite database, vector index, logs, and settings all live under that directory and are removed cleanly on `npx claude-mem-plus uninstall`.

@@ -4,7 +4,7 @@
 
 ## Overview
 
-Use claude-mem's persistent memory in Cursor without a Claude Code subscription. Choose between free-tier providers (Gemini, OpenRouter) or paid options.
+Use claude-mem-plus's persistent memory in Cursor without a Claude Code subscription. Choose between free-tier providers (Gemini, OpenRouter) or paid options.
 
 **What You Get**:
 - **Persistent memory** that survives across sessions - your AI remembers what it worked on
@@ -34,8 +34,8 @@ Use claude-mem's persistent memory in Cursor without a Claude Code subscription.
 
 ```bash
 # Clone the repository
-git clone https://github.com/thedotmack/claude-mem.git
-cd claude-mem
+git clone https://github.com/thedotmack/claude-mem-plus.git
+cd claude-mem-plus
 
 # Install dependencies
 bun install
@@ -46,7 +46,7 @@ bun run build
 
 ## Step 2: Configure Provider (Choose One)
 
-Since you don't have Claude Code, you need to configure an AI provider for claude-mem's summarization engine.
+Since you don't have Claude Code, you need to configure an AI provider for claude-mem-plus's summarization engine.
 
 ### Option A: Gemini (Recommended - Free Tier)
 
@@ -54,10 +54,10 @@ Gemini offers 1500 free requests per day, plenty for typical usage.
 
 ```bash
 # Create settings directory
-mkdir -p ~/.claude-mem
+mkdir -p ~/.claude-mem-plus
 
 # Create settings file
-cat > ~/.claude-mem/settings.json << 'EOF'
+cat > ~/.claude-mem-plus/settings.json << 'EOF'
 {
   "CLAUDE_MEM_PROVIDER": "gemini",
   "CLAUDE_MEM_GEMINI_API_KEY": "YOUR_GEMINI_API_KEY",
@@ -74,8 +74,8 @@ EOF
 OpenRouter provides access to many models, including free options.
 
 ```bash
-mkdir -p ~/.claude-mem
-cat > ~/.claude-mem/settings.json << 'EOF'
+mkdir -p ~/.claude-mem-plus
+cat > ~/.claude-mem-plus/settings.json << 'EOF'
 {
   "CLAUDE_MEM_PROVIDER": "openrouter",
   "CLAUDE_MEM_OPENROUTER_API_KEY": "YOUR_OPENROUTER_API_KEY"
@@ -94,8 +94,8 @@ EOF
 If you have Anthropic API credits but not a Claude Code subscription:
 
 ```bash
-mkdir -p ~/.claude-mem
-cat > ~/.claude-mem/settings.json << 'EOF'
+mkdir -p ~/.claude-mem-plus
+cat > ~/.claude-mem-plus/settings.json << 'EOF'
 {
   "CLAUDE_MEM_PROVIDER": "claude",
   "ANTHROPIC_API_KEY": "YOUR_ANTHROPIC_API_KEY"
@@ -106,7 +106,7 @@ EOF
 ## Step 3: Install Cursor Hooks
 
 ```bash
-# From the claude-mem repo directory (recommended - all projects)
+# From the claude-mem-plus repo directory (recommended - all projects)
 bun run cursor:install -- user
 
 # Or for project-level only:
@@ -160,14 +160,14 @@ The worker runs in the background and handles:
 
 Verify your settings file exists and has valid credentials:
 ```bash
-cat ~/.claude-mem/settings.json
+cat ~/.claude-mem-plus/settings.json
 ```
 
 ### Worker not starting
 
 Check logs:
 ```bash
-tail -f ~/.claude-mem/logs/worker-$(date +%Y-%m-%d).log
+tail -f ~/.claude-mem-plus/logs/worker-$(date +%Y-%m-%d).log
 ```
 
 ### Hooks not executing
@@ -190,7 +190,7 @@ If you hit the 1500 requests/day limit:
 
 - Read [README.md](README.md) for detailed hook documentation
 - Check [CONTEXT-INJECTION.md](CONTEXT-INJECTION.md) for context behavior details
-- Visit https://docs.claude-mem.ai for full documentation
+- Visit https://docs.claude-mem-plus.ai for full documentation
 
 ## Quick Reference
 
@@ -221,13 +221,13 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 
 ```powershell
 # Clone and build
-git clone https://github.com/thedotmack/claude-mem.git
-cd claude-mem
+git clone https://github.com/thedotmack/claude-mem-plus.git
+cd claude-mem-plus
 bun install
 bun run build
 
 # Configure provider (Gemini example)
-$settingsDir = "$env:USERPROFILE\.claude-mem"
+$settingsDir = "$env:USERPROFILE\.claude-mem-plus"
 New-Item -ItemType Directory -Force -Path $settingsDir
 
 @"

@@ -1,37 +1,37 @@
-# claude-mem fork (zh-fork) Publishing Guide
+# claude-mem-plus fork (zh-fork) Publishing Guide
 
 如何把 fork 发到 npm 让其他用户 `npm install -g <package>` 可用。
 
 ## 先决定 publish 策略
 
-### Option A:**保留 `claude-mem` 名(覆盖 upstream)**
+### Option A:**保留 `claude-mem-plus` 名(覆盖 upstream)**
 
 ```json
-{ "name": "claude-mem", "version": "12.4.9-zh-fork.1" }
+{ "name": "claude-mem-plus", "version": "12.4.9-zh-fork.1" }
 ```
 
 ⚠️ **不推荐** — 你不是 upstream 维护者,npm publish 会被拒(需要 publish 权限)。除非 fork 自己用 (`npm pack` + 本地 `npm install -g <tgz>`)。
 
-### Option B:**改名 `claude-mem-zh-fork`(独立包)**← 推荐
+### Option B:**改名 `claude-mem-plus-zh-fork`(独立包)**← 推荐
 
 ```json
 {
-  "name": "claude-mem-zh-fork",
+  "name": "claude-mem-plus-zh-fork",
   "version": "1.0.0",
-  "description": "claude-mem fork: 31 langs i18n + soft delete trash + cmem-sync integration",
-  "repository": { "url": "https://github.com/<your>/claude-mem.git" },
-  "homepage": "https://github.com/<your>/claude-mem#readme",
-  "bugs": { "url": "https://github.com/<your>/claude-mem/issues" }
+  "description": "claude-mem-plus fork: 31 langs i18n + soft delete trash + cmem-sync integration",
+  "repository": { "url": "https://github.com/<your>/claude-mem-plus.git" },
+  "homepage": "https://github.com/<your>/claude-mem-plus#readme",
+  "bugs": { "url": "https://github.com/<your>/claude-mem-plus/issues" }
 }
 ```
 
-用户:`npm install -g claude-mem-zh-fork`,命令仍是 `claude-mem`(`bin` 字段控制)。
+用户:`npm install -g claude-mem-plus-zh-fork`,命令仍是 `claude-mem-plus`(`bin` 字段控制)。
 
 ### Option C:**只 GitHub Release tarball,不 publish 到 npm**
 
 用户:
 ```bash
-npm install -g https://github.com/<your>/claude-mem/releases/download/v1.0.0/claude-mem-1.0.0.tgz
+npm install -g https://github.com/<your>/claude-mem-plus/releases/download/v1.0.0/claude-mem-plus-1.0.0.tgz
 ```
 或 `install-client.sh --tarball <URL>`。
 
@@ -40,7 +40,7 @@ npm install -g https://github.com/<your>/claude-mem/releases/download/v1.0.0/cla
 ### 1. 改 package.json
 
 ```bash
-cd /Users/bjarne/Code/claude/claude-mem
+cd /Users/bjarne/Code/claude/claude-mem-plus
 
 # 备份原文件
 cp package.json package.json.upstream-backup
@@ -49,25 +49,25 @@ cp package.json package.json.upstream-backup
 python3 - <<'PY'
 import json
 d = json.load(open('package.json'))
-d['name'] = 'claude-mem-zh-fork'
+d['name'] = 'claude-mem-plus-zh-fork'
 d['version'] = '1.0.0'
-d['description'] = 'claude-mem fork: 31-language viewer i18n + soft delete trash + cmem-sync integration'
-d['repository'] = {'type': 'git', 'url': 'https://github.com/<your-username>/claude-mem.git'}
-d['homepage'] = 'https://github.com/<your-username>/claude-mem#readme'
-d['bugs'] = {'url': 'https://github.com/<your-username>/claude-mem/issues'}
-# bin 不变(用户装完跑 `claude-mem` 命令)
+d['description'] = 'claude-mem-plus fork: 31-language viewer i18n + soft delete trash + cmem-sync integration'
+d['repository'] = {'type': 'git', 'url': 'https://github.com/<your-username>/claude-mem-plus.git'}
+d['homepage'] = 'https://github.com/<your-username>/claude-mem-plus#readme'
+d['bugs'] = {'url': 'https://github.com/<your-username>/claude-mem-plus/issues'}
+# bin 不变(用户装完跑 `claude-mem-plus` 命令)
 json.dump(d, open('package.json', 'w'), indent=2)
 print("OK")
 PY
 ```
 
 注意 ⚠️ 改名后**全局命令冲突**:
-- 用户已经装了 upstream `claude-mem` → fork 装失败(命令名冲突)
-- 解决:让用户先 `npm uninstall -g claude-mem`,再装 fork
+- 用户已经装了 upstream `claude-mem-plus` → fork 装失败(命令名冲突)
+- 解决:让用户先 `npm uninstall -g claude-mem-plus`,再装 fork
 
 或者 fork 也改 bin:
 ```json
-{ "bin": { "claude-mem": "./dist/npx-cli/index.js", "cmem": "./dist/npx-cli/index.js" } }
+{ "bin": { "claude-mem-plus": "./dist/npx-cli/index.js", "cmem": "./dist/npx-cli/index.js" } }
 ```
 
 ### 2. 准备 .npmignore
@@ -109,34 +109,34 @@ ISSUE-BLOWOUT-TODO.md
 npm run build
 npm pack --dry-run | head -50    # 看会发哪些文件
 npm pack                          # 真生成 tgz
-ls -lh claude-mem-zh-fork-1.0.0.tgz
+ls -lh claude-mem-plus-zh-fork-1.0.0.tgz
 ```
 
 ### 4. 本地装一遍确认 work
 
 ```bash
-npm uninstall -g claude-mem        # 卸 upstream(如果有)
-npm install -g ./claude-mem-zh-fork-1.0.0.tgz
-which claude-mem
-claude-mem sync --help              # 应该看到 sync 子命令
+npm uninstall -g claude-mem-plus        # 卸 upstream(如果有)
+npm install -g ./claude-mem-plus-zh-fork-1.0.0.tgz
+which claude-mem-plus
+claude-mem-plus sync --help              # 应该看到 sync 子命令
 ```
 
 ### 5. npm publish
 
 ```bash
 npm login                           # 第一次需要(用户名 / 密码 / OTP)
-npm publish --access public         # 发布到 https://www.npmjs.com/package/claude-mem-zh-fork
+npm publish --access public         # 发布到 https://www.npmjs.com/package/claude-mem-plus-zh-fork
 ```
 
 公开后,其他用户:
 ```bash
-npm install -g claude-mem-zh-fork
+npm install -g claude-mem-plus-zh-fork
 ```
 
 或者用 `install-client.sh`:
 ```bash
-curl -sSL https://raw.githubusercontent.com/<your>/claude-mem/zh-fork/install-client.sh | \
-    bash -s -- --package claude-mem-zh-fork
+curl -sSL https://raw.githubusercontent.com/<your>/claude-mem-plus/zh-fork/install-client.sh | \
+    bash -s -- --package claude-mem-plus-zh-fork
 ```
 
 ## GitHub Release(配合 npm publish)
@@ -154,7 +154,7 @@ git push origin v1.0.0
 gh release create v1.0.0 \
     --title "v1.0.0 zh-fork" \
     --notes-file CHANGELOG.md \
-    claude-mem-zh-fork-1.0.0.tgz
+    claude-mem-plus-zh-fork-1.0.0.tgz
 ```
 
 或用 GitHub Actions 自动化(下面)。
@@ -220,13 +220,13 @@ git push origin zh-fork --force-with-lease
 
 用户:
 ```bash
-npm update -g claude-mem-zh-fork    # 拉最新
-claude-mem stop && claude-mem start
+npm update -g claude-mem-plus-zh-fork    # 拉最新
+claude-mem-plus stop && claude-mem-plus start
 ```
 
 或者重跑 install-client.sh(会自动 npm install 最新):
 ```bash
-curl -sSL .../install-client.sh | bash -s -- --package claude-mem-zh-fork
+curl -sSL .../install-client.sh | bash -s -- --package claude-mem-plus-zh-fork
 ```
 
 ## 常见问题
@@ -237,18 +237,18 @@ curl -sSL .../install-client.sh | bash -s -- --package claude-mem-zh-fork
 - 不是 owner → npm 公网限定 unique 包名
 - 需要 OTP → npm 账号开了 2FA,publish 时输入
 
-### bin 命令冲突(claude-mem 已装 upstream)
+### bin 命令冲突(claude-mem-plus 已装 upstream)
 
 ```bash
-npm uninstall -g claude-mem
-npm install -g claude-mem-zh-fork
+npm uninstall -g claude-mem-plus
+npm install -g claude-mem-plus-zh-fork
 ```
 
 或者 fork 改 bin name(`{ "bin": { "cmem-mem": "..." } }`),让两者共存。
 
 ### Bun 依赖
 
-claude-mem worker 跑在 Bun 上(`worker-service.cjs`)。npm install 不会装 Bun。`install-client.sh` 会自动装,手动安装看:
+claude-mem-plus worker 跑在 Bun 上(`worker-service.cjs`)。npm install 不会装 Bun。`install-client.sh` 会自动装,手动安装看:
 ```bash
 curl -fsSL https://bun.sh/install | bash
 ```
@@ -299,5 +299,5 @@ upstream 是 **AGPL-3.0**,fork 沿用。Publish 到 npm:
 - worker DatabaseManager 没跑 MigrationRunner
 
 ### Based on
-- upstream thedotmack/claude-mem v12.4.9
+- upstream thedotmack/claude-mem-plus v12.4.9
 ```

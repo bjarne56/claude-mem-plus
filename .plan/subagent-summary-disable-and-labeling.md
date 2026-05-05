@@ -18,7 +18,7 @@
 
 **Discriminator for subagent context**: presence of `agent_id` OR `agent_type` in the hook stdin JSON.
 
-### Current claude-mem architecture (grepped + read)
+### Current claude-mem-plus architecture (grepped + read)
 
 - `src/cli/types.ts:1-15` — `NormalizedHookInput` lacks `agentId` / `agentType`.
 - `src/cli/adapters/claude-code.ts:5-17` — Claude Code adapter does NOT extract `agent_id` / `agent_type`.
@@ -164,8 +164,8 @@
 
 **Verification checklist**:
 - Run worker; check logs for `[migration010]`.
-- `sqlite3 ~/.claude-mem/claude-mem.db "PRAGMA table_info(observations);"` → shows `agent_type` and `agent_id` columns.
-- `sqlite3 ~/.claude-mem/claude-mem.db ".indexes observations"` → shows `idx_observations_agent_type`.
+- `sqlite3 ~/.claude-mem-plus/claude-mem.db "PRAGMA table_info(observations);"` → shows `agent_type` and `agent_id` columns.
+- `sqlite3 ~/.claude-mem-plus/claude-mem.db ".indexes observations"` → shows `idx_observations_agent_type`.
 
 **Anti-pattern guards**:
 - Do NOT drop or rename existing columns.
@@ -296,7 +296,7 @@ After Phases 1-5 land and pass verification:
 3. **Push branch**: push current worktree branch `trail-guarantee` (or a new feature branch — confirm with `git status`). Create PR via `gh pr create` with summary of both features.
 4. **Run `/loop 5m`** to continuously re-check PR review comments: as each CodeRabbit/Greptile/human comment arrives, address it in a new commit, push, and re-check. Exit loop only when all actionable review comments are resolved and status checks pass.
 5. **Merge to main** via `gh pr merge --squash --auto` (or `--merge` per repo convention — inspect `.github/` first).
-6. **Version bump**: `cd ~/Scripts/claude-mem/` and run `/version-bump`.
+6. **Version bump**: `cd ~/Scripts/claude-mem-plus/` and run `/version-bump`.
 
 **Anti-pattern guards for this phase**:
 - Do NOT force-push to main.
@@ -310,6 +310,6 @@ After Phases 1-5 land and pass verification:
 
 - `grep -rn "agent_id\|agentId" src/` → fields present in: `types.ts`, `claude-code.ts`, `summarize.ts`, `observation.ts`, `SessionRoutes.ts`, observation types, store, migration010.
 - `grep -rn "subagent_context" src/services/worker/` → worker-side guard present.
-- `sqlite3 ~/.claude-mem/claude-mem.db "PRAGMA table_info(observations);"` → includes `agent_type`, `agent_id`.
+- `sqlite3 ~/.claude-mem-plus/claude-mem.db "PRAGMA table_info(observations);"` → includes `agent_type`, `agent_id`.
 - `npm test && npm run build` → both green.
 - Smoke test: simulate a subagent hook payload end-to-end → observation labeled, no summary fired.

@@ -122,7 +122,7 @@ export function Feed({
             </div>
             <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' }}>
               <a
-                href="https://docs.claude-mem.ai"
+                href="https://docs.claude-mem-plus.ai"
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{
@@ -137,7 +137,7 @@ export function Feed({
                 {t('feed.emptyAction.docs')}
               </a>
               <a
-                href="https://github.com/thedotmack/claude-mem"
+                href="https://github.com/thedotmack/claude-mem-plus"
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{

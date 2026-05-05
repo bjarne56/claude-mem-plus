@@ -80,7 +80,7 @@ describe('MemoryRoutes — POST /api/memory/save (#2116)', () => {
       getChromaSync: () => null,
     };
 
-    routes = new MemoryRoutes(mockDbManager as any, 'claude-mem');
+    routes = new MemoryRoutes(mockDbManager as any, 'claude-mem-plus');
   });
 
   afterEach(() => {
@@ -153,8 +153,8 @@ describe('MemoryRoutes — POST /api/memory/save (#2116)', () => {
     const { req, res } = createMockReqRes({ text: 'hello' });
     handler(req as Request, res as Response);
 
-    expect(mockGetOrCreateManualSession).toHaveBeenCalledWith('claude-mem');
-    expect(storeObservationCalls[0][1]).toBe('claude-mem');
+    expect(mockGetOrCreateManualSession).toHaveBeenCalledWith('claude-mem-plus');
+    expect(storeObservationCalls[0][1]).toBe('claude-mem-plus');
   });
 
   it('rejects unknown top-level fields with HTTP 400 (no silent drop)', () => {

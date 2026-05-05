@@ -3,7 +3,7 @@
 import Database from 'bun:sqlite';
 import { resolve } from 'path';
 
-const DB_PATH = resolve(process.env.HOME!, '.claude-mem/claude-mem.db');
+const DB_PATH = resolve(process.env.HOME!, '.claude-mem-plus/claude-mem.db');
 
 const BAD_WINDOW_START = 1766623500000; 
 const BAD_WINDOW_END = 1766626260000;   

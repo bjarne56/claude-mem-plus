@@ -1,10 +1,10 @@
 <!--
 ═══════════════════════════════════════════════════════════════════════════════
-  claude-mem-plus  —  fork of thedotmack/claude-mem
+  claude-mem-plus  —  fork of thedotmack/claude-mem-plus
 ═══════════════════════════════════════════════════════════════════════════════
 -->
 
-> **claude-mem-plus** is a fork of [thedotmack/claude-mem](https://github.com/thedotmack/claude-mem) v12.6.0 that adds:
+> **claude-mem-plus** is a fork of [thedotmack/claude-mem-plus](https://github.com/thedotmack/claude-mem-plus) v12.6.0 that adds:
 >
 > - 🌐 **31-language viewer UI** with browser auto-detect + RTL support.
 > - 🌐 **31-language SKILL.md descriptions** — `install-client.sh` detects
@@ -41,18 +41,18 @@
 > sudo ./scripts/install-server.sh --domain cmem.example.com
 > ```
 >
-> Below is the **upstream README** (Alex Newman's original claude-mem).
+> Below is the **upstream README** (Alex Newman's original claude-mem-plus).
 > Fork-specific increments live in [CMEM_SYNC_README.md](CMEM_SYNC_README.md).
 
 ---
 
 <h1 align="center">
   <br>
-  <a href="https://github.com/thedotmack/claude-mem">
+  <a href="https://github.com/thedotmack/claude-mem-plus">
     <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/thedotmack/claude-mem/main/docs/public/claude-mem-logo-for-dark-mode.webp">
-      <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/thedotmack/claude-mem/main/docs/public/claude-mem-logo-for-light-mode.webp">
-      <img src="https://raw.githubusercontent.com/thedotmack/claude-mem/main/docs/public/claude-mem-logo-for-light-mode.webp" alt="Claude-Mem" width="400">
+      <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/thedotmack/claude-mem-plus/main/docs/public/claude-mem-plus-logo-for-dark-mode.webp">
+      <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/thedotmack/claude-mem-plus/main/docs/public/claude-mem-plus-logo-for-light-mode.webp">
+      <img src="https://raw.githubusercontent.com/thedotmack/claude-mem-plus/main/docs/public/claude-mem-plus-logo-for-light-mode.webp" alt="Claude-Mem" width="400">
     </picture>
   </a>
   <br>
@@ -113,9 +113,9 @@
 <p align="center">
   <a href="https://trendshift.io/repositories/15496" target="_blank">
     <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/thedotmack/claude-mem/main/docs/public/trendshift-badge-dark.svg">
-      <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/thedotmack/claude-mem/main/docs/public/trendshift-badge.svg">
-      <img src="https://raw.githubusercontent.com/thedotmack/claude-mem/main/docs/public/trendshift-badge.svg" alt="thedotmack/claude-mem | Trendshift" width="250" height="55"/>
+      <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/thedotmack/claude-mem-plus/main/docs/public/trendshift-badge-dark.svg">
+      <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/thedotmack/claude-mem-plus/main/docs/public/trendshift-badge.svg">
+      <img src="https://raw.githubusercontent.com/thedotmack/claude-mem-plus/main/docs/public/trendshift-badge.svg" alt="thedotmack/claude-mem-plus | Trendshift" width="250" height="55"/>
     </picture>
   </a>
 </p>
@@ -125,10 +125,10 @@
 <table align="center">
   <tr>
     <td align="center">
-      <a href="https://github.com/thedotmack/claude-mem">
+      <a href="https://github.com/thedotmack/claude-mem-plus">
         <picture>
           <img
-            src="https://raw.githubusercontent.com/thedotmack/claude-mem/main/docs/public/cm-preview.gif"
+            src="https://raw.githubusercontent.com/thedotmack/claude-mem-plus/main/docs/public/cm-preview.gif"
             alt="Claude-Mem Preview"
             width="500"
           >
@@ -136,19 +136,19 @@
       </a>
     </td>
     <td align="center">
-      <a href="https://www.star-history.com/#thedotmack/claude-mem&Date">
+      <a href="https://www.star-history.com/#thedotmack/claude-mem-plus&Date">
         <picture>
           <source
             media="(prefers-color-scheme: dark)"
-            srcset="https://api.star-history.com/image?repos=thedotmack/claude-mem&type=date&theme=dark&legend=top-left"
+            srcset="https://api.star-history.com/image?repos=thedotmack/claude-mem-plus&type=date&theme=dark&legend=top-left"
           />
           <source
             media="(prefers-color-scheme: light)"
-            srcset="https://api.star-history.com/image?repos=thedotmack/claude-mem&type=date&legend=top-left"
+            srcset="https://api.star-history.com/image?repos=thedotmack/claude-mem-plus&type=date&legend=top-left"
           />
           <img
             alt="Star History Chart"
-            src="https://api.star-history.com/image?repos=thedotmack/claude-mem&type=date&legend=top-left"
+            src="https://api.star-history.com/image?repos=thedotmack/claude-mem-plus&type=date&legend=top-left"
             width="500"
           />
         </picture>
@@ -178,41 +178,41 @@
 Install with a single command:
 
 ```bash
-npx claude-mem install
+npx claude-mem-plus install
 ```
 
 Or install for Gemini CLI (auto-detects `~/.gemini`):
 
 ```bash
-npx claude-mem install --ide gemini-cli
+npx claude-mem-plus install --ide gemini-cli
 ```
 Or install for OpenCode:
 
 ```bash
-npx claude-mem install --ide opencode
+npx claude-mem-plus install --ide opencode
 ```
 
 Or install from the plugin marketplace inside Claude Code:
 
 ```bash
-/plugin marketplace add thedotmack/claude-mem
+/plugin marketplace add thedotmack/claude-mem-plus
 
-/plugin install claude-mem
+/plugin install claude-mem-plus
 ```
 
 Restart Claude Code or Gemini CLI. Context from previous sessions will automatically appear in new sessions.
 
-> **Note:** Claude-Mem is also published on npm, but `npm install -g claude-mem` installs the **SDK/library only** — it does not register the plugin hooks or set up the worker service. Always install via `npx claude-mem install` or the `/plugin` commands above.
+> **Note:** Claude-Mem is also published on npm, but `npm install -g claude-mem-plus` installs the **SDK/library only** — it does not register the plugin hooks or set up the worker service. Always install via `npx claude-mem-plus install` or the `/plugin` commands above.
 
 ### 🦞 OpenClaw Gateway
 
-Install claude-mem as a persistent memory plugin on [OpenClaw](https://openclaw.ai) gateways with a single command:
+Install claude-mem-plus as a persistent memory plugin on [OpenClaw](https://openclaw.ai) gateways with a single command:
 
 ```bash
 curl -fsSL https://install.cmem.ai/openclaw.sh | bash
 ```
 
-The installer handles dependencies, plugin setup, AI provider configuration, worker startup, and optional real-time observation feeds to Telegram, Discord, Slack, and more. See the [OpenClaw Integration Guide](https://docs.claude-mem.ai/openclaw-integration) for details.
+The installer handles dependencies, plugin setup, AI provider configuration, worker startup, and optional real-time observation feeds to Telegram, Discord, Slack, and more. See the [OpenClaw Integration Guide](https://docs.claude-mem-plus.ai/openclaw-integration) for details.
 
 **Key Features:**
 
@@ -231,36 +231,36 @@ The installer handles dependencies, plugin setup, AI provider configuration, wor
 
 ## Documentation
 
-📚 **[View Full Documentation](https://docs.claude-mem.ai/)** - Browse on official website
+📚 **[View Full Documentation](https://docs.claude-mem-plus.ai/)** - Browse on official website
 
 ### Getting Started
 
-- **[Installation Guide](https://docs.claude-mem.ai/installation)** - Quick start & advanced installation
-- **[Gemini CLI Setup](https://docs.claude-mem.ai/gemini-cli/setup)** - Dedicated guide for Google's Gemini CLI integration
-- **[Usage Guide](https://docs.claude-mem.ai/usage/getting-started)** - How Claude-Mem works automatically
-- **[Search Tools](https://docs.claude-mem.ai/usage/search-tools)** - Query your project history with natural language
-- **[Beta Features](https://docs.claude-mem.ai/beta-features)** - Try experimental features like Endless Mode
+- **[Installation Guide](https://docs.claude-mem-plus.ai/installation)** - Quick start & advanced installation
+- **[Gemini CLI Setup](https://docs.claude-mem-plus.ai/gemini-cli/setup)** - Dedicated guide for Google's Gemini CLI integration
+- **[Usage Guide](https://docs.claude-mem-plus.ai/usage/getting-started)** - How Claude-Mem works automatically
+- **[Search Tools](https://docs.claude-mem-plus.ai/usage/search-tools)** - Query your project history with natural language
+- **[Beta Features](https://docs.claude-mem-plus.ai/beta-features)** - Try experimental features like Endless Mode
 
 ### Best Practices
 
-- **[Context Engineering](https://docs.claude-mem.ai/context-engineering)** - AI agent context optimization principles
-- **[Progressive Disclosure](https://docs.claude-mem.ai/progressive-disclosure)** - Philosophy behind Claude-Mem's context priming strategy
+- **[Context Engineering](https://docs.claude-mem-plus.ai/context-engineering)** - AI agent context optimization principles
+- **[Progressive Disclosure](https://docs.claude-mem-plus.ai/progressive-disclosure)** - Philosophy behind Claude-Mem's context priming strategy
 
 ### Architecture
 
-- **[Overview](https://docs.claude-mem.ai/architecture/overview)** - System components & data flow
-- **[Architecture Evolution](https://docs.claude-mem.ai/architecture-evolution)** - The journey from v3 to v5
-- **[Hooks Architecture](https://docs.claude-mem.ai/hooks-architecture)** - How Claude-Mem uses lifecycle hooks
-- **[Hooks Reference](https://docs.claude-mem.ai/architecture/hooks)** - 7 hook scripts explained
-- **[Worker Service](https://docs.claude-mem.ai/architecture/worker-service)** - HTTP API & Bun management
-- **[Database](https://docs.claude-mem.ai/architecture/database)** - SQLite schema & FTS5 search
-- **[Search Architecture](https://docs.claude-mem.ai/architecture/search-architecture)** - Hybrid search with Chroma vector database
+- **[Overview](https://docs.claude-mem-plus.ai/architecture/overview)** - System components & data flow
+- **[Architecture Evolution](https://docs.claude-mem-plus.ai/architecture-evolution)** - The journey from v3 to v5
+- **[Hooks Architecture](https://docs.claude-mem-plus.ai/hooks-architecture)** - How Claude-Mem uses lifecycle hooks
+- **[Hooks Reference](https://docs.claude-mem-plus.ai/architecture/hooks)** - 7 hook scripts explained
+- **[Worker Service](https://docs.claude-mem-plus.ai/architecture/worker-service)** - HTTP API & Bun management
+- **[Database](https://docs.claude-mem-plus.ai/architecture/database)** - SQLite schema & FTS5 search
+- **[Search Architecture](https://docs.claude-mem-plus.ai/architecture/search-architecture)** - Hybrid search with Chroma vector database
 
 ### Configuration & Development
 
-- **[Configuration](https://docs.claude-mem.ai/configuration)** - Environment variables & settings
-- **[Development](https://docs.claude-mem.ai/development)** - Building, testing, contributing
-- **[Troubleshooting](https://docs.claude-mem.ai/troubleshooting)** - Common issues & solutions
+- **[Configuration](https://docs.claude-mem-plus.ai/configuration)** - Environment variables & settings
+- **[Development](https://docs.claude-mem-plus.ai/development)** - Building, testing, contributing
+- **[Troubleshooting](https://docs.claude-mem-plus.ai/troubleshooting)** - Common issues & solutions
 
 ---
 
@@ -275,7 +275,7 @@ The installer handles dependencies, plugin setup, AI provider configuration, wor
 5. **mem-search Skill** - Natural language queries with progressive disclosure
 6. **Chroma Vector Database** - Hybrid semantic + keyword search for intelligent context retrieval
 
-See [Architecture Overview](https://docs.claude-mem.ai/architecture/overview) for details.
+See [Architecture Overview](https://docs.claude-mem-plus.ai/architecture/overview) for details.
 
 ---
 
@@ -314,7 +314,7 @@ search(query="authentication bug", type="bugfix", limit=10)
 get_observations(ids=[123, 456])
 ```
 
-See [Search Tools Guide](https://docs.claude-mem.ai/usage/search-tools) for detailed examples.
+See [Search Tools Guide](https://docs.claude-mem-plus.ai/usage/search-tools) for detailed examples.
 
 ---
 
@@ -322,7 +322,7 @@ See [Search Tools Guide](https://docs.claude-mem.ai/usage/search-tools) for deta
 
 Claude-Mem offers a **beta channel** with experimental features like **Endless Mode** (biomimetic memory architecture for extended sessions). Switch between stable and beta versions from the web viewer UI at http://localhost:37777 → Settings.
 
-See **[Beta Features Documentation](https://docs.claude-mem.ai/beta-features)** for details on Endless Mode and how to try it.
+See **[Beta Features Documentation](https://docs.claude-mem-plus.ai/beta-features)** for details on Endless Mode and how to try it.
 
 ---
 
@@ -349,9 +349,9 @@ Make sure Node.js and npm are installed and added to your PATH. Download the lat
 
 ## Configuration
 
-Settings are managed in `~/.claude-mem/settings.json` (auto-created with defaults on first run). Configure AI model, worker port, data directory, log level, and context injection settings.
+Settings are managed in `~/.claude-mem-plus/settings.json` (auto-created with defaults on first run). Configure AI model, worker port, data directory, log level, and context injection settings.
 
-See the **[Configuration Guide](https://docs.claude-mem.ai/configuration)** for all available settings and examples.
+See the **[Configuration Guide](https://docs.claude-mem-plus.ai/configuration)** for all available settings and examples.
 
 ### Mode & Language Configuration
 
@@ -363,7 +363,7 @@ This option controls both:
 
 #### How to Configure
 
-Edit your settings file at `~/.claude-mem/settings.json`:
+Edit your settings file at `~/.claude-mem-plus/settings.json`:
 
 ```json
 {
@@ -396,7 +396,7 @@ Restart Claude Code to apply the new mode configuration.
 
 ## Development
 
-See the **[Development Guide](https://docs.claude-mem.ai/development)** for build instructions, testing, and contribution workflow.
+See the **[Development Guide](https://docs.claude-mem-plus.ai/development)** for build instructions, testing, and contribution workflow.
 
 ---
 
@@ -404,7 +404,7 @@ See the **[Development Guide](https://docs.claude-mem.ai/development)** for buil
 
 If experiencing issues, describe the problem to Claude and the troubleshoot skill will automatically diagnose and provide fixes.
 
-See the **[Troubleshooting Guide](https://docs.claude-mem.ai/troubleshooting)** for common issues and solutions.
+See the **[Troubleshooting Guide](https://docs.claude-mem-plus.ai/troubleshooting)** for common issues and solutions.
 
 ---
 
@@ -427,7 +427,7 @@ Contributions are welcome! Please:
 4. Update documentation
 5. Submit a Pull Request
 
-See [Development Guide](https://docs.claude-mem.ai/development) for contribution workflow.
+See [Development Guide](https://docs.claude-mem-plus.ai/development) for contribution workflow.
 
 ---
 
@@ -453,8 +453,8 @@ See the [LICENSE](LICENSE) file for full details.
 ## Support
 
 - **Documentation**: [docs/](docs/)
-- **Issues**: [GitHub Issues](https://github.com/thedotmack/claude-mem/issues)
-- **Repository**: [github.com/thedotmack/claude-mem](https://github.com/thedotmack/claude-mem)
+- **Issues**: [GitHub Issues](https://github.com/thedotmack/claude-mem-plus/issues)
+- **Repository**: [github.com/thedotmack/claude-mem-plus](https://github.com/thedotmack/claude-mem-plus)
 - **Official X Account**: [@Claude_Memory](https://x.com/Claude_Memory)
 - **Official Discord**: [Join Discord](https://discord.com/invite/J4wttp9vDu)
 - **Author**: Alex Newman ([@thedotmack](https://github.com/thedotmack))

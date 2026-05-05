@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# pack-release.sh — 给 claude-mem fork 打 release 包(开源 / 内部分发用)
+# pack-release.sh — 给 claude-mem-plus fork 打 release 包(开源 / 内部分发用)
 #
 # 输出:
 #   dist/
-#     claude-mem-<version>.tgz             npm pack 产物
-#     claude-mem-<version>.tgz.sha256      SHA256 校验
+#     claude-mem-plus-<version>.tgz             npm pack 产物
+#     claude-mem-plus-<version>.tgz.sha256      SHA256 校验
 #     install-client.sh                    安装脚本(便于和 tarball 一起分发)
 #     RELEASE_MANIFEST.txt                 内容清单 + 校验 + 提交 hash + 时间
 #
@@ -50,7 +50,7 @@ done
 ROOT="$(command cd "$(command dirname "$0")/.." && command pwd)"
 cd "$ROOT" || fail "找不到项目根目录"
 
-[[ -f package.json ]] || fail "package.json 不存在,$ROOT 不是 claude-mem 仓库?"
+[[ -f package.json ]] || fail "package.json 不存在,$ROOT 不是 claude-mem-plus 仓库?"
 
 PKG_VERSION=$(command node -p "require('./package.json').version")
 PKG_NAME=$(command node -p "require('./package.json').name")
@@ -68,7 +68,7 @@ run() {
 }
 
 # ── pipeline ───────────────────────────────────
-log "${BOLD}claude-mem release packer${RESET}"
+log "${BOLD}claude-mem-plus release packer${RESET}"
 info "包名:       $PKG_NAME"
 info "版本:       $PKG_VERSION"
 info "release tag:$RELEASE_TAG"
@@ -116,7 +116,7 @@ if [[ "$DRY_RUN" -eq 0 ]]; then
         local_git_dirty=" (DIRTY — 有未提交改动)"
     fi
     cat > "$DIST/RELEASE_MANIFEST.txt" <<EOF
-claude-mem release manifest
+claude-mem-plus release manifest
 ═══════════════════════════════════════════════════════════════
 package:       $PKG_NAME
 version:       $PKG_VERSION

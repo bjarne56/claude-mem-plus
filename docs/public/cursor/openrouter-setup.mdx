@@ -27,8 +27,8 @@ This guide walks you through setting up Claude-Mem in Cursor using OpenRouter. O
 
 ```bash
 # Clone the repository
-git clone https://github.com/thedotmack/claude-mem.git
-cd claude-mem
+git clone https://github.com/thedotmack/claude-mem-plus.git
+cd claude-mem-plus
 
 # Install dependencies
 bun install
@@ -55,10 +55,10 @@ Create the settings file manually:
 
 ```bash
 # Create settings directory
-mkdir -p ~/.claude-mem
+mkdir -p ~/.claude-mem-plus
 
 # Create settings file with OpenRouter configuration
-cat > ~/.claude-mem/settings.json << 'EOF'
+cat > ~/.claude-mem-plus/settings.json << 'EOF'
 {
   "CLAUDE_MEM_PROVIDER": "openrouter",
   "CLAUDE_MEM_OPENROUTER_API_KEY": "YOUR_OPENROUTER_API_KEY"
@@ -137,7 +137,7 @@ OpenRouter charges per token. To manage costs:
 Ensure your settings file exists with the correct format:
 
 ```bash
-cat ~/.claude-mem/settings.json
+cat ~/.claude-mem-plus/settings.json
 ```
 
 Should output something like:

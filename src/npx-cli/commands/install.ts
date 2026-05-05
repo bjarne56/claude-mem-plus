@@ -92,7 +92,7 @@ function registerMarketplace(): void {
   knownMarketplaces['thedotmack'] = {
     source: {
       source: 'github',
-      repo: 'thedotmack/claude-mem',
+      repo: 'thedotmack/claude-mem-plus',
     },
     installLocation: marketplaceDirectory(),
     lastUpdated: new Date().toISOString(),
@@ -112,7 +112,7 @@ function registerPlugin(version: string): void {
   const cachePath = pluginCacheDirectory(version);
   const now = new Date().toISOString();
 
-  installedPlugins.plugins['claude-mem@thedotmack'] = [
+  installedPlugins.plugins['claude-mem-plus@thedotmack'] = [
     {
       scope: 'user',
       installPath: cachePath,
@@ -129,7 +129,7 @@ function enablePluginInClaudeSettings(): void {
   const settings = readJsonSafe<Record<string, any>>(claudeSettingsPath(), {});
 
   if (!settings.enabledPlugins) settings.enabledPlugins = {};
-  settings.enabledPlugins['claude-mem@thedotmack'] = true;
+  settings.enabledPlugins['claude-mem-plus@thedotmack'] = true;
 
   writeJsonFileAtomic(claudeSettingsPath(), settings);
 }
@@ -167,7 +167,7 @@ function makeIDETask(ideId: string, failedIDEs: string[], pendingErrors: string[
           if (mcpResult === 0) {
             return `Cursor: hooks + MCP installed ${pc.green('OK')}`;
           }
-          return `Cursor: hooks installed; MCP setup failed — run \`npx claude-mem cursor mcp\` ${pc.yellow('!')}`;
+          return `Cursor: hooks installed; MCP setup failed — run \`npx claude-mem-plus cursor mcp\` ${pc.yellow('!')}`;
         },
       };
     }
@@ -374,7 +374,7 @@ function applyClaudeCodePathSetupIfNeeded(): void {
   } else {
     try {
       const trailing = existing.length === 0 || existing.endsWith('\n') ? '' : '\n';
-      const block = `${trailing}\n# Added by claude-mem installer for Claude Code\n${exportLine}\n`;
+      const block = `${trailing}\n# Added by claude-mem-plus installer for Claude Code\n${exportLine}\n`;
       writeFileSync(configFile, existing + block, 'utf-8');
       log.success(`Added Claude Code to PATH in ${configFile}`);
     } catch (error: unknown) {
@@ -590,7 +590,7 @@ async function promptProvider(options: InstallOptions): Promise<ProviderId> {
 
   const persistClaudeProvider = () => {
     const wrote = mergeSettings({ CLAUDE_MEM_PROVIDER: 'claude' });
-    if (wrote) log.info('Saved provider=claude to ~/.claude-mem/settings.json');
+    if (wrote) log.info('Saved provider=claude to ~/.claude-mem-plus/settings.json');
   };
 
   if (!isInteractive) {
@@ -600,7 +600,7 @@ async function promptProvider(options: InstallOptions): Promise<ProviderId> {
         return 'claude';
       }
       const wrote = mergeSettings({ CLAUDE_MEM_PROVIDER: options.provider });
-      if (wrote) log.info(`Saved provider=${options.provider} to ~/.claude-mem/settings.json`);
+      if (wrote) log.info(`Saved provider=${options.provider} to ~/.claude-mem-plus/settings.json`);
       log.warn(`Provider=${options.provider} requested non-interactively. API key prompt skipped — set CLAUDE_MEM_${options.provider.toUpperCase()}_API_KEY and CLAUDE_MEM_PROVIDER in settings.json or env manually if not already set.`);
       return options.provider;
     }
@@ -612,7 +612,7 @@ async function promptProvider(options: InstallOptions): Promise<ProviderId> {
     selectedProvider = options.provider;
   } else {
     const result = await p.select<ProviderId>({
-      message: 'Which LLM provider should claude-mem use to compress observations?',
+      message: 'Which LLM provider should claude-mem-plus use to compress observations?',
       options: [
         { value: 'claude', label: 'Claude Code auth (default — no extra setup, uses your existing Claude Code subscription)' },
         { value: 'gemini', label: 'Gemini API key (free tier available — fast and cheap)' },
@@ -641,7 +641,7 @@ async function promptProvider(options: InstallOptions): Promise<ProviderId> {
   const existingKey = getSetting(keyEnvName as keyof SettingsDefaults) as string | undefined;
   if (existingKey && existingKey.trim().length > 0) {
     const wrote = mergeSettings({ CLAUDE_MEM_PROVIDER: selectedProvider });
-    if (wrote) log.info(`Saved provider=${selectedProvider} to ~/.claude-mem/settings.json`);
+    if (wrote) log.info(`Saved provider=${selectedProvider} to ~/.claude-mem-plus/settings.json`);
     return selectedProvider;
   }
 
@@ -663,7 +663,7 @@ async function promptProvider(options: InstallOptions): Promise<ProviderId> {
     [keyEnvName]: apiKey,
   });
   if (wrote) {
-    log.info(`Saved provider=${selectedProvider} to ~/.claude-mem/settings.json`);
+    log.info(`Saved provider=${selectedProvider} to ~/.claude-mem-plus/settings.json`);
   }
   return selectedProvider;
 }
@@ -683,7 +683,7 @@ async function promptClaudeModel(options: InstallOptions): Promise<void> {
     }
     const wrote = mergeSettings({ CLAUDE_MEM_MODEL: options.model });
     if (wrote) {
-      log.info(`Saved Claude model=${options.model} to ~/.claude-mem/settings.json`);
+      log.info(`Saved Claude model=${options.model} to ~/.claude-mem-plus/settings.json`);
     }
     return;
   }
@@ -694,7 +694,7 @@ async function promptClaudeModel(options: InstallOptions): Promise<void> {
   const initialValue = allowed.has(initialModel) ? initialModel : 'claude-haiku-4-5-20251001';
 
   const result = await p.select<string>({
-    message: 'Which Claude model should claude-mem use to compress observations?\nThis runs whenever you and Claude touch a file — keep it cheap and fast.',
+    message: 'Which Claude model should claude-mem-plus use to compress observations?\nThis runs whenever you and Claude touch a file — keep it cheap and fast.',
     options: [
       { value: 'claude-haiku-4-5-20251001', label: 'Haiku 4.5 (recommended — fast, cheap, great for compression)' },
       { value: 'claude-sonnet-4-6', label: 'Sonnet 4.6 (balanced quality and cost)' },
@@ -711,7 +711,7 @@ async function promptClaudeModel(options: InstallOptions): Promise<void> {
 
   const wrote = mergeSettings({ CLAUDE_MEM_MODEL: selectedModel });
   if (wrote) {
-    log.info(`Saved Claude model=${selectedModel} to ~/.claude-mem/settings.json`);
+    log.info(`Saved Claude model=${selectedModel} to ~/.claude-mem-plus/settings.json`);
   }
 }
 
@@ -727,9 +727,9 @@ export async function runInstallCommand(options: InstallOptions = {}): Promise<v
 
   if (isInteractive) {
     await playBanner();
-    p.intro(pc.bgCyan(pc.black(' claude-mem install ')));
+    p.intro(pc.bgCyan(pc.black(' claude-mem-plus install ')));
   } else {
-    console.log('claude-mem install');
+    console.log('claude-mem-plus install');
   }
   const marketplaceDir = marketplaceDirectory();
   const alreadyInstalled = existsSync(join(marketplaceDir, 'plugin', '.claude-plugin', 'plugin.json'));
@@ -747,7 +747,7 @@ export async function runInstallCommand(options: InstallOptions = {}): Promise<v
   }
 
   const dot = pc.dim('·');
-  const segments = [`${pc.bold('claude-mem')} ${pc.cyan(`v${version}`)}`];
+  const segments = [`${pc.bold('claude-mem-plus')} ${pc.cyan(`v${version}`)}`];
   if (existingVersion && existingVersion !== version) {
     segments.push(`installed ${pc.yellow(`v${existingVersion}`)}`);
   } else if (existingVersion) {
@@ -928,7 +928,7 @@ export async function runInstallCommand(options: InstallOptions = {}): Promise<v
           case 'warming':
             return `Worker starting on port ${port} — finishing in background ${pc.yellow('⏳')}`;
           case 'dead':
-            return `Worker did not start — try \`npx claude-mem start\` manually ${pc.yellow('!')}`;
+            return `Worker did not start — try \`npx claude-mem-plus start\` manually ${pc.yellow('!')}`;
         }
       },
     },
@@ -990,7 +990,7 @@ export async function runInstallCommand(options: InstallOptions = {}): Promise<v
   const finalWorkerState = workerStartResult as WorkerStartResult;
   const workerAlive = finalWorkerState !== 'dead' || workerReady;
   const workerHeadline = autoStartSkipped
-    ? `${pc.yellow('!')} Worker autostart skipped — start it manually with ${pc.bold('npx claude-mem start')}`
+    ? `${pc.yellow('!')} Worker autostart skipped — start it manually with ${pc.bold('npx claude-mem-plus start')}`
     : workerReady || finalWorkerState === 'ready'
       ? `${pc.green('✓')} Worker running at ${pc.underline(`http://localhost:${actualPort}`)}`
       : `${pc.yellow('⏳')} Worker starting at ${pc.underline(`http://localhost:${actualPort}`)} — give it ~30s, then refresh`;
@@ -1005,10 +1005,10 @@ export async function runInstallCommand(options: InstallOptions = {}): Promise<v
         `  ${pc.cyan('B.')} Front-load it: open Claude Code and run ${pc.bold('/learn-codebase')} to ingest the whole repo (~5 min, optional).`,
         ``,
         `Memory injection starts on your second session in a project.`,
-        `Everything stays in ${pc.cyan('~/.claude-mem')} on this machine.`,
+        `Everything stays in ${pc.cyan('~/.claude-mem-plus')} on this machine.`,
         ``,
         `${pc.dim('How it works: /how-it-works   ·   Disable first-session hint: CLAUDE_MEM_WELCOME_HINT_ENABLED=false')}`,
-        `${pc.dim('Note: close all Claude Code sessions before uninstalling, or ~/.claude-mem will be recreated by active hooks.')}`,
+        `${pc.dim('Note: close all Claude Code sessions before uninstalling, or ~/.claude-mem-plus will be recreated by active hooks.')}`,
       ]
     : workerAlive
     ? [
@@ -1021,13 +1021,13 @@ export async function runInstallCommand(options: InstallOptions = {}): Promise<v
         `  ${pc.cyan('B.')} Front-load it: open Claude Code and run ${pc.bold('/learn-codebase')} to ingest the whole repo (~5 min, optional).`,
         ``,
         `Memory injection starts on your second session in a project.`,
-        `Everything stays in ${pc.cyan('~/.claude-mem')} on this machine.`,
+        `Everything stays in ${pc.cyan('~/.claude-mem-plus')} on this machine.`,
         ``,
         `${pc.dim('How it works: /how-it-works   ·   Disable first-session hint: CLAUDE_MEM_WELCOME_HINT_ENABLED=false')}`,
-        `${pc.dim('Note: close all Claude Code sessions before uninstalling, or ~/.claude-mem will be recreated by active hooks.')}`,
+        `${pc.dim('Note: close all Claude Code sessions before uninstalling, or ~/.claude-mem-plus will be recreated by active hooks.')}`,
       ]
     : [
-        `${pc.yellow('!')} Worker not yet ready on port ${pc.cyan(String(workerPort))} -- still starting up; check ${pc.bold('claude-mem status')} later, or start manually: ${pc.bold('npx claude-mem start')}`,
+        `${pc.yellow('!')} Worker not yet ready on port ${pc.cyan(String(workerPort))} -- still starting up; check ${pc.bold('claude-mem-plus status')} later, or start manually: ${pc.bold('npx claude-mem-plus start')}`,
         ``,
         `${pc.bold('First success:')} keep ${pc.underline(`http://localhost:${workerPort}`)} open in a browser, then open Claude Code in any project. Observations stream in as Claude reads, edits, and runs commands.`,
         ``,
@@ -1036,27 +1036,27 @@ export async function runInstallCommand(options: InstallOptions = {}): Promise<v
         `  ${pc.cyan('B.')} Front-load it: open Claude Code and run ${pc.bold('/learn-codebase')} to ingest the whole repo (~5 min, optional).`,
         ``,
         `Memory injection starts on your second session in a project.`,
-        `Everything stays in ${pc.cyan('~/.claude-mem')} on this machine.`,
+        `Everything stays in ${pc.cyan('~/.claude-mem-plus')} on this machine.`,
         ``,
         `${pc.dim('How it works: /how-it-works   ·   Disable first-session hint: CLAUDE_MEM_WELCOME_HINT_ENABLED=false')}`,
-        `${pc.dim('Note: close all Claude Code sessions before uninstalling, or ~/.claude-mem will be recreated by active hooks.')}`,
+        `${pc.dim('Note: close all Claude Code sessions before uninstalling, or ~/.claude-mem-plus will be recreated by active hooks.')}`,
       ];
 
   if (isInteractive) {
     p.note(nextSteps.join('\n'), 'Next Steps');
     if (failedIDEs.length > 0) {
-      p.outro(pc.yellow('claude-mem installed with some IDE setup failures.'));
+      p.outro(pc.yellow('claude-mem-plus installed with some IDE setup failures.'));
     } else {
-      p.outro(pc.green('claude-mem installed successfully!'));
+      p.outro(pc.green('claude-mem-plus installed successfully!'));
     }
   } else {
     console.log('\n  Next Steps');
     nextSteps.forEach(l => console.log(`  ${l}`));
     if (failedIDEs.length > 0) {
-      console.log('\nclaude-mem installed with some IDE setup failures.');
+      console.log('\nclaude-mem-plus installed with some IDE setup failures.');
       process.exitCode = 1;
     } else {
-      console.log('\nclaude-mem installed successfully!');
+      console.log('\nclaude-mem-plus installed successfully!');
     }
   }
 }
@@ -1066,9 +1066,9 @@ export async function runRepairCommand(): Promise<void> {
   const cacheDir = pluginCacheDirectory(version);
 
   if (isInteractive) {
-    p.intro(pc.bgCyan(pc.black(' claude-mem repair ')));
+    p.intro(pc.bgCyan(pc.black(' claude-mem-plus repair ')));
   } else {
-    console.log('claude-mem repair');
+    console.log('claude-mem-plus repair');
   }
   log.info(`Version: ${pc.cyan(version)}`);
 
@@ -1097,8 +1097,8 @@ export async function runRepairCommand(): Promise<void> {
   ]);
 
   if (isInteractive) {
-    p.outro(pc.green('claude-mem repair complete.'));
+    p.outro(pc.green('claude-mem-plus repair complete.'));
   } else {
-    console.log('claude-mem repair complete.');
+    console.log('claude-mem-plus repair complete.');
   }
 }

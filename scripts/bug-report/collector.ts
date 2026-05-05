@@ -205,7 +205,7 @@ export async function collectDiagnostics(
   options: { includeLogs?: boolean } = {}
 ): Promise<SystemDiagnostics> {
   const homeDir = os.homedir();
-  const dataDir = path.join(homeDir, ".claude-mem");
+  const dataDir = path.join(homeDir, ".claude-mem-plus");
   const pluginPath = path.join(
     homeDir,
     ".claude",
@@ -214,7 +214,7 @@ export async function collectDiagnostics(
     "thedotmack"
   );
   const cwd = process.cwd();
-  const isDevMode = cwd.includes("claude-mem") && !cwd.includes(".claude");
+  const isDevMode = cwd.includes("claude-mem-plus") && !cwd.includes(".claude");
 
   const [claudeMem, claudeCode, bun, osVersion] = await Promise.all([
     getClaudememVersion(),

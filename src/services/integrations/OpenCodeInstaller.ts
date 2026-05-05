@@ -23,7 +23,7 @@ export function getOpenCodeAgentsMdPath(): string {
 }
 
 export function getInstalledPluginPath(): string {
-  return path.join(getOpenCodePluginsDirectory(), 'claude-mem.js');
+  return path.join(getOpenCodePluginsDirectory(), 'claude-mem-plus.js');
 }
 
 export function findBuiltPluginPath(): string | null {
@@ -214,7 +214,7 @@ export function checkOpenCodeStatus(): number {
     const content = readFileSync(agentsMdPath, 'utf-8');
     const hasContextTags = content.includes(CONTEXT_TAG_OPEN);
     console.log(`  Exists: yes`);
-    console.log(`  Has claude-mem context: ${hasContextTags ? 'yes' : 'no'}`);
+    console.log(`  Has claude-mem-plus context: ${hasContextTags ? 'yes' : 'no'}`);
   } else {
     console.log(`  Exists: no`);
   }
@@ -235,7 +235,7 @@ export async function installOpenCodeIntegration(): Promise<number> {
 
 *No context yet. Complete your first session and context will appear here.*
 
-Use claude-mem search tools for manual memory queries.`;
+Use claude-mem-plus search tools for manual memory queries.`;
 
   let contextToInject = placeholderContext;
   let contextSource = 'placeholder';
@@ -271,7 +271,7 @@ Plugin installed to: ${getInstalledPluginPath()}
 Context file: ${getOpenCodeAgentsMdPath()}
 
 Next steps:
-  1. Start claude-mem worker: npx claude-mem start
+  1. Start claude-mem-plus worker: npx claude-mem-plus start
   2. Restart OpenCode to load the plugin
   3. Memory capture is automatic from then on
 `);

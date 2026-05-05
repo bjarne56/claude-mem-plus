@@ -3,11 +3,11 @@
 ---
 <h1 align="center">
   <br>
-  <a href="https://github.com/thedotmack/claude-mem">
+  <a href="https://github.com/thedotmack/claude-mem-plus">
     <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/thedotmack/claude-mem/main/docs/public/claude-mem-logo-for-dark-mode.webp">
-      <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/thedotmack/claude-mem/main/docs/public/claude-mem-logo-for-light-mode.webp">
-      <img src="https://raw.githubusercontent.com/thedotmack/claude-mem/main/docs/public/claude-mem-logo-for-light-mode.webp" alt="Claude-Mem" width="400">
+      <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/thedotmack/claude-mem-plus/main/docs/public/claude-mem-plus-logo-for-dark-mode.webp">
+      <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/thedotmack/claude-mem-plus/main/docs/public/claude-mem-plus-logo-for-light-mode.webp">
+      <img src="https://raw.githubusercontent.com/thedotmack/claude-mem-plus/main/docs/public/claude-mem-plus-logo-for-light-mode.webp" alt="Claude-Mem" width="400">
     </picture>
   </a>
   <br>
@@ -65,9 +65,9 @@
 <p align="center">
   <a href="https://trendshift.io/repositories/15496" target="_blank">
     <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/thedotmack/claude-mem/main/docs/public/trendshift-badge-dark.svg">
-      <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/thedotmack/claude-mem/main/docs/public/trendshift-badge.svg">
-      <img src="https://raw.githubusercontent.com/thedotmack/claude-mem/main/docs/public/trendshift-badge.svg" alt="thedotmack/claude-mem | Trendshift" width="250" height="55"/>
+      <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/thedotmack/claude-mem-plus/main/docs/public/trendshift-badge-dark.svg">
+      <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/thedotmack/claude-mem-plus/main/docs/public/trendshift-badge.svg">
+      <img src="https://raw.githubusercontent.com/thedotmack/claude-mem-plus/main/docs/public/trendshift-badge.svg" alt="thedotmack/claude-mem-plus | Trendshift" width="250" height="55"/>
     </picture>
   </a>
 </p>
@@ -75,9 +75,9 @@
 <br>
 
 <p align="center">
-  <a href="https://github.com/thedotmack/claude-mem">
+  <a href="https://github.com/thedotmack/claude-mem-plus">
     <picture>
-      <img src="https://raw.githubusercontent.com/thedotmack/claude-mem/main/docs/public/cm-preview.gif" alt="Claude-Mem Preview" width="800">
+      <img src="https://raw.githubusercontent.com/thedotmack/claude-mem-plus/main/docs/public/cm-preview.gif" alt="Claude-Mem Preview" width="800">
     </picture>
   </a>
 </p>
@@ -103,9 +103,9 @@
 在終端機中開啟新的 Claude Code 工作階段，並輸入以下指令：
 
 ```
-> /plugin marketplace add thedotmack/claude-mem
+> /plugin marketplace add thedotmack/claude-mem-plus
 
-> /plugin install claude-mem
+> /plugin install claude-mem-plus
 ```
 
 重新啟動 Claude Code。先前工作階段的脈絡將自動出現在新的工作階段中。
@@ -131,31 +131,31 @@
 
 ### 入門指南
 
-- **[安裝指南](https://docs.claude-mem.ai/installation)** - 快速開始與進階安裝
-- **[使用指南](https://docs.claude-mem.ai/usage/getting-started)** - Claude-Mem 如何自動運作
-- **[搜尋工具](https://docs.claude-mem.ai/usage/search-tools)** - 使用自然語言查詢專案歷史
-- **[Beta 功能](https://docs.claude-mem.ai/beta-features)** - 試用 Endless Mode 等實驗性功能
+- **[安裝指南](https://docs.claude-mem-plus.ai/installation)** - 快速開始與進階安裝
+- **[使用指南](https://docs.claude-mem-plus.ai/usage/getting-started)** - Claude-Mem 如何自動運作
+- **[搜尋工具](https://docs.claude-mem-plus.ai/usage/search-tools)** - 使用自然語言查詢專案歷史
+- **[Beta 功能](https://docs.claude-mem-plus.ai/beta-features)** - 試用 Endless Mode 等實驗性功能
 
 ### 最佳實務
 
-- **[脈絡工程](https://docs.claude-mem.ai/context-engineering)** - AI 代理脈絡最佳化原則
-- **[漸進式揭露](https://docs.claude-mem.ai/progressive-disclosure)** - Claude-Mem 脈絡啟動策略背後的理念
+- **[脈絡工程](https://docs.claude-mem-plus.ai/context-engineering)** - AI 代理脈絡最佳化原則
+- **[漸進式揭露](https://docs.claude-mem-plus.ai/progressive-disclosure)** - Claude-Mem 脈絡啟動策略背後的理念
 
 ### 架構
 
-- **[概覽](https://docs.claude-mem.ai/architecture/overview)** - 系統元件與資料流程
-- **[架構演進](https://docs.claude-mem.ai/architecture-evolution)** - 從 v3 到 v5 的旅程
-- **[Hooks 架構](https://docs.claude-mem.ai/hooks-architecture)** - Claude-Mem 如何使用生命週期掛鉤
-- **[Hooks 參考](https://docs.claude-mem.ai/architecture/hooks)** - 7 個掛鉤腳本說明
-- **[Worker 服務](https://docs.claude-mem.ai/architecture/worker-service)** - HTTP API 與 Bun 管理
-- **[資料庫](https://docs.claude-mem.ai/architecture/database)** - SQLite 結構描述與 FTS5 搜尋
-- **[搜尋架構](https://docs.claude-mem.ai/architecture/search-architecture)** - 使用 Chroma 向量資料庫的混合搜尋
+- **[概覽](https://docs.claude-mem-plus.ai/architecture/overview)** - 系統元件與資料流程
+- **[架構演進](https://docs.claude-mem-plus.ai/architecture-evolution)** - 從 v3 到 v5 的旅程
+- **[Hooks 架構](https://docs.claude-mem-plus.ai/hooks-architecture)** - Claude-Mem 如何使用生命週期掛鉤
+- **[Hooks 參考](https://docs.claude-mem-plus.ai/architecture/hooks)** - 7 個掛鉤腳本說明
+- **[Worker 服務](https://docs.claude-mem-plus.ai/architecture/worker-service)** - HTTP API 與 Bun 管理
+- **[資料庫](https://docs.claude-mem-plus.ai/architecture/database)** - SQLite 結構描述與 FTS5 搜尋
+- **[搜尋架構](https://docs.claude-mem-plus.ai/architecture/search-architecture)** - 使用 Chroma 向量資料庫的混合搜尋
 
 ### 設定與開發
 
-- **[設定](https://docs.claude-mem.ai/configuration)** - 環境變數與設定
-- **[開發](https://docs.claude-mem.ai/development)** - 建置、測試、貢獻
-- **[疑難排解](https://docs.claude-mem.ai/troubleshooting)** - 常見問題與解決方案
+- **[設定](https://docs.claude-mem-plus.ai/configuration)** - 環境變數與設定
+- **[開發](https://docs.claude-mem-plus.ai/development)** - 建置、測試、貢獻
+- **[疑難排解](https://docs.claude-mem-plus.ai/troubleshooting)** - 常見問題與解決方案
 
 ---
 
@@ -170,7 +170,7 @@
 5. **mem-search 技能** - 具有漸進式揭露的自然語言查詢
 6. **Chroma 向量資料庫** - 用於智慧脈絡擷取的混合語意 + 關鍵字搜尋
 
-詳情請參閱[架構概覽](https://docs.claude-mem.ai/architecture/overview)。
+詳情請參閱[架構概覽](https://docs.claude-mem-plus.ai/architecture/overview)。
 
 ---
 
@@ -211,7 +211,7 @@ search(query="authentication bug", type="bugfix", limit=10)
 get_observations(ids=[123, 456])
 ```
 
-詳細範例請參閱[搜尋工具指南](https://docs.claude-mem.ai/usage/search-tools)。
+詳細範例請參閱[搜尋工具指南](https://docs.claude-mem-plus.ai/usage/search-tools)。
 
 ---
 
@@ -219,7 +219,7 @@ get_observations(ids=[123, 456])
 
 Claude-Mem 提供具有實驗性功能的 **Beta 通道**，例如 **Endless Mode**（用於延長工作階段的仿生記憶架構）。在 http://localhost:37777 → Settings 的網頁檢視介面中切換穩定版與 Beta 版。
 
-有關 Endless Mode 與如何試用的詳情，請參閱 **[Beta 功能文件](https://docs.claude-mem.ai/beta-features)**。
+有關 Endless Mode 與如何試用的詳情，請參閱 **[Beta 功能文件](https://docs.claude-mem-plus.ai/beta-features)**。
 
 ---
 
@@ -235,15 +235,15 @@ Claude-Mem 提供具有實驗性功能的 **Beta 通道**，例如 **Endless Mod
 
 ## 設定
 
-設定在 `~/.claude-mem/settings.json` 中管理（首次執行時自動以預設值建立）。設定 AI 模型、Worker 連接埠、資料目錄、日誌層級與脈絡注入設定。
+設定在 `~/.claude-mem-plus/settings.json` 中管理（首次執行時自動以預設值建立）。設定 AI 模型、Worker 連接埠、資料目錄、日誌層級與脈絡注入設定。
 
-所有可用設定與範例請參閱 **[設定指南](https://docs.claude-mem.ai/configuration)**。
+所有可用設定與範例請參閱 **[設定指南](https://docs.claude-mem-plus.ai/configuration)**。
 
 ---
 
 ## 開發
 
-建置說明、測試與貢獻工作流程請參閱 **[開發指南](https://docs.claude-mem.ai/development)**。
+建置說明、測試與貢獻工作流程請參閱 **[開發指南](https://docs.claude-mem-plus.ai/development)**。
 
 ---
 
@@ -251,7 +251,7 @@ Claude-Mem 提供具有實驗性功能的 **Beta 通道**，例如 **Endless Mod
 
 如遇問題，向 Claude 描述問題，troubleshoot 技能將自動診斷並提供修正。
 
-常見問題與解決方案請參閱 **[疑難排解指南](https://docs.claude-mem.ai/troubleshooting)**。
+常見問題與解決方案請參閱 **[疑難排解指南](https://docs.claude-mem-plus.ai/troubleshooting)**。
 
 ---
 
@@ -274,7 +274,7 @@ npm run bug-report
 4. 更新文件
 5. 提交 Pull Request
 
-貢獻工作流程請參閱[開發指南](https://docs.claude-mem.ai/development)。
+貢獻工作流程請參閱[開發指南](https://docs.claude-mem-plus.ai/development)。
 
 ---
 
@@ -300,8 +300,8 @@ Copyright (C) 2025 Alex Newman (@thedotmack). All rights reserved.
 ## 支援
 
 - **文件**：[docs/](docs/)
-- **Issues**：[GitHub Issues](https://github.com/thedotmack/claude-mem/issues)
-- **儲存庫**：[github.com/thedotmack/claude-mem](https://github.com/thedotmack/claude-mem)
+- **Issues**：[GitHub Issues](https://github.com/thedotmack/claude-mem-plus/issues)
+- **儲存庫**：[github.com/thedotmack/claude-mem-plus](https://github.com/thedotmack/claude-mem-plus)
 - **官方 X 帳號**：[@Claude_Memory](https://x.com/Claude_Memory)
 - **官方 Discord**：[加入 Discord](https://discord.com/invite/J4wttp9vDu)
 - **作者**：Alex Newman ([@thedotmack](https://github.com/thedotmack))

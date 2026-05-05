@@ -4,9 +4,9 @@ interface WelcomeCardProps {
   onDismiss: () => void;
 }
 
-const STORAGE_KEY = 'claude-mem-welcome-dismissed-v3';
+const STORAGE_KEY = 'claude-mem-plus-welcome-dismissed-v3';
 const EXPLAINER_URL = '/api/onboarding/explainer';
-const DOCS_URL = 'https://docs.claude-mem.ai';
+const DOCS_URL = 'https://docs.claude-mem-plus.ai';
 
 export function getStoredWelcomeDismissed(): boolean {
   try {
@@ -186,8 +186,8 @@ export function WelcomeCard({ onDismiss }: WelcomeCardProps) {
         <DismissButton onClick={handleDismiss} />
 
         <header className="welcome-modal-header">
-          <img className="welcome-modal-logo" src="claude-mem-logo-stylized.png" alt="" width="96" height="96" />
-          <h2 id="welcome-modal-title">Welcome to claude-mem</h2>
+          <img className="welcome-modal-logo" src="claude-mem-plus-logo-stylized.png" alt="" width="96" height="96" />
+          <h2 id="welcome-modal-title">Welcome to claude-mem-plus</h2>
           <p>Persistent memory for Claude Code.</p>
         </header>
 

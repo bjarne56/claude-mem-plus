@@ -1,10 +1,10 @@
-# Plan: NPX Distribution + Universal IDE/CLI Coverage for claude-mem
+# Plan: NPX Distribution + Universal IDE/CLI Coverage for claude-mem-plus
 
 ## Problem
 
 1. **Installation is slow and fragile**: Current install clones the full git repo, runs `npm install`, and builds from source. The npm package already ships pre-built artifacts.
 
-2. **IDE coverage is limited**: claude-mem only supports Claude Code (plugin) and Cursor (hooks installer). The AI coding tools landscape has exploded — Gemini CLI (95k stars), OpenCode (110k stars), Windsurf (~1M users), Codex CLI, Antigravity, Goose, Crush, Copilot CLI, and more all support extensibility.
+2. **IDE coverage is limited**: claude-mem-plus only supports Claude Code (plugin) and Cursor (hooks installer). The AI coding tools landscape has exploded — Gemini CLI (95k stars), OpenCode (110k stars), Windsurf (~1M users), Codex CLI, Antigravity, Goose, Crush, Copilot CLI, and more all support extensibility.
 
 ## Key Insights
 
@@ -16,19 +16,19 @@
 - **OpenCode has the richest plugin system**: 20+ hook events across 12 categories, JS/TS plugin modules, custom tool creation, MCP support. 110k stars — largest open-source AI CLI.
 - **`npx skills` by Vercel supports 41 agents** — proving the multi-IDE installer UX works. Their agent detection pattern (check if config dir exists) is the right model.
 - **All IDEs share a single worker on port 37777**: One worker serves all integrations. Session source (which IDE) is tracked via the `source` field in hook payloads. No per-IDE worker instances.
-- **This npx CLI fully replaces the old `claude-mem-installer`**: Not a supplement — the complete replacement.
+- **This npx CLI fully replaces the old `claude-mem-plus-installer`**: Not a supplement — the complete replacement.
 
 ## Solution
 
-`npx claude-mem` becomes a unified CLI: install, configure any IDE, manage the worker, search memory.
+`npx claude-mem-plus` becomes a unified CLI: install, configure any IDE, manage the worker, search memory.
 
 ```
-npx claude-mem                          # Interactive install + IDE selection
-npx claude-mem install                  # Same as above
-npx claude-mem install --ide windsurf   # Direct IDE setup
-npx claude-mem start / stop / status    # Worker management
-npx claude-mem search <query>           # Search memory from terminal
-npx claude-mem transcript watch         # Start transcript watcher
+npx claude-mem-plus                          # Interactive install + IDE selection
+npx claude-mem-plus install                  # Same as above
+npx claude-mem-plus install --ide windsurf   # Direct IDE setup
+npx claude-mem-plus start / stop / status    # Worker management
+npx claude-mem-plus search <query>           # Search memory from terminal
+npx claude-mem-plus transcript watch         # Start transcript watcher
 ```
 
 ## Platform Support
@@ -81,7 +81,7 @@ npx claude-mem transcript watch         # Start transcript watcher
 | Gemini CLI | `~/.gemini/tmp/<hash>/chats/` | JSON |
 | OpenCode | `.opencode/` (SQLite) | SQLite — needs export |
 
-### What claude-mem Already Has
+### What claude-mem-plus Already Has
 
 | Component | Status | Location |
 |-----------|--------|----------|
@@ -112,33 +112,33 @@ npx claude-mem transcript watch         # Start transcript watcher
 1. **Add `bin` field to `package.json`**:
    ```json
    "bin": {
-     "claude-mem": "./dist/cli/index.js"
+     "claude-mem-plus": "./dist/cli/index.js"
    }
    ```
 
 2. **Create `src/npx-cli/index.ts`** — a Node.js CLI router (NOT Bun) with command categories:
 
    **Install commands** (pure Node.js, no Bun required):
-   - `npx claude-mem` or `npx claude-mem install` → interactive install (IDE multi-select)
-   - `npx claude-mem install --ide <name>` → direct IDE setup (only for implemented IDEs; unimplemented ones error with "Support for <name> coming soon")
-   - `npx claude-mem update` → update to latest version
-   - `npx claude-mem uninstall` → remove plugin and IDE configs
-   - `npx claude-mem version` → print version
+   - `npx claude-mem-plus` or `npx claude-mem-plus install` → interactive install (IDE multi-select)
+   - `npx claude-mem-plus install --ide <name>` → direct IDE setup (only for implemented IDEs; unimplemented ones error with "Support for <name> coming soon")
+   - `npx claude-mem-plus update` → update to latest version
+   - `npx claude-mem-plus uninstall` → remove plugin and IDE configs
+   - `npx claude-mem-plus version` → print version
 
    **Runtime commands** (delegate to Bun via installed plugin):
-   - `npx claude-mem start` → spawns `bun worker-service.cjs start`
-   - `npx claude-mem stop` → spawns `bun worker-service.cjs stop`
-   - `npx claude-mem restart` → spawns `bun worker-service.cjs restart`
-   - `npx claude-mem status` → spawns `bun worker-service.cjs status`
-   - `npx claude-mem search <query>` → hits `GET http://localhost:37777/api/search?q=<query>`
-   - `npx claude-mem transcript watch` → starts transcript watcher
+   - `npx claude-mem-plus start` → spawns `bun worker-service.cjs start`
+   - `npx claude-mem-plus stop` → spawns `bun worker-service.cjs stop`
+   - `npx claude-mem-plus restart` → spawns `bun worker-service.cjs restart`
+   - `npx claude-mem-plus status` → spawns `bun worker-service.cjs status`
+   - `npx claude-mem-plus search <query>` → hits `GET http://localhost:37777/api/search?q=<query>`
+   - `npx claude-mem-plus transcript watch` → starts transcript watcher
 
-   **Runtime commands must check for installation first**: If plugin directory doesn't exist at `~/.claude/plugins/marketplaces/thedotmack/`, print "claude-mem is not installed. Run: npx claude-mem install" and exit.
+   **Runtime commands must check for installation first**: If plugin directory doesn't exist at `~/.claude/plugins/marketplaces/thedotmack/`, print "claude-mem-plus is not installed. Run: npx claude-mem-plus install" and exit.
 
 3. **The install flow** (fully replaces git clone + build):
    - Detect the npm package's own location (`import.meta.url` or `__dirname`)
    - Copy `plugin/` from the npm package to `~/.claude/plugins/marketplaces/thedotmack/`
-   - Copy `plugin/` to `~/.claude/plugins/cache/thedotmack/claude-mem/<version>/`
+   - Copy `plugin/` to `~/.claude/plugins/cache/thedotmack/claude-mem-plus/<version>/`
    - Register marketplace in `~/.claude/plugins/known_marketplaces.json`
    - Register plugin in `~/.claude/plugins/installed_plugins.json`
    - Enable in `~/.claude/settings.json`
@@ -178,13 +178,13 @@ npx claude-mem transcript watch         # Start transcript watcher
 
 ### Verification
 
-- `npx claude-mem install` copies plugin to correct directories on macOS, Linux, and Windows
+- `npx claude-mem-plus install` copies plugin to correct directories on macOS, Linux, and Windows
 - Auto-detection finds installed IDEs
-- `npx claude-mem start/stop/status` work after install
-- `npx claude-mem search "test"` returns results
-- `npx claude-mem start` before install prints helpful error message
-- `npx claude-mem update` and `npx claude-mem uninstall` work correctly
-- `npx claude-mem version` prints version
+- `npx claude-mem-plus start/stop/status` work after install
+- `npx claude-mem-plus search "test"` returns results
+- `npx claude-mem-plus start` before install prints helpful error message
+- `npx claude-mem-plus update` and `npx claude-mem-plus uninstall` work correctly
+- `npx claude-mem-plus version` prints version
 
 ### Anti-patterns
 
@@ -231,7 +231,7 @@ npx claude-mem transcript watch         # Start transcript watcher
 
 ### Gemini CLI Hook Events
 
-| Event | Map to claude-mem | Use |
+| Event | Map to claude-mem-plus | Use |
 |-------|-------------------|-----|
 | `SessionStart` | `session-init` | Start tracking session |
 | `BeforeAgent` | `user-prompt` | Capture user prompt |
@@ -297,7 +297,7 @@ npx claude-mem transcript watch         # Start transcript watcher
        "hooks": {
          "AfterTool": [{
            "matcher": "*",
-           "hooks": [{ "name": "claude-mem", "type": "command", "command": "<path-to-hook-script>", "timeout": 5000 }]
+           "hooks": [{ "name": "claude-mem-plus", "type": "command", "command": "<path-to-hook-script>", "timeout": 5000 }]
          }]
        }
      }
@@ -305,7 +305,7 @@ npx claude-mem transcript watch         # Start transcript watcher
    - Note: `matcher` uses regex for tool events, exact string for lifecycle events. `"*"` or `""` matches all.
    - Hook groups support `sequential: boolean` (default false = parallel execution)
    - Security: Project-level hooks are fingerprinted — if name/command changes, user is warned
-   - Context injection via `~/.gemini/GEMINI.md` (append claude-mem section with `<claude-mem-context>` tags, same pattern as CLAUDE.md)
+   - Context injection via `~/.gemini/GEMINI.md` (append claude-mem-plus section with `<claude-mem-plus-context>` tags, same pattern as CLAUDE.md)
    - Settings hierarchy: project `.gemini/settings.json` > user `~/.gemini/settings.json` > system `/etc/gemini-cli/settings.json`
 
 3. **Register `gemini-cli` in `getPlatformAdapter()`** at `src/cli/adapters/index.ts`
@@ -314,10 +314,10 @@ npx claude-mem transcript watch         # Start transcript watcher
 
 ### Verification
 
-- `npx claude-mem install --ide gemini-cli` merges hooks into `~/.gemini/settings.json`
+- `npx claude-mem-plus install --ide gemini-cli` merges hooks into `~/.gemini/settings.json`
 - Gemini CLI sessions are captured by the worker
 - `AfterTool` events produce observations with correct `tool_name`, `tool_input`, `tool_response`
-- `GEMINI.md` gets claude-mem context section
+- `GEMINI.md` gets claude-mem-plus context section
 - Existing Gemini CLI settings are preserved (merge, not overwrite)
 - Verify `session_id` from base input is used for session tracking
 
@@ -381,7 +381,7 @@ type PluginInput = {
 return {
   tool: {
     claude_mem_search: tool({
-      description: "Search claude-mem memory database",
+      description: "Search claude-mem-plus memory database",
       args: { query: tool.schema.string() },
       async execute(args, context) {
         // context: { sessionID, messageID, agent, directory, worktree, abort, metadata, ask }
@@ -400,7 +400,7 @@ return {
    - Use **direct interceptor** `tool.execute.after` for tool observation capture (gives `tool`, `args`, `output`)
    - Use **bus event catch-all** `event` for session lifecycle:
 
-   | Mechanism | Event | Map to claude-mem |
+   | Mechanism | Event | Map to claude-mem-plus |
    |-----------|-------|-------------------|
    | interceptor | `tool.execute.after` | `observation` (tool name + args + output) |
    | bus event | `session.created` | `session-init` |
@@ -415,17 +415,17 @@ return {
 2. **Build the plugin** in the esbuild pipeline → `dist/opencode-plugin/index.js`
 
 3. **Create OpenCode setup in installer** (two options, prefer file-based):
-   - **Option A (file-based):** Copy plugin to `~/.config/opencode/plugins/claude-mem.ts` (auto-loaded at startup)
-   - **Option B (npm-based):** Add to `~/.config/opencode/opencode.json` under `"plugin"` array: `["claude-mem"]`
+   - **Option A (file-based):** Copy plugin to `~/.config/opencode/plugins/claude-mem-plus.ts` (auto-loaded at startup)
+   - **Option B (npm-based):** Add to `~/.config/opencode/opencode.json` under `"plugin"` array: `["claude-mem-plus"]`
    - Config also supports JSONC (`opencode.jsonc`) and legacy `config.json`
-   - Context injection: Append to `~/.config/opencode/AGENTS.md` (or create it) with `<claude-mem-context>` tags
+   - Context injection: Append to `~/.config/opencode/AGENTS.md` (or create it) with `<claude-mem-plus-context>` tags
    - Additional context via `"instructions"` config key (supports file paths, globs, remote URLs)
 
 4. **Add OpenCode to installer IDE selection**
 
 ### OpenCode Verification
 
-- `npx claude-mem install --ide opencode` registers the plugin (file or npm)
+- `npx claude-mem-plus install --ide opencode` registers the plugin (file or npm)
 - OpenCode loads the plugin on next session
 - `tool.execute.after` interceptor produces observations with `tool`, `args`, `output`
 - Bus events (`session.created`, `session.deleted`) handle session lifecycle
@@ -450,7 +450,7 @@ return {
 
 **Naming pattern**: `pre_`/`post_` prefix + 5 action categories, plus 2 standalone post-only events.
 
-| Event | Can Block? | Map to claude-mem | Use |
+| Event | Can Block? | Map to claude-mem-plus | Use |
 |-------|-----------|-------------------|-----|
 | `pre_user_prompt` | Yes | `session-init` + `context` | Start session, inject context |
 | `pre_read_code` | Yes | — | Skip (pre-execution, can block file reads) |
@@ -522,7 +522,7 @@ return {
      ```
    - Note: Tilde expansion (`~`) is NOT supported in `working_directory` — use absolute paths
    - Merge order: cloud → system → user → workspace (all hooks at all levels execute)
-   - Context injection via `.windsurf/rules/claude-mem-context.md` (workspace-level; Windsurf rules are workspace-scoped)
+   - Context injection via `.windsurf/rules/claude-mem-plus-context.md` (workspace-level; Windsurf rules are workspace-scoped)
    - Rule limits: 6,000 chars per file, 12,000 chars total across all rules
 
 3. **Register `windsurf` in `getPlatformAdapter()`** at `src/cli/adapters/index.ts`
@@ -531,10 +531,10 @@ return {
 
 ### Windsurf Verification
 
-- `npx claude-mem install --ide windsurf` creates hooks config at `~/.codeium/windsurf/hooks.json`
+- `npx claude-mem-plus install --ide windsurf` creates hooks config at `~/.codeium/windsurf/hooks.json`
 - Windsurf sessions are captured by the worker via post-action hooks
 - `trajectory_id` is used as session identifier
-- Context is injected via `.windsurf/rules/claude-mem-context.md` (under 6K char limit)
+- Context is injected via `.windsurf/rules/claude-mem-plus-context.md` (under 6K char limit)
 - Existing hooks.json is preserved (merge, not overwrite)
 
 ### Windsurf Anti-patterns
@@ -558,7 +558,7 @@ Codex has both a `notify` hook (real-time) and transcript files (complete histor
 1. **Create Codex transcript schema** — the sample in `src/services/transcripts/config.ts` is already production-quality. Verify against current Codex CLI JSONL format and update if needed.
 
 2. **Create Codex setup in installer**:
-   - Write transcript-watch config to `~/.claude-mem/transcript-watch.json`
+   - Write transcript-watch config to `~/.claude-mem-plus/transcript-watch.json`
    - Set up watch for `~/.codex/sessions/**/*.jsonl` using existing CODEX_SAMPLE_SCHEMA
    - Context injection via `.codex/AGENTS.md` (Codex reads this natively)
    - Must merge with existing `config.toml` if it exists (read → parse → merge → write)
@@ -567,8 +567,8 @@ Codex has both a `notify` hook (real-time) and transcript files (complete histor
 
 ### Verification
 
-- `npx claude-mem install --ide codex` creates transcript watch config
-- Codex sessions appear in claude-mem database
+- `npx claude-mem-plus install --ide codex` creates transcript watch config
+- Codex sessions appear in claude-mem-plus database
 - `AGENTS.md` updated with context after sessions
 - Existing `config.toml` is preserved
 
@@ -583,7 +583,7 @@ Codex has both a `notify` hook (real-time) and transcript files (complete histor
 1. **Wire OpenClaw into the npx installer**:
    - Detect `~/.openclaw/` directory
    - Copy pre-built plugin from `openclaw/dist/` (built in Phase 2) to OpenClaw plugins location
-   - Register in `~/.openclaw/openclaw.json` under `plugins.claude-mem`
+   - Register in `~/.openclaw/openclaw.json` under `plugins.claude-mem-plus`
    - Configure worker port, project name, syncMemoryFile
    - Optionally prompt for observation feed setup (channel type + target ID)
 
@@ -591,7 +591,7 @@ Codex has both a `notify` hook (real-time) and transcript files (complete histor
 
 ### Verification
 
-- `npx claude-mem install --ide openclaw` registers the plugin
+- `npx claude-mem-plus install --ide openclaw` registers the plugin
 - OpenClaw gateway loads the plugin on restart
 - Observations are recorded from OpenClaw sessions
 - MEMORY.md syncs to agent workspaces
@@ -618,7 +618,7 @@ MCP-only integrations provide: search tools + context injection. They do NOT cap
 
 2. **Antigravity MCP setup**:
    - Write MCP config to `~/.gemini/antigravity/mcp_config.json` (merge, not overwrite)
-   - Context injection: `~/.gemini/GEMINI.md` (shared with Gemini CLI) and/or `.agent/rules/claude-mem-context.md`
+   - Context injection: `~/.gemini/GEMINI.md` (shared with Gemini CLI) and/or `.agent/rules/claude-mem-plus-context.md`
    - Detection: `~/.gemini/antigravity/` exists
    - Note: Antigravity has NO hook system — MCP is the only integration path
 
@@ -633,7 +633,7 @@ MCP-only integrations provide: search tools + context injection. They do NOT cap
 
 5. **Roo Code MCP setup**:
    - Write MCP config to `.roo/` or workspace settings
-   - Context injection: `.roo/rules/claude-mem-context.md`
+   - Context injection: `.roo/rules/claude-mem-plus-context.md`
    - Detection: Check for VS Code extension directory containing `roo-code`
 
 6. **Warp MCP setup**:
@@ -650,7 +650,7 @@ JSON configs: Read → parse → deep merge → write back. YAML configs (Goose)
 
 ### Verification
 
-- Each IDE can search claude-mem via MCP tools
+- Each IDE can search claude-mem-plus via MCP tools
 - Context files are written to IDE-specific locations
 - Existing configs are preserved
 
@@ -668,8 +668,8 @@ This is a **full replacement**, not a deprecation.
 
 ### What to implement
 
-1. Remove `claude-mem-installer` npm package (unpublish or mark deprecated with message pointing to `npx claude-mem`)
-2. Update `install/public/install.sh` → redirect to `npx claude-mem`
+1. Remove `claude-mem-plus-installer` npm package (unpublish or mark deprecated with message pointing to `npx claude-mem-plus`)
+2. Update `install/public/install.sh` → redirect to `npx claude-mem-plus`
 3. Remove `installer/` directory from the repository (it's replaced by `src/npx-cli/`)
 4. Update docs site to reflect the new install command
 5. Update README.md install instructions
@@ -683,11 +683,11 @@ This is a **full replacement**, not a deprecation.
 1. `npm run build` succeeds, produces `dist/cli/index.js` and `openclaw/dist/index.js`
 2. `node dist/cli/index.js install` works clean (no prior install)
 3. Auto-detects installed IDEs correctly per platform
-4. `npx claude-mem start/stop/status/search` all work
-5. `npx claude-mem update` updates correctly
-6. `npx claude-mem uninstall` cleans up all IDE configs
-7. `npx claude-mem version` prints version
-8. `npx claude-mem start` before install shows helpful error
+4. `npx claude-mem-plus start/stop/status/search` all work
+5. `npx claude-mem-plus update` updates correctly
+6. `npx claude-mem-plus uninstall` cleans up all IDE configs
+7. `npx claude-mem-plus version` prints version
+8. `npx claude-mem-plus start` before install shows helpful error
 9. No Bun dependency at install time
 
 ### Per-integration verification

@@ -54,7 +54,7 @@ Settings are applied immediately—no restart required.
 
 ### Manual Configuration
 
-Edit `~/.claude-mem/settings.json`:
+Edit `~/.claude-mem-plus/settings.json`:
 
 ```json
 {
@@ -105,7 +105,7 @@ You can switch between Claude and Gemini at any time:
 
 ## Error Behavior
 
-If Gemini is selected and the API errors, claude-mem logs the failure and re-throws so the message stays pending for later retry. There is no Claude SDK fallback — earlier docs claimed automatic Claude fallback, but the wiring was never actually engaged in production (#2087). To switch providers, change `CLAUDE_MEM_PROVIDER` in settings.
+If Gemini is selected and the API errors, claude-mem-plus logs the failure and re-throws so the message stays pending for later retry. There is no Claude SDK fallback — earlier docs claimed automatic Claude fallback, but the wiring was never actually engaged in production (#2087). To switch providers, change `CLAUDE_MEM_PROVIDER` in settings.
 
 **Throwing conditions:**
 - Rate limiting (HTTP 429)
@@ -119,7 +119,7 @@ If Gemini is selected and the API errors, claude-mem logs the failure and re-thr
 ### "Gemini API key not configured"
 
 Either:
-- Set `CLAUDE_MEM_GEMINI_API_KEY` in `~/.claude-mem/settings.json`, or
+- Set `CLAUDE_MEM_GEMINI_API_KEY` in `~/.claude-mem-plus/settings.json`, or
 - Set the `GEMINI_API_KEY` environment variable
 
 ### Rate Limiting
@@ -145,7 +145,7 @@ Claude-mem enforces these limits automatically with built-in delays between requ
 | gemini-3-flash-preview | 1,000 | 1M |
 
 <Tip>
-**Recommended**: Enable billing on your Google Cloud project to unlock much higher rate limits. You won't be charged unless you exceed the generous free quota. This allows claude-mem to process observations instantly instead of waiting between requests.
+**Recommended**: Enable billing on your Google Cloud project to unlock much higher rate limits. You won't be charged unless you exceed the generous free quota. This allows claude-mem-plus to process observations instantly instead of waiting between requests.
 </Tip>
 
 If you hit rate limits:

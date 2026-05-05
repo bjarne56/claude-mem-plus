@@ -8,7 +8,7 @@ import { tmpdir } from 'os';
 import { execFileSync, execSync } from 'child_process';
 
 function tempDbPath(): string {
-  return join(tmpdir(), `claude-mem-test-${Date.now()}-${Math.random().toString(36).slice(2)}.db`);
+  return join(tmpdir(), `claude-mem-plus-test-${Date.now()}-${Math.random().toString(36).slice(2)}.db`);
 }
 
 function cleanup(path: string): void {

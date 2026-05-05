@@ -1,4 +1,4 @@
--- claude-mem SQLite schema
+-- claude-mem-plus SQLite schema
 --
 -- Authoritative shape of the database after all migrations through
 -- runner.ts have been applied (current tip = migration 29). Fresh
@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS schema_versions (
 );
 
 -- ─────────────────────────────────────────────────────────────────────
--- sdk_sessions: one row per Claude/Codex session observed by claude-mem.
+-- sdk_sessions: one row per Claude/Codex session observed by claude-mem-plus.
 -- ─────────────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS sdk_sessions (
   id                  INTEGER PRIMARY KEY AUTOINCREMENT,

@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-mkdir -p "$HOME/.claude" "$HOME/.claude-mem"
+mkdir -p "$HOME/.claude" "$HOME/.claude-mem-plus"
 
 if [[ -n "${CLAUDE_MEM_CREDENTIALS_FILE:-}" ]]; then
   if [[ ! -f "$CLAUDE_MEM_CREDENTIALS_FILE" ]]; then

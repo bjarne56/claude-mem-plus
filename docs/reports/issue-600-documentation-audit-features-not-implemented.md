@@ -10,7 +10,7 @@
 
 ## 1. Executive Summary
 
-A comprehensive audit by @bguidolim has identified **8 discrepancies** between the claude-mem documentation (`docs/public/`) and the actual implementation in the main branch. The core issue is that documentation describes beta-branch features as if they exist in the production release, leading to user confusion and failed feature expectations.
+A comprehensive audit by @bguidolim has identified **8 discrepancies** between the claude-mem-plus documentation (`docs/public/`) and the actual implementation in the main branch. The core issue is that documentation describes beta-branch features as if they exist in the production release, leading to user confusion and failed feature expectations.
 
 ### Key Findings
 

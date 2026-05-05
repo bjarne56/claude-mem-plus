@@ -1,7 +1,7 @@
 {
   "name": "claude-mem-plus",
   "version": "12.6.1",
-  "description": "claude-mem fork with cmem-sync (cross-machine sync via self-hosted cmem-server), 31-language UI, soft-delete + trash, public registration page. Pairs with bjarne56/cmem-server.",
+  "description": "claude-mem-plus fork with cmem-sync (cross-machine sync via self-hosted cmem-server), 31-language UI, soft-delete + trash, public registration page. Pairs with bjarne56/cmem-server.",
   "author": {
     "name": "Alex Newman (upstream) + bjarne56 (fork)",
     "url": "https://github.com/thedotmack"
@@ -12,7 +12,7 @@
   "keywords": [
     "claude",
     "claude-code",
-    "claude-mem",
+    "claude-mem-plus",
     "claude-agent-sdk",
     "mcp",
     "plugin",
@@ -29,9 +29,9 @@
     "i18n"
   ],
   "interface": {
-    "displayName": "claude-mem",
+    "displayName": "claude-mem-plus",
     "shortDescription": "Persistent memory and context compression across coding sessions.",
-    "longDescription": "claude-mem captures coding-session activity, compresses it into reusable observations, and injects relevant context back into future Claude Code and Codex-compatible sessions.",
+    "longDescription": "claude-mem-plus captures coding-session activity, compresses it into reusable observations, and injects relevant context back into future Claude Code and Codex-compatible sessions.",
     "developerName": "Alex Newman (upstream) + bjarne56 (fork)",
     "category": "Productivity",
     "capabilities": [

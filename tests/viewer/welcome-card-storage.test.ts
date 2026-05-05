@@ -25,8 +25,8 @@ class MemoryStorage {
 const memStore = new MemoryStorage();
 (globalThis as unknown as { localStorage: MemoryStorage }).localStorage = memStore;
 
-const STORAGE_KEY = 'claude-mem-welcome-dismissed-v3';
-const LEGACY_KEY = 'claude-mem-welcome-dismissed-v1';
+const STORAGE_KEY = 'claude-mem-plus-welcome-dismissed-v3';
+const LEGACY_KEY = 'claude-mem-plus-welcome-dismissed-v1';
 
 import {
   getStoredWelcomeDismissed,

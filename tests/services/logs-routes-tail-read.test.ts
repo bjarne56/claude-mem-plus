@@ -6,7 +6,7 @@ import { tmpdir } from 'os';
 import { readLastLines } from '../../src/services/worker/http/routes/LogsRoutes.js';
 
 describe('readLastLines (#1203 OOM fix)', () => {
-  const testDir = join(tmpdir(), `claude-mem-logs-test-${Date.now()}`);
+  const testDir = join(tmpdir(), `claude-mem-plus-logs-test-${Date.now()}`);
   const testFile = join(testDir, 'test.log');
 
   beforeEach(() => {

@@ -72,7 +72,7 @@ function projectsHaveObservations(
   return false;
 }
 
-const WELCOME_HINT_TEMPLATE = `# claude-mem status
+const WELCOME_HINT_TEMPLATE = `# claude-mem-plus status
 
 This project has no memory yet. The current session will seed it; subsequent sessions will receive auto-injected context for relevant past work.
 
@@ -566,7 +566,7 @@ export class SearchRoutes extends BaseRouteHandler {
       examples: [
         `curl "${baseUrl}/api/search/observations?query=authentication&limit=5"`,
         `curl "${baseUrl}/api/search/by-type?type=bugfix&limit=10"`,
-        `curl "${baseUrl}/api/context/recent?project=claude-mem&limit=3"`,
+        `curl "${baseUrl}/api/context/recent?project=claude-mem-plus&limit=3"`,
         `curl "${baseUrl}/api/context/timeline?anchor=123&depth_before=5&depth_after=5"`
       ]
     });

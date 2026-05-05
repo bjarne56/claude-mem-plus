@@ -13,12 +13,12 @@ This feature is **disabled by default**. Enable it via settings if you want auto
 
 ## How It Works
 
-When you work with Claude Code in a project, claude-mem tracks which files are read and modified. After each observation is saved, it automatically:
+When you work with Claude Code in a project, claude-mem-plus tracks which files are read and modified. After each observation is saved, it automatically:
 
 1. Identifies unique folder paths from touched files
 2. Queries recent observations relevant to each folder
 3. Generates a formatted timeline of activity
-4. Writes it to `CLAUDE.md` in that folder (inside `<claude-mem-context>` tags)
+4. Writes it to `CLAUDE.md` in that folder (inside `<claude-mem-plus-context>` tags)
 
 ### What Gets Generated
 
@@ -31,7 +31,7 @@ Each folder's `CLAUDE.md` contains a "Recent Activity" section showing:
 - Estimated token counts
 
 ```markdown
-<claude-mem-context>
+<claude-mem-plus-context>
 # Recent Activity
 
 ### Jan 4, 2026
@@ -40,12 +40,12 @@ Each folder's `CLAUDE.md` contains a "Recent Activity" section showing:
 |----|------|---|-------|------|
 | #1234 | 4:30 PM | 🔵 | Implemented user authentication | ~250 |
 | #1235 | " | 🔴 | Fixed login redirect bug | ~180 |
-</claude-mem-context>
+</claude-mem-plus-context>
 ```
 
 ### User Content Preservation
 
-The auto-generated content is wrapped in `<claude-mem-context>` tags. **Any content you write outside these tags is preserved** when the file is regenerated. This means you can:
+The auto-generated content is wrapped in `<claude-mem-plus-context>` tags. **Any content you write outside these tags is preserved** when the file is regenerated. This means you can:
 
 - Add your own documentation above or below the generated section
 - Write folder-specific instructions for Claude
@@ -57,9 +57,9 @@ The auto-generated content is wrapped in `<claude-mem-context>` tags. **Any cont
 This folder contains all authentication-related code.
 Follow the established patterns for new auth providers.
 
-<claude-mem-context>
+<claude-mem-plus-context>
 ... auto-generated content ...
-</claude-mem-context>
+</claude-mem-plus-context>
 
 ## Manual Notes
 
@@ -85,7 +85,7 @@ Git submodules (which have a `.git` *file* instead of directory) are correctly d
 
 To enable folder CLAUDE.md generation, edit your settings file:
 
-**1. Open `~/.claude-mem/settings.json`**
+**1. Open `~/.claude-mem-plus/settings.json`**
 
 **2. Add or update this setting:**
 ```json
@@ -119,7 +119,7 @@ bun scripts/regenerate-claude-md.ts --clean
 
 **What cleanup does:**
 1. Finds all `CLAUDE.md` files recursively
-2. Strips `<claude-mem-context>...</claude-mem-context>` sections
+2. Strips `<claude-mem-plus-context>...</claude-mem-plus-context>` sections
 3. **Deletes** files that become empty after stripping
 4. **Preserves** files that have user content outside the tags
 
@@ -230,7 +230,7 @@ This means observations about shared code are visible regardless of which worktr
 
 ### How It Works
 
-1. When generating context, claude-mem detects if your project is a worktree
+1. When generating context, claude-mem-plus detects if your project is a worktree
 2. It identifies the parent repository automatically
 3. Timeline queries include both locations
 4. Results are interleaved chronologically

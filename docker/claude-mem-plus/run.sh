@@ -3,16 +3,16 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-TAG="${TAG:-claude-mem:basic}"
+TAG="${TAG:-claude-mem-plus:basic}"
 
-HOST_MEM_DIR="${HOST_MEM_DIR:-$REPO_ROOT/.docker-claude-mem-data}"
+HOST_MEM_DIR="${HOST_MEM_DIR:-$REPO_ROOT/.docker-claude-mem-plus-data}"
 mkdir -p "$HOST_MEM_DIR"
-echo "[run] host .claude-mem dir: $HOST_MEM_DIR" >&2
+echo "[run] host .claude-mem-plus dir: $HOST_MEM_DIR" >&2
 
 CREDS_FILE=""
 CREDS_MOUNT_ARGS=()
 if [[ -z "${ANTHROPIC_API_KEY:-}" ]]; then
-  CREDS_FILE="$(mktemp -t claude-mem-creds.XXXXXX.json)"
+  CREDS_FILE="$(mktemp -t claude-mem-plus-creds.XXXXXX.json)"
   trap 'rm -f "$CREDS_FILE"' EXIT
 
   creds_obtained=0
@@ -46,6 +46,6 @@ TTY_ARGS=()
 
 docker run --rm ${TTY_ARGS[@]+"${TTY_ARGS[@]}"} \
   "${CREDS_MOUNT_ARGS[@]}" \
-  -v "$HOST_MEM_DIR:/home/node/.claude-mem" \
+  -v "$HOST_MEM_DIR:/home/node/.claude-mem-plus" \
   "$TAG" \
   "$@"

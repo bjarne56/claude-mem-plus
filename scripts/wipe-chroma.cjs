@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 
-const chromaDir = path.join(os.homedir(), '.claude-mem', 'chroma');
+const chromaDir = path.join(os.homedir(), '.claude-mem-plus', 'chroma');
 
 if (fs.existsSync(chromaDir)) {
   const before = fs.readdirSync(chromaDir);

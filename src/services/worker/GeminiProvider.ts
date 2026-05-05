@@ -450,7 +450,7 @@ export class GeminiProvider {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            ...(priorRequestId ? { 'x-claude-mem-prior-request-id': priorRequestId } : {}),
+            ...(priorRequestId ? { 'x-claude-mem-plus-prior-request-id': priorRequestId } : {}),
           },
           body: JSON.stringify({
             contents,

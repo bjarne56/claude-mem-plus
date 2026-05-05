@@ -9,7 +9,7 @@ flowchart TD
         B2 -- no --> B3["skip Chroma init"]
         B2 -- yes --> B4["ChromaMcpManager.getInstance() (no connect)"]
         B4 --> B5["dbManager.initialize()"]
-        B5 --> B6["new ChromaSync('claude-mem') -> cm__claude-mem"]
+        B5 --> B6["new ChromaSync('claude-mem-plus') -> cm__claude-mem-plus"]
         B6 --> B7["SearchOrchestrator + CorpusBuilder receive shared instance"]
         B7 --> B8["mark init complete"]
         B8 --> B9["fire-and-forget backfillAllProjects()"]
@@ -56,7 +56,7 @@ flowchart TD
         OS -- macOS --> MAC["build Zscaler-merged CA bundle + 4 SSL env vars"]
         OS -- Linux --> LIN["uvx chroma-mcp"]
         WIN & MAC & LIN --> MODE{"mode"}
-        MODE -- local --> ML["--client-type persistent --data-dir ~/.claude-mem/chroma"]
+        MODE -- local --> ML["--client-type persistent --data-dir ~/.claude-mem-plus/chroma"]
         MODE -- remote --> MR["--client-type http --host --port [--ssl --tenant --database --api-key]"]
         ML & MR --> SPN["spawn subprocess (cwd=os.homedir())"]
         SPN --> SUP["register with supervisor"]
@@ -73,7 +73,7 @@ flowchart TD
 
     subgraph Subproc["uvx chroma-mcp subprocess"]
         SEND --> CMP["chroma-mcp server"]
-        CMP --> STORE[("~/.claude-mem/chroma/")]
+        CMP --> STORE[("~/.claude-mem-plus/chroma/")]
     end
 
     subgraph Read["Read Path"]
@@ -129,7 +129,7 @@ flowchart TD
         B1["worker start"] --> B2{"CHROMA_ENABLED?"}
         B2 -- no --> B3["skip"]
         B2 -- yes --> B4["new ChromaStore() -> in-process chromadb persistent client"]
-        B4 --> B5["open ~/.claude-mem/chroma/"]
+        B4 --> B5["open ~/.claude-mem-plus/chroma/"]
     end
 
     subgraph Ingress["Single Write Ingress"]

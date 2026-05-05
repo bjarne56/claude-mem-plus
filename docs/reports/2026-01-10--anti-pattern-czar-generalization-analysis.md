@@ -8,11 +8,11 @@ This report analyzes whether the `/anti-pattern-czar` command and its underlying
 
 ## Executive Summary
 
-The anti-pattern detection system in claude-mem consists of two components:
+The anti-pattern detection system in claude-mem-plus consists of two components:
 1. **`/anti-pattern-czar`** - An interactive workflow command for detecting and fixing error handling anti-patterns
 2. **`detect-error-handling-antipatterns.ts`** - The underlying static analysis script
 
-**Verdict:** The core detection patterns are highly generalizable to any TypeScript/JavaScript codebase. However, the current implementation has claude-mem-specific hardcoding that would need to be extracted into configuration for broader use.
+**Verdict:** The core detection patterns are highly generalizable to any TypeScript/JavaScript codebase. However, the current implementation has claude-mem-plus-specific hardcoding that would need to be extracted into configuration for broader use.
 
 ---
 
@@ -65,14 +65,14 @@ The script uses **purely regex-based detection** (no AST parsing) with two phase
 
 ### Unique Value Proposition
 
-The claude-mem detector catches patterns that **no standard ESLint rule addresses**:
+The claude-mem-plus detector catches patterns that **no standard ESLint rule addresses**:
 
 1. **Partial Error Logging** - Logging `error.message` loses stack traces
 2. **Error String Matching** - Fragile `if (error.message.includes('timeout'))` patterns
 3. **Error Message Guessing** - Chained `.includes()` for error classification
 4. **Critical Path Continuation** - Logging but continuing in code that should fail
 
-These patterns represent **real debugging nightmares** that caused hours of investigation in claude-mem's development.
+These patterns represent **real debugging nightmares** that caused hours of investigation in claude-mem-plus's development.
 
 ---
 
@@ -157,13 +157,13 @@ error-pattern-detector/
 
 ## PR #666 Review Context
 
-The PR review raised a valid concern: the `/anti-pattern-czar` command references a script (`scripts/anti-pattern-test/detect-error-handling-antipatterns.ts`) that only exists in the claude-mem development repository.
+The PR review raised a valid concern: the `/anti-pattern-czar` command references a script (`scripts/anti-pattern-test/detect-error-handling-antipatterns.ts`) that only exists in the claude-mem-plus development repository.
 
 **Options:**
 
 1. **Keep as development tool** - Don't distribute with plugin (recommended by reviewer)
 2. **Bundle the detector** - Include the script in the plugin distribution
-3. **Extract to standalone package** - Publish as `@claude-mem/error-pattern-detector` and depend on it
+3. **Extract to standalone package** - Publish as `@claude-mem-plus/error-pattern-detector` and depend on it
 
 Option 3 enables both plugin distribution and community adoption.
 

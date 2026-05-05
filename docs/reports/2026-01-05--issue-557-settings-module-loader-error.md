@@ -1,7 +1,7 @@
 # Investigation Report: Issue #557 - Plugin Fails to Start
 
 **Date:** January 5, 2026
-**Issue:** [#557](https://github.com/thedotmack/claude-mem/issues/557) - Plugin fails to start: settings.json not generated, worker throws module loader error
+**Issue:** [#557](https://github.com/thedotmack/claude-mem-plus/issues/557) - Plugin fails to start: settings.json not generated, worker throws module loader error
 **Author:** Sheikh Abdur Raheem Ali (@sheikheddy)
 **Investigator:** Claude (Opus 4.5)
 
@@ -22,7 +22,7 @@ The root cause appears to be that Claude Code 2.0.76 is invoking hooks with Node
 
 | Component | Version |
 |-----------|---------|
-| claude-mem | 8.1.0 |
+| claude-mem-plus | 8.1.0 |
 | Claude Code | 2.0.76 |
 | Node.js | v25.2.1 |
 | Bun | 1.3.5 |
@@ -46,7 +46,7 @@ This error signature indicates Node.js (not Bun) is attempting to load a CommonJ
 
 ### Hook Configuration Analysis
 
-From `/Users/alexnewman/Scripts/claude-mem/plugin/hooks/hooks.json`:
+From `/Users/alexnewman/Scripts/claude-mem-plus/plugin/hooks/hooks.json`:
 
 ```json
 {
@@ -84,7 +84,7 @@ From `/Users/alexnewman/Scripts/claude-mem/plugin/hooks/hooks.json`:
 
 ### Build Configuration Analysis
 
-From `/Users/alexnewman/Scripts/claude-mem/scripts/build-hooks.js`:
+From `/Users/alexnewman/Scripts/claude-mem-plus/scripts/build-hooks.js`:
 
 1. **Hooks** are built with:
    - `format: 'esm'` (ES modules)
@@ -100,7 +100,7 @@ The `bun:sqlite` external dependency is the critical issue. When Node.js tries t
 
 ### Settings.json Auto-Creation Analysis
 
-From `/Users/alexnewman/Scripts/claude-mem/src/services/worker/http/routes/SettingsRoutes.ts`:
+From `/Users/alexnewman/Scripts/claude-mem-plus/src/services/worker/http/routes/SettingsRoutes.ts`:
 
 ```typescript
 private ensureSettingsFile(settingsPath: string): void {
@@ -124,7 +124,7 @@ This method is only called when:
 
 ### SettingsDefaultsManager Behavior
 
-From `/Users/alexnewman/Scripts/claude-mem/src/shared/SettingsDefaultsManager.ts`:
+From `/Users/alexnewman/Scripts/claude-mem-plus/src/shared/SettingsDefaultsManager.ts`:
 
 ```typescript
 static loadFromFile(settingsPath: string): SettingsDefaults {
@@ -282,7 +282,7 @@ if (typeof Bun === 'undefined') {
 
 4. **Check if settings.json exists:**
    ```bash
-   cat ~/.claude-mem/settings.json
+   cat ~/.claude-mem-plus/settings.json
    ```
 
 5. **Verify worker can start:**
@@ -312,15 +312,15 @@ Until a fix is released, users can manually:
 
 2. **Create settings.json manually:**
    ```bash
-   mkdir -p ~/.claude-mem
-   cat > ~/.claude-mem/settings.json << 'EOF'
+   mkdir -p ~/.claude-mem-plus
+   cat > ~/.claude-mem-plus/settings.json << 'EOF'
    {
      "CLAUDE_MEM_MODEL": "claude-sonnet-4-5",
      "CLAUDE_MEM_CONTEXT_OBSERVATIONS": "50",
      "CLAUDE_MEM_WORKER_PORT": "37777",
      "CLAUDE_MEM_WORKER_HOST": "127.0.0.1",
      "CLAUDE_MEM_PROVIDER": "claude",
-     "CLAUDE_MEM_DATA_DIR": "$HOME/.claude-mem",
+     "CLAUDE_MEM_DATA_DIR": "$HOME/.claude-mem-plus",
      "CLAUDE_MEM_LOG_LEVEL": "INFO",
      "CLAUDE_MEM_MODE": "code"
    }

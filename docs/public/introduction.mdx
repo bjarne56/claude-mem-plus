@@ -14,14 +14,14 @@ Claude-Mem seamlessly preserves context across sessions by automatically capturi
 Install with a single command:
 
 ```bash
-npx claude-mem install
+npx claude-mem-plus install
 ```
 
 Or install from the plugin marketplace inside Claude Code:
 
 ```bash
-/plugin marketplace add thedotmack/claude-mem
-/plugin install claude-mem
+/plugin marketplace add thedotmack/claude-mem-plus
+/plugin install claude-mem-plus
 ```
 
 Restart Claude Code. Context from previous sessions will automatically appear in new sessions.
@@ -78,7 +78,7 @@ See [Architecture Overview](architecture/overview) for details.
 ## System Requirements
 
 - **Node.js**: 20.0.0 or higher
-- **Bun** ≥ 1.0 (auto-installed by `npx claude-mem install` if missing)
+- **Bun** ≥ 1.0 (auto-installed by `npx claude-mem-plus install` if missing)
 - **uv** (auto-installed if missing — provides Python for Chroma)
 - **Claude Code** (or another supported IDE: Cursor, Gemini CLI, Windsurf, OpenCode, Codex CLI, OpenClaw)
 - **SQLite 3** — bundled via `bun:sqlite`

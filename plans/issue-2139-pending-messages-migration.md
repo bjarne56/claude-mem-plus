@@ -179,26 +179,26 @@ grep -on ".run(2[7-9]," plugin/scripts/worker-service.cjs
 
 1. Move the existing DB aside to simulate a fresh install:
    ```bash
-   mv ~/.claude-mem/claude-mem.db ~/.claude-mem/claude-mem.db.preissue2139
-   mv ~/.claude-mem/claude-mem.db-wal ~/.claude-mem/claude-mem.db-wal.preissue2139 2>/dev/null
-   mv ~/.claude-mem/claude-mem.db-shm ~/.claude-mem/claude-mem.db-shm.preissue2139 2>/dev/null
+   mv ~/.claude-mem-plus/claude-mem.db ~/.claude-mem-plus/claude-mem.db.preissue2139
+   mv ~/.claude-mem-plus/claude-mem.db-wal ~/.claude-mem-plus/claude-mem.db-wal.preissue2139 2>/dev/null
+   mv ~/.claude-mem-plus/claude-mem.db-shm ~/.claude-mem-plus/claude-mem.db-shm.preissue2139 2>/dev/null
    ```
-2. Restart the worker (kill PID from `~/.claude-mem/supervisor.json`; the supervisor respawns it).
+2. Restart the worker (kill PID from `~/.claude-mem-plus/supervisor.json`; the supervisor respawns it).
 3. Confirm the schema:
    ```bash
-   sqlite3 ~/.claude-mem/claude-mem.db "PRAGMA table_info(pending_messages);" | grep -E 'tool_use_id|worker_pid'
+   sqlite3 ~/.claude-mem-plus/claude-mem.db "PRAGMA table_info(pending_messages);" | grep -E 'tool_use_id|worker_pid'
    # Both rows must appear.
-   sqlite3 ~/.claude-mem/claude-mem.db "SELECT version FROM schema_versions ORDER BY version;"
+   sqlite3 ~/.claude-mem-plus/claude-mem.db "SELECT version FROM schema_versions ORDER BY version;"
    # Must include 28 and 29.
-   sqlite3 ~/.claude-mem/claude-mem.db ".indexes pending_messages" | grep -E 'worker_pid|session_tool'
+   sqlite3 ~/.claude-mem-plus/claude-mem.db ".indexes pending_messages" | grep -E 'worker_pid|session_tool'
    # idx_pending_messages_worker_pid and ux_pending_session_tool must appear.
    ```
 4. Run a tool call in Claude Code so PostToolUse fires.
-5. `tail -n 200 ~/.claude-mem/logs/<latest>.log | grep -E 'no such column|has no column'` — must be empty.
-6. `sqlite3 ~/.claude-mem/claude-mem.db "SELECT COUNT(*) FROM observations;"` — must be > 0 after a real session.
+5. `tail -n 200 ~/.claude-mem-plus/logs/<latest>.log | grep -E 'no such column|has no column'` — must be empty.
+6. `sqlite3 ~/.claude-mem-plus/claude-mem.db "SELECT COUNT(*) FROM observations;"` — must be > 0 after a real session.
 7. Restore the original DB so the test isn't destructive:
    ```bash
-   mv ~/.claude-mem/claude-mem.db.preissue2139 ~/.claude-mem/claude-mem.db
+   mv ~/.claude-mem-plus/claude-mem.db.preissue2139 ~/.claude-mem-plus/claude-mem.db
    # (and the -wal/-shm if they existed)
    ```
 
@@ -209,7 +209,7 @@ The user's reported scenario (v29 already applied, columns missing) must also se
 1. Copy the current dev DB to a scratch path.
 2. Force the broken state:
    ```bash
-   cp ~/.claude-mem/claude-mem.db /tmp/issue2139-test.db
+   cp ~/.claude-mem-plus/claude-mem.db /tmp/issue2139-test.db
    sqlite3 /tmp/issue2139-test.db "
      ALTER TABLE pending_messages DROP COLUMN tool_use_id;
      ALTER TABLE pending_messages DROP COLUMN worker_pid;
@@ -229,7 +229,7 @@ The user's reported scenario (v29 already applied, columns missing) must also se
    - Confirm the diagnosis (SessionStore mirror missing v28).
    - Note the fix is shipping — give the version number after `version-bump`.
    - Thank the reporter (offer was already in their post; we don't need a PR from them).
-2. After the next claude-mem release, the affected user's worker will self-heal on next boot via the column-existence guards.
+2. After the next claude-mem-plus release, the affected user's worker will self-heal on next boot via the column-existence guards.
 
 ## Anti-Pattern Audit (final)
 

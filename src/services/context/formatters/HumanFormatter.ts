@@ -69,7 +69,7 @@ const STRINGS: Record<Lang, Strings> = {
     untitled: '未命名',
     sessionStarted: '会话开始',
     previously: '之前',
-    footerAccess: (workK, readN) => `用 ${readN}t 词元访问过往 ${workK}k 词元的调研与决策。用 claude-mem skill 按 ID 取记忆。`,
+    footerAccess: (workK, readN) => `用 ${readN}t 词元访问过往 ${workK}k 词元的调研与决策。用 claude-mem-plus skill 按 ID 取记忆。`,
     emptyState: '本项目暂无过往会话。',
   },
   en: {
@@ -94,7 +94,7 @@ const STRINGS: Record<Lang, Strings> = {
     untitled: 'Untitled',
     sessionStarted: 'Session started',
     previously: 'Previously',
-    footerAccess: (workK, readN) => `Access ${workK}k tokens of past research & decisions for just ${readN}t. Use the claude-mem skill to access memories by ID.`,
+    footerAccess: (workK, readN) => `Access ${workK}k tokens of past research & decisions for just ${readN}t. Use the claude-mem-plus skill to access memories by ID.`,
     emptyState: 'No previous sessions found for this project yet.',
   },
 };

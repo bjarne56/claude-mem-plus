@@ -188,7 +188,7 @@ describe('classifyClaudeError', () => {
   });
 
   it('classifies "Invalid API key" message as auth_invalid', () => {
-    const err = classifyClaudeError(new Error('Invalid API key: configure ~/.claude-mem/.env'));
+    const err = classifyClaudeError(new Error('Invalid API key: configure ~/.claude-mem-plus/.env'));
     expect(err.kind).toBe('auth_invalid');
   });
 

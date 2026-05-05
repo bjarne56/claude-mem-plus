@@ -148,7 +148,7 @@ export class SyncManager {
   async push(opts: { batchSize?: number; cwdHint?: string } = {}): Promise<PushResult> {
     const batchSize = opts.batchSize ?? PUSH_BATCH_SIZE;
     if (!this.state.isLoggedIn()) {
-      throw new Error('未登录,请先 claude-mem sync login');
+      throw new Error('未登录,请先 claude-mem-plus sync login');
     }
 
     const result: PushResult = { pushed: 0, duplicates: 0, errors: 0, serverSeqMax: 0 };
@@ -286,7 +286,7 @@ export class SyncManager {
 
   async pull(opts: { limit?: number } = {}): Promise<PullResult> {
     if (!this.state.isLoggedIn()) {
-      throw new Error('未登录,请先 claude-mem sync login');
+      throw new Error('未登录,请先 claude-mem-plus sync login');
     }
 
     const since = this.state.get().last_pulled_seq;

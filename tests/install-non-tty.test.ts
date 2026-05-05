@@ -70,7 +70,7 @@ describe('Install Non-TTY Support', () => {
     });
 
     it('uses console.log for intro in non-interactive mode', () => {
-      expect(installSource).toContain("console.log('claude-mem install')");
+      expect(installSource).toContain("console.log('claude-mem-plus install')");
     });
 
     it('uses console.log for note/summary in non-interactive mode', () => {
@@ -104,7 +104,7 @@ describe('Install Non-TTY Support', () => {
 
     it('addresses privacy: everything stays local', () => {
       expect(installSource).toContain('Everything stays in ');
-      expect(installSource).toContain("pc.cyan('~/.claude-mem')");
+      expect(installSource).toContain("pc.cyan('~/.claude-mem-plus')");
     });
 
     it('keeps /learn-codebase as the optional front-load path', () => {

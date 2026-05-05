@@ -38,17 +38,17 @@ USER node
 RUN npm install -g @anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}
 
 USER root
-COPY plugin/ /opt/claude-mem/
-RUN chown -R node:node /opt/claude-mem
+COPY plugin/ /opt/claude-mem-plus/
+RUN chown -R node:node /opt/claude-mem-plus
 
-RUN mkdir -p /home/node/.claude /home/node/.claude-mem \
- && chown -R node:node /home/node/.claude /home/node/.claude-mem
+RUN mkdir -p /home/node/.claude /home/node/.claude-mem-plus \
+ && chown -R node:node /home/node/.claude /home/node/.claude-mem-plus
 
 USER node
 WORKDIR /home/node
 
-COPY --chown=node:node docker/claude-mem/entrypoint.sh /usr/local/bin/claude-mem-entrypoint
-RUN chmod +x /usr/local/bin/claude-mem-entrypoint
+COPY --chown=node:node docker/claude-mem-plus/entrypoint.sh /usr/local/bin/claude-mem-plus-entrypoint
+RUN chmod +x /usr/local/bin/claude-mem-plus-entrypoint
 
-ENTRYPOINT ["/usr/local/bin/claude-mem-entrypoint"]
+ENTRYPOINT ["/usr/local/bin/claude-mem-plus-entrypoint"]
 CMD ["bash"]

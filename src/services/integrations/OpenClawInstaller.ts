@@ -22,7 +22,7 @@ export function getOpenClawExtensionsDirectory(): string {
 }
 
 export function getOpenClawClaudeMemExtensionDirectory(): string {
-  return path.join(getOpenClawExtensionsDirectory(), 'claude-mem');
+  return path.join(getOpenClawExtensionsDirectory(), 'claude-mem-plus');
 }
 
 export function getOpenClawConfigFilePath(): string {
@@ -116,10 +116,10 @@ function registerPluginInOpenClawConfig(
   if (!config.plugins.slots) config.plugins.slots = {};
   if (!config.plugins.entries) config.plugins.entries = {};
 
-  config.plugins.slots.memory = 'claude-mem';
+  config.plugins.slots.memory = 'claude-mem-plus';
 
-  if (!config.plugins.entries['claude-mem']) {
-    config.plugins.entries['claude-mem'] = {
+  if (!config.plugins.entries['claude-mem-plus']) {
+    config.plugins.entries['claude-mem-plus'] = {
       enabled: true,
       config: {
         workerPort,
@@ -128,11 +128,11 @@ function registerPluginInOpenClawConfig(
       },
     };
   } else {
-    config.plugins.entries['claude-mem'].enabled = true;
-    if (!config.plugins.entries['claude-mem'].config) {
-      config.plugins.entries['claude-mem'].config = {};
+    config.plugins.entries['claude-mem-plus'].enabled = true;
+    if (!config.plugins.entries['claude-mem-plus'].config) {
+      config.plugins.entries['claude-mem-plus'].config = {};
     }
-    const existingPluginConfig = config.plugins.entries['claude-mem'].config;
+    const existingPluginConfig = config.plugins.entries['claude-mem-plus'].config;
     if (existingPluginConfig.workerPort === undefined) existingPluginConfig.workerPort = workerPort;
     if (existingPluginConfig.project === undefined) existingPluginConfig.project = project;
     if (existingPluginConfig.syncMemoryFile === undefined) existingPluginConfig.syncMemoryFile = syncMemoryFile;
@@ -147,11 +147,11 @@ function unregisterPluginFromOpenClawConfig(): void {
 
   const config = readOpenClawConfig();
 
-  if (config.plugins?.entries?.['claude-mem']) {
-    delete config.plugins.entries['claude-mem'];
+  if (config.plugins?.entries?.['claude-mem-plus']) {
+    delete config.plugins.entries['claude-mem-plus'];
   }
 
-  if (config.plugins?.slots?.memory === 'claude-mem') {
+  if (config.plugins?.slots?.memory === 'claude-mem-plus') {
     delete config.plugins.slots.memory;
   }
 
@@ -174,7 +174,7 @@ export function installOpenClawPlugin(): number {
   const skillsDirectory = findPluginSkillsDirectory();
 
   const extensionPackageJson = {
-    name: 'claude-mem',
+    name: 'claude-mem-plus',
     version: '1.0.0',
     type: 'module',
     main: 'dist/index.js',
@@ -275,9 +275,9 @@ export function checkOpenClawStatus(): number {
   console.log(`Config (openclaw.json): ${configFilePath}`);
   if (existsSync(configFilePath)) {
     const config = readOpenClawConfig();
-    const isRegistered = config.plugins?.entries?.['claude-mem'] !== undefined;
-    const isEnabled = config.plugins?.entries?.['claude-mem']?.enabled === true;
-    const isMemorySlot = config.plugins?.slots?.memory === 'claude-mem';
+    const isRegistered = config.plugins?.entries?.['claude-mem-plus'] !== undefined;
+    const isEnabled = config.plugins?.entries?.['claude-mem-plus']?.enabled === true;
+    const isMemorySlot = config.plugins?.slots?.memory === 'claude-mem-plus';
 
     console.log(`  Exists: yes`);
     console.log(`  Registered: ${isRegistered ? 'yes' : 'no'}`);
@@ -285,7 +285,7 @@ export function checkOpenClawStatus(): number {
     console.log(`  Memory slot: ${isMemorySlot ? 'yes' : 'no'}`);
 
     if (isRegistered) {
-      const pluginConfig = config.plugins.entries['claude-mem'].config;
+      const pluginConfig = config.plugins.entries['claude-mem-plus'].config;
       if (pluginConfig) {
         console.log(`  Worker port: ${pluginConfig.workerPort ?? 'default'}`);
         console.log(`  Project: ${pluginConfig.project ?? 'default'}`);
@@ -317,7 +317,7 @@ Plugin installed to: ${extensionDirectory}
 Config updated: ${getOpenClawConfigFilePath()}
 
 Next steps:
-  1. Start claude-mem worker: npx claude-mem start
+  1. Start claude-mem-plus worker: npx claude-mem-plus start
   2. Restart OpenClaw to load the plugin
   3. Memory capture is automatic from then on
 `);

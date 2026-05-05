@@ -1,11 +1,11 @@
 # Installer Streamline — Eliminate 30s Silent Dead Air
 
-**Goal:** Move all heavy install work (Bun/uv install, `bun install` in plugin cache) into the `npx claude-mem install` flow with a visible spinner. Make hooks runtime-only — never installers.
+**Goal:** Move all heavy install work (Bun/uv install, `bun install` in plugin cache) into the `npx claude-mem-plus install` flow with a visible spinner. Make hooks runtime-only — never installers.
 
 **Net effect:**
-- `smart-install.js` runs in normal Claude Code lifecycle: 3 → 0 (or 1 via `npx claude-mem repair` after `claude plugin update`)
+- `smart-install.js` runs in normal Claude Code lifecycle: 3 → 0 (or 1 via `npx claude-mem-plus repair` after `claude plugin update`)
 - 30s silent dead air → visible spinner during `npx`
-- `npx claude-mem repair` becomes the canonical recovery entry point
+- `npx claude-mem-plus repair` becomes the canonical recovery entry point
 - ~420 lines of code deleted (smart-install.js × 2 + tests + docs)
 
 **Out of scope:** `bun-runner.js` deletion (independent rework with Windows/stdin verification needs — ship later).
@@ -22,7 +22,7 @@ These facts came from a discovery agent + direct file reads. Each implementation
 |---|---|---|
 | NPX command dispatcher | `src/npx-cli/index.ts:39–141` | Manual `switch (command)` on `process.argv.slice(2)`. Each case dynamic-imports its handler. |
 | `install` case (template for `repair`) | `src/npx-cli/index.ts:46–52` | `const { runInstallCommand } = await import('./commands/install.js'); await runInstallCommand({ ide: ideValue });` |
-| Plugin cache dir helper | `src/npx-cli/utils/paths.ts:32–34` | `pluginCacheDirectory(version)` → `~/.claude/plugins/cache/thedotmack/claude-mem/{version}/` |
+| Plugin cache dir helper | `src/npx-cli/utils/paths.ts:32–34` | `pluginCacheDirectory(version)` → `~/.claude/plugins/cache/thedotmack/claude-mem-plus/{version}/` |
 | `.install-version` marker readers | `src/services/context/ContextBuilder.ts:36,45` and `src/services/worker/BranchManager.ts:173,228` | These read/delete the marker. Marker schema (`{ version, bun, uv, installedAt }`) MUST be preserved. |
 | `clack` task pattern | `src/npx-cli/commands/install.ts:604–664` | `runTasks([{ title, task: async (message) => { … return 'Done OK' } }])` |
 
@@ -166,7 +166,7 @@ Place this AFTER the "Installing dependencies" (npm install) task — same order
 case 'claude-code': {
   try {
     execSync(
-      'claude plugin marketplace add thedotmack/claude-mem && claude plugin install claude-mem',
+      'claude plugin marketplace add thedotmack/claude-mem-plus && claude plugin install claude-mem-plus',
       { stdio: 'inherit' },
     );
     log.success('Claude Code: plugin installed via CLI.');
@@ -199,9 +199,9 @@ export async function runRepairCommand(): Promise<void> {
   const cacheDir = pluginCacheDirectory(version);
 
   if (isInteractive) {
-    p.intro(pc.bgCyan(pc.black(' claude-mem repair ')));
+    p.intro(pc.bgCyan(pc.black(' claude-mem-plus repair ')));
   } else {
-    console.log('claude-mem repair');
+    console.log('claude-mem-plus repair');
   }
   log.info(`Version: ${pc.cyan(version)}`);
 
@@ -223,9 +223,9 @@ export async function runRepairCommand(): Promise<void> {
   ]);
 
   if (isInteractive) {
-    p.outro(pc.green('claude-mem repair complete.'));
+    p.outro(pc.green('claude-mem-plus repair complete.'));
   } else {
-    console.log('claude-mem repair complete.');
+    console.log('claude-mem-plus repair complete.');
   }
 }
 ```
@@ -247,7 +247,7 @@ export async function runRepairCommand(): Promise<void> {
 
 ---
 
-## Phase 3 — Wire `npx claude-mem repair`
+## Phase 3 — Wire `npx claude-mem-plus repair`
 
 **What to implement:** Add a `repair` case to the npx-cli command dispatcher.
 
@@ -269,11 +269,11 @@ Place it adjacent to the `install` case for discoverability.
 
 ### Edit 3B — Help text update (if applicable)
 
-If `src/npx-cli/index.ts` has a help/usage block (look for `case 'help':` or default case), add `repair` to the list of commands with description: `Repair claude-mem runtime (re-runs Bun/uv setup and bun install in plugin cache).`
+If `src/npx-cli/index.ts` has a help/usage block (look for `case 'help':` or default case), add `repair` to the list of commands with description: `Repair claude-mem-plus runtime (re-runs Bun/uv setup and bun install in plugin cache).`
 
 **Verification checklist:**
-- [ ] `npx claude-mem repair --help` (after build) shows the command
-- [ ] `npx claude-mem repair` runs `runRepairCommand` end to end on a corrupted cache (delete `.install-version` then run; should reinstall)
+- [ ] `npx claude-mem-plus repair --help` (after build) shows the command
+- [ ] `npx claude-mem-plus repair` runs `runRepairCommand` end to end on a corrupted cache (delete `.install-version` then run; should reinstall)
 - [ ] Help/usage output (if it exists) lists `repair`
 
 **Anti-pattern guards:**
@@ -316,15 +316,15 @@ try {
   const pkg = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf-8'));
   const markerPath = join(ROOT, '.install-version');
   if (!existsSync(markerPath)) {
-    console.error('claude-mem: runtime not yet set up — run: npx claude-mem repair');
+    console.error('claude-mem-plus: runtime not yet set up — run: npx claude-mem-plus repair');
     process.exit(0);
   }
   const marker = JSON.parse(readFileSync(markerPath, 'utf-8'));
   if (marker.version !== pkg.version) {
-    console.error(`claude-mem: upgraded to v${pkg.version} — run: npx claude-mem repair`);
+    console.error(`claude-mem-plus: upgraded to v${pkg.version} — run: npx claude-mem-plus repair`);
   }
 } catch {
-  console.error('claude-mem: install marker unreadable — run: npx claude-mem repair');
+  console.error('claude-mem-plus: install marker unreadable — run: npx claude-mem-plus repair');
 }
 process.exit(0);
 ```
@@ -354,7 +354,7 @@ After edit, the SessionStart `hooks` array has 2 entries instead of 3.
 - [ ] `cat plugin/hooks/hooks.json | jq '.hooks.SessionStart[0].hooks | length'` returns `2`
 - [ ] `grep -c "smart-install" plugin/hooks/hooks.json` returns `0`
 - [ ] `node plugin/scripts/version-check.js` exits 0 in <500ms (time it)
-- [ ] On a fresh checkout (no `.install-version` marker), version-check stderr says "run: npx claude-mem repair"
+- [ ] On a fresh checkout (no `.install-version` marker), version-check stderr says "run: npx claude-mem-plus repair"
 
 **Anti-pattern guards:**
 - ❌ Do not change the exit code from 0 — Windows Terminal tab management depends on it (CLAUDE.md exit-code strategy).
@@ -411,7 +411,7 @@ If you skip this, document why in the PR description.
 
 ### Edit 6A — `docs/architecture-overview.md:36`
 
-Update reference to smart-install. New copy: "On first install, `npx claude-mem install` sets up Bun and uv globally and runs `bun install` in the plugin cache. The Setup hook then runs a sub-100ms version check on every Claude Code startup; if the plugin was upgraded externally, the user is prompted to run `npx claude-mem repair`."
+Update reference to smart-install. New copy: "On first install, `npx claude-mem-plus install` sets up Bun and uv globally and runs `bun install` in the plugin cache. The Setup hook then runs a sub-100ms version check on every Claude Code startup; if the plugin was upgraded externally, the user is prompted to run `npx claude-mem-plus repair`."
 
 ### Edit 6B — `docs/public/configuration.mdx:139,163` and `docs/public/development.mdx:42`
 
@@ -468,9 +468,9 @@ Must be green. Likely failures to anticipate:
 
 ### Edit 7C — Manual fresh-install verification
 
-1. On a clean machine (or after `rm -rf ~/.claude/plugins/marketplaces/thedotmack ~/.claude/plugins/cache/thedotmack ~/.claude-mem`):
+1. On a clean machine (or after `rm -rf ~/.claude/plugins/marketplaces/thedotmack ~/.claude/plugins/cache/thedotmack ~/.claude-mem-plus`):
    ```bash
-   npx claude-mem install
+   npx claude-mem-plus install
    ```
    Confirm:
    - Spinner says "Setting up runtime (first install can take ~30s)"
@@ -482,12 +482,12 @@ Must be green. Likely failures to anticipate:
    - No "claude plugin install" output
 3. Simulate a stale install:
    ```bash
-   rm ~/.claude/plugins/cache/thedotmack/claude-mem/<version>/.install-version
+   rm ~/.claude/plugins/cache/thedotmack/claude-mem-plus/<version>/.install-version
    ```
-   Open a new Claude Code session. Confirm version-check.js prints the "run: npx claude-mem repair" message to stderr.
+   Open a new Claude Code session. Confirm version-check.js prints the "run: npx claude-mem-plus repair" message to stderr.
 4. Run repair:
    ```bash
-   npx claude-mem repair
+   npx claude-mem-plus repair
    ```
    Confirm spinner runs through Bun/uv check + bun install + marker write, then exits clean.
 
@@ -500,7 +500,7 @@ Per the PR creation flow in the user's outer task. Don't auto-merge; the user wa
 - [ ] `npm test` exits 0
 - [ ] Manual fresh install completes with visible spinner, no silent dead air
 - [ ] Setup hook fires <200ms after rebuild
-- [ ] `npx claude-mem repair` runs end-to-end
+- [ ] `npx claude-mem-plus repair` runs end-to-end
 
 **Anti-pattern guards:**
 - ❌ Do not skip the manual verification — the whole point of this PR is UX (eliminating dead air). Type checks won't catch a regression.

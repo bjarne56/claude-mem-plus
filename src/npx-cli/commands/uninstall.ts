@@ -26,7 +26,7 @@ function removeMarketplaceDirectory(): boolean {
 }
 
 function removeCacheDirectory(): boolean {
-  const cacheDirectory = join(pluginsDirectory(), 'cache', 'thedotmack', 'claude-mem');
+  const cacheDirectory = join(pluginsDirectory(), 'cache', 'thedotmack', 'claude-mem-plus');
   if (existsSync(cacheDirectory)) {
     rmSync(cacheDirectory, { recursive: true, force: true });
     return true;
@@ -44,8 +44,8 @@ function removeFromKnownMarketplaces(): void {
 
 function removeFromInstalledPlugins(): void {
   const installedPlugins = readJsonSafe<Record<string, any>>(installedPluginsPath(), {});
-  if (installedPlugins.plugins?.['claude-mem@thedotmack']) {
-    delete installedPlugins.plugins['claude-mem@thedotmack'];
+  if (installedPlugins.plugins?.['claude-mem-plus@thedotmack']) {
+    delete installedPlugins.plugins['claude-mem-plus@thedotmack'];
     writeJsonFileAtomic(installedPluginsPath(), installedPlugins);
   }
 }
@@ -58,7 +58,7 @@ function stripLegacyClaudeMemAlias(): void {
     join(home, 'Documents', 'PowerShell', 'Microsoft.PowerShell_profile.ps1'),
   ];
 
-  const aliasLineRegex = /^\s*alias\s+claude-mem\s*=/;
+  const aliasLineRegex = /^\s*alias\s+claude-mem-plus\s*=/;
 
   for (const filePath of candidateFiles) {
     if (!existsSync(filePath)) continue;
@@ -74,7 +74,7 @@ function stripLegacyClaudeMemAlias(): void {
     if (filtered.length === lines.length) continue; 
     try {
       writeFileSync(filePath, filtered.join('\n'));
-      console.error(`Removed legacy claude-mem alias from ${filePath}`);
+      console.error(`Removed legacy claude-mem-plus alias from ${filePath}`);
     } catch (error: unknown) {
       console.warn(`[uninstall] Could not rewrite ${filePath}:`, error instanceof Error ? error.message : String(error));
     }
@@ -83,8 +83,8 @@ function stripLegacyClaudeMemAlias(): void {
 
 function removeFromClaudeSettings(): void {
   const settings = readJsonSafe<Record<string, any>>(claudeSettingsPath(), {});
-  if (settings.enabledPlugins?.['claude-mem@thedotmack'] !== undefined) {
-    delete settings.enabledPlugins['claude-mem@thedotmack'];
+  if (settings.enabledPlugins?.['claude-mem-plus@thedotmack'] !== undefined) {
+    delete settings.enabledPlugins['claude-mem-plus@thedotmack'];
     writeJsonFileAtomic(claudeSettingsPath(), settings);
   }
 }
@@ -102,7 +102,7 @@ function removeStrayClaudeMemPaths(): number {
       console.warn(`[uninstall] Could not read ${npxRoot}:`, error instanceof Error ? error.message : String(error));
     }
     for (const hashDir of hashDirs) {
-      const candidate = join(npxRoot, hashDir, 'node_modules', 'claude-mem');
+      const candidate = join(npxRoot, hashDir, 'node_modules', 'claude-mem-plus');
       if (!existsSync(candidate)) continue;
       try {
         rmSync(candidate, { recursive: true, force: true });
@@ -131,7 +131,7 @@ function removeStrayClaudeMemPaths(): number {
         continue;
       }
       for (const entry of logEntries) {
-        if (!entry.startsWith('mcp-logs-plugin-claude-mem-')) continue;
+        if (!entry.startsWith('mcp-logs-plugin-claude-mem-plus-')) continue;
         const logPath = join(projectPath, entry);
         try {
           rmSync(logPath, { recursive: true, force: true });
@@ -143,7 +143,7 @@ function removeStrayClaudeMemPaths(): number {
     }
   }
 
-  const pluginDataDir = join(home, '.claude', 'plugins', 'data', 'claude-mem-thedotmack');
+  const pluginDataDir = join(home, '.claude', 'plugins', 'data', 'claude-mem-plus-thedotmack');
   if (existsSync(pluginDataDir)) {
     try {
       rmSync(pluginDataDir, { recursive: true, force: true });
@@ -157,10 +157,10 @@ function removeStrayClaudeMemPaths(): number {
 }
 
 export async function runUninstallCommand(): Promise<void> {
-  p.intro(pc.bgRed(pc.white(' claude-mem uninstall ')));
+  p.intro(pc.bgRed(pc.white(' claude-mem-plus uninstall ')));
 
   if (!isPluginInstalled()) {
-    p.log.warn('claude-mem does not appear to be installed.');
+    p.log.warn('claude-mem-plus does not appear to be installed.');
 
     if (process.stdin.isTTY) {
       const shouldCleanup = await p.confirm({
@@ -178,7 +178,7 @@ export async function runUninstallCommand(): Promise<void> {
     }
   } else if (process.stdin.isTTY) {
     const shouldContinue = await p.confirm({
-      message: 'Are you sure you want to uninstall claude-mem?',
+      message: 'Are you sure you want to uninstall claude-mem-plus?',
       initialValue: false,
     });
 
@@ -239,14 +239,14 @@ export async function runUninstallCommand(): Promise<void> {
       },
     },
     {
-      title: 'Removing legacy claude-mem shell alias',
+      title: 'Removing legacy claude-mem-plus shell alias',
       task: async () => {
         stripLegacyClaudeMemAlias();
         return `Legacy alias check complete ${pc.green('OK')}`;
       },
     },
     {
-      title: 'Removing stray claude-mem caches and logs',
+      title: 'Removing stray claude-mem-plus caches and logs',
       task: async () => {
         const removed = removeStrayClaudeMemPaths();
         return removed > 0
@@ -292,11 +292,11 @@ export async function runUninstallCommand(): Promise<void> {
 
   p.note(
     [
-      `Your data directory at ${pc.cyan('~/.claude-mem')} was preserved.`,
-      'To remove it manually: rm -rf ~/.claude-mem',
+      `Your data directory at ${pc.cyan('~/.claude-mem-plus')} was preserved.`,
+      'To remove it manually: rm -rf ~/.claude-mem-plus',
     ].join('\n'),
     'Note',
   );
 
-  p.outro(pc.green('claude-mem has been uninstalled.'));
+  p.outro(pc.green('claude-mem-plus has been uninstalled.'));
 }

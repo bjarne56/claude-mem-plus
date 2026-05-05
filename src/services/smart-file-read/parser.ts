@@ -112,7 +112,7 @@ const EMPTY_USER_GRAMMAR_CONFIG: UserGrammarConfig = {
 export function loadUserGrammars(projectRoot: string): UserGrammarConfig {
   if (userGrammarCache.has(projectRoot)) return userGrammarCache.get(projectRoot)!;
 
-  const configPath = join(projectRoot, ".claude-mem.json");
+  const configPath = join(projectRoot, ".claude-mem-plus.json");
   let rawConfig: Record<string, unknown>;
 
   try {

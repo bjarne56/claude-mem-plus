@@ -74,20 +74,20 @@ Claude Code's hook system provides exactly what we need:
 
 ## The Hook Scripts
 
-Claude-Mem uses lifecycle hook scripts across 5 lifecycle events. Runtime setup is handled out-of-band by `npx claude-mem install` (and `npx claude-mem repair`); the Setup hook only runs a sub-100ms `version-check.js` to flag stale installs. SessionStart runs 2 hooks in sequence: worker-service start, then context-hook.
+Claude-Mem uses lifecycle hook scripts across 5 lifecycle events. Runtime setup is handled out-of-band by `npx claude-mem-plus install` (and `npx claude-mem-plus repair`); the Setup hook only runs a sub-100ms `version-check.js` to flag stale installs. SessionStart runs 2 hooks in sequence: worker-service start, then context-hook.
 
 ### Setup Hook: Version Check
 
 **Purpose:** Detect stale installs caused by external plugin upgrades and prompt the user to repair.
 
-**Note:** Runtime installation (Bun, uv, `bun install` in the plugin cache) is performed by `npx claude-mem install` and `npx claude-mem repair` — the Setup hook itself never installs anything.
+**Note:** Runtime installation (Bun, uv, `bun install` in the plugin cache) is performed by `npx claude-mem-plus install` and `npx claude-mem-plus repair` — the Setup hook itself never installs anything.
 
 **When:** Claude Code Setup phase, before every session.
 
 **What it does:**
 1. Reads the `.install-version` marker written by the npx installer.
 2. Compares it against the currently loaded plugin version.
-3. On mismatch, writes `run: npx claude-mem repair` to stderr.
+3. On mismatch, writes `run: npx claude-mem-plus repair` to stderr.
 4. Always exits 0 (non-blocking, sub-100ms).
 
 **Configuration:**
@@ -110,7 +110,7 @@ Claude-Mem uses lifecycle hook scripts across 5 lifecycle events. Runtime setup 
 - ✅ Always exit 0 — never blocks a session
 - ✅ Clear repair instructions on stderr when the plugin was upgraded externally (e.g. `claude plugin update`)
 
-**Source:** `scripts/version-check.js`. The matching installer logic lives in `npx claude-mem install` / `npx claude-mem repair`, which install Bun + uv globally, run `bun install` in the plugin cache, and write the `.install-version` marker — all behind a visible clack spinner.
+**Source:** `scripts/version-check.js`. The matching installer logic lives in `npx claude-mem-plus install` / `npx claude-mem-plus repair`, which install Bun + uv globally, run `bun install` in the plugin cache, and write the `.install-version` marker — all behind a visible clack spinner.
 
 ---
 
@@ -135,7 +135,7 @@ Claude-Mem uses lifecycle hook scripts across 5 lifecycle events. Runtime setup 
 
 **Output format:**
 ```markdown
-# [claude-mem] recent context
+# [claude-mem-plus] recent context
 
 **Legend:** 🎯 session-request | 🔴 gotcha | 🟡 problem-solution ...
 
@@ -642,7 +642,7 @@ claude --debug
     **Symptoms:** PostToolUse hook runs but observations missing
 
     **Debugging:**
-    1. Check database: `sqlite3 ~/.claude-mem/claude-mem.db "SELECT * FROM observation_queue"`
+    1. Check database: `sqlite3 ~/.claude-mem-plus/claude-mem.db "SELECT * FROM observation_queue"`
     2. Verify session exists: `SELECT * FROM sdk_sessions`
     3. Check worker status: `npm run worker:status`
     4. View worker logs: `npm run worker:logs`
@@ -696,8 +696,8 @@ claude --debug
 
 **Why the Setup hook stays fast:**
 - The Setup hook only reads the `.install-version` marker — no `npm install`, no spawned subprocesses.
-- All heavy lifting (Bun + uv install, `bun install` inside the plugin cache) happens in `npx claude-mem install` / `npx claude-mem repair`, which run with a visible clack spinner outside the session lifecycle.
-- On marker mismatch the hook prints a one-line `run: npx claude-mem repair` hint to stderr and exits 0; the user opts into the slow path explicitly.
+- All heavy lifting (Bun + uv install, `bun install` inside the plugin cache) happens in `npx claude-mem-plus install` / `npx claude-mem-plus repair`, which run with a visible clack spinner outside the session lifecycle.
+- On marker mismatch the hook prints a one-line `run: npx claude-mem-plus repair` hint to stderr and exits 0; the user opts into the slow path explicitly.
 
 ### Database Performance
 
@@ -763,7 +763,7 @@ LIMIT 20
 - Session summaries
 
 **Privacy guarantees:**
-- All data stored locally in `~/.claude-mem/claude-mem.db`
+- All data stored locally in `~/.claude-mem-plus/claude-mem.db`
 - No cloud uploads (API calls only for AI compression)
 - SQLite file permissions: user-only read/write
 - No analytics or telemetry

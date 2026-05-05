@@ -126,7 +126,7 @@ function executeCleanup(dbPath: string, effectiveDataDir: string, markerPath: st
   const effectiveBackupsDir = path.join(effectiveDataDir, 'backups');
   mkdirSync(effectiveBackupsDir, { recursive: true });
   const ts = new Date().toISOString().replace(/[:.]/g, '-');
-  backupPath = path.join(effectiveBackupsDir, `claude-mem-pre-12.4.3-${ts}.db`);
+  backupPath = path.join(effectiveBackupsDir, `claude-mem-plus-pre-12.4.3-${ts}.db`);
 
   const backupDb = new Database(dbPath, { readonly: true });
   let vacuumFailed = false;

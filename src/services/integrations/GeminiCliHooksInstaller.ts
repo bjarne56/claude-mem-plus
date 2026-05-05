@@ -30,7 +30,7 @@ const GEMINI_CONFIG_DIR = path.join(homedir(), '.gemini');
 const GEMINI_SETTINGS_PATH = path.join(GEMINI_CONFIG_DIR, 'settings.json');
 const GEMINI_MD_PATH = path.join(GEMINI_CONFIG_DIR, 'GEMINI.md');
 
-const HOOK_NAME = 'claude-mem';
+const HOOK_NAME = 'claude-mem-plus';
 const HOOK_TIMEOUT_MS = 10000;
 
 const GEMINI_EVENT_TO_INTERNAL_EVENT: Record<string, string> = {
@@ -131,8 +131,8 @@ function mergeHooksIntoSettings(
 }
 
 function setupGeminiMdContextSection(): void {
-  const contextTag = '<claude-mem-context>';
-  const contextEndTag = '</claude-mem-context>';
+  const contextTag = '<claude-mem-plus-context>';
+  const contextEndTag = '</claude-mem-plus-context>';
   const placeholder = `${contextTag}
 # Memory Context from Past Sessions
 
@@ -209,7 +209,7 @@ Hooks installed to: ${GEMINI_SETTINGS_PATH}
 Using unified CLI: bun worker-service.cjs hook gemini-cli <event>
 
 Next steps:
-  1. Start claude-mem worker: claude-mem start
+  1. Start claude-mem-plus worker: claude-mem-plus start
   2. Restart Gemini CLI to load the hooks
   3. Memory will be captured automatically during sessions
 
@@ -270,11 +270,11 @@ function writeSettingsAndCleanupGeminiContext(
   removedCount: number,
 ): void {
   writeGeminiSettings(settings);
-  console.log(`  Removed ${removedCount} claude-mem hook(s) from ${GEMINI_SETTINGS_PATH}`);
+  console.log(`  Removed ${removedCount} claude-mem-plus hook(s) from ${GEMINI_SETTINGS_PATH}`);
 
   if (existsSync(GEMINI_MD_PATH)) {
     let mdContent = readFileSync(GEMINI_MD_PATH, 'utf-8');
-    const contextRegex = /\n?<claude-mem-context>[\s\S]*?<\/claude-mem-context>\n?/;
+    const contextRegex = /\n?<claude-mem-plus-context>[\s\S]*?<\/claude-mem-plus-context>\n?/;
     if (contextRegex.test(mdContent)) {
       mdContent = mdContent.replace(contextRegex, '');
       writeFileSync(GEMINI_MD_PATH, mdContent);
@@ -292,7 +292,7 @@ export function checkGeminiCliHooksStatus(): number {
   if (!existsSync(GEMINI_SETTINGS_PATH)) {
     console.log('Gemini CLI settings: Not found');
     console.log(`  Expected at: ${GEMINI_SETTINGS_PATH}\n`);
-    console.log('No hooks installed. Run: claude-mem install --ide gemini-cli\n');
+    console.log('No hooks installed. Run: claude-mem-plus install --ide gemini-cli\n');
     return 0;
   }
 
@@ -312,7 +312,7 @@ export function checkGeminiCliHooksStatus(): number {
 
   if (!settings.hooks) {
     console.log('Gemini CLI settings: Found, but no hooks configured\n');
-    console.log('No hooks installed. Run: claude-mem install --ide gemini-cli\n');
+    console.log('No hooks installed. Run: claude-mem-plus install --ide gemini-cli\n');
     return 0;
   }
 
@@ -327,8 +327,8 @@ export function checkGeminiCliHooksStatus(): number {
   }
 
   if (installedEvents.length === 0) {
-    console.log('Gemini CLI settings: Found, but no claude-mem hooks\n');
-    console.log('Run: claude-mem install --ide gemini-cli\n');
+    console.log('Gemini CLI settings: Found, but no claude-mem-plus hooks\n');
+    console.log('Run: claude-mem-plus install --ide gemini-cli\n');
     return 0;
   }
 
@@ -342,10 +342,10 @@ export function checkGeminiCliHooksStatus(): number {
 
   if (existsSync(GEMINI_MD_PATH)) {
     const mdContent = readFileSync(GEMINI_MD_PATH, 'utf-8');
-    if (mdContent.includes('<claude-mem-context>')) {
+    if (mdContent.includes('<claude-mem-plus-context>')) {
       console.log(`Context: Active (${GEMINI_MD_PATH})`);
     } else {
-      console.log('Context: GEMINI.md exists but missing claude-mem section');
+      console.log('Context: GEMINI.md exists but missing claude-mem-plus section');
     }
   } else {
     console.log('Context: No GEMINI.md found');
@@ -370,19 +370,19 @@ export async function handleGeminiCliCommand(subcommand: string, _args: string[]
       console.log(`
 Claude-Mem Gemini CLI Integration
 
-Usage: claude-mem gemini-cli <command>
+Usage: claude-mem-plus gemini-cli <command>
 
 Commands:
   install             Install hooks into ~/.gemini/settings.json
-  uninstall           Remove claude-mem hooks (preserves other hooks)
+  uninstall           Remove claude-mem-plus hooks (preserves other hooks)
   status              Check installation status
 
 Examples:
-  claude-mem gemini-cli install     # Install hooks
-  claude-mem gemini-cli status      # Check if installed
-  claude-mem gemini-cli uninstall   # Remove hooks
+  claude-mem-plus gemini-cli install     # Install hooks
+  claude-mem-plus gemini-cli status      # Check if installed
+  claude-mem-plus gemini-cli uninstall   # Remove hooks
 
-For more info: https://docs.claude-mem.ai/usage/gemini-provider
+For more info: https://docs.claude-mem-plus.ai/usage/gemini-provider
       `);
       return 0;
   }

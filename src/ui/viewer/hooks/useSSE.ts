@@ -89,6 +89,19 @@ export function useSSE() {
               setQueueDepth(data.queueDepth || 0);
             }
             break;
+
+          case 'project_renamed': {
+            const oldName = data.oldName;
+            const newName = data.newName;
+            if (!oldName || !newName) break;
+            console.log('[SSE] Project renamed:', oldName, '→', newName);
+            const patch = <T extends { project: string }>(items: T[]): T[] =>
+              items.map(item => (item.project === oldName ? { ...item, project: newName } : item));
+            setObservations(prev => patch(prev));
+            setSummaries(prev => patch(prev));
+            setPrompts(prev => patch(prev));
+            break;
+          }
         }
       };
     };

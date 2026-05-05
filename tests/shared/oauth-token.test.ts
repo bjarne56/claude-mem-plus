@@ -56,7 +56,7 @@ function restorePlatform(): void {
 
 beforeEach(() => {
   // Redirect DATA_DIR to a temp directory for marker file tests.
-  tempDir = fs.mkdtempSync(join(fs.realpathSync(require('os').tmpdir()), 'claude-mem-oauth-test-'));
+  tempDir = fs.mkdtempSync(join(fs.realpathSync(require('os').tmpdir()), 'claude-mem-plus-oauth-test-'));
   dataDirSpy = spyOn(paths, 'dataDir').mockImplementation(() => tempDir);
 });
 

@@ -1,8 +1,8 @@
 # Cynical Deletion Plan — 29 issues → ~7 deletions
 
 **Date:** 2026-04-25
-**Branch:** `claude-mem-skill-invocation-and-github-issue-2139`
-**Source:** Triage of all 29 open issues for `thedotmack/claude-mem` applied with delete-first lens.
+**Branch:** `claude-mem-plus-skill-invocation-and-github-issue-2139`
+**Source:** Triage of all 29 open issues for `thedotmack/claude-mem-plus` applied with delete-first lens.
 
 ## Headline
 
@@ -72,7 +72,7 @@ The codebase has accumulated **defenders** (orphan cleanup → duplicate detecti
 ### What stays
 
 - **`verifyPidFileOwnership()`** at `process-registry.ts:160-182` and `captureProcessStartToken()` at lines 94-146 — these are correct. PID file with start-time token is exactly the OS-trust pattern we want.
-- **The PID file itself** at `~/.claude-mem/worker.pid` (or `$DATA_DIR/worker.pid`). This is the lock.
+- **The PID file itself** at `~/.claude-mem-plus/worker.pid` (or `$DATA_DIR/worker.pid`). This is the lock.
 - **`waitForPortFree()`** with a short timeout — used to confirm shutdown completed. Stays.
 
 ### Implementation steps
@@ -175,7 +175,7 @@ Discovery showed multi-account is ~80% there: `DATA_DIR` is fully overridable, p
 
 3. **Multi-account commit:**
    - Document in CLAUDE.md: multi-account works by setting `CLAUDE_MEM_DATA_DIR=/path/to/account-N` per shell. All paths derive from it. Per-UID port collision is handled automatically.
-   - Add a one-line CLI command: `claude-mem profile use <name>` that exports the right env vars (or just print the export command for user to eval).
+   - Add a one-line CLI command: `claude-mem-plus profile use <name>` that exports the right env vars (or just print the export command for user to eval).
    - Close #2101 with documentation pointing at the above.
 
 ### Verification
@@ -274,11 +274,11 @@ Discovery showed multi-account is ~80% there: `DATA_DIR` is fully overridable, p
 - `plugin/scripts/smart-install.js:633` — delete the call.
 - `src/npx-cli/commands/uninstall.ts` — add a one-time legacy-alias-strip pass:
   - Read `~/.bashrc`, `~/.zshrc`, `~/Documents/PowerShell/Microsoft.PowerShell_profile.ps1`.
-  - Remove any line matching `^alias claude-mem=` or `^function claude-mem`.
-  - Print "Removed legacy claude-mem alias from <file>" so users know.
-- Update README + docs: canonical entry points are `npx claude-mem <cmd>` and `bunx claude-mem <cmd>`.
+  - Remove any line matching `^alias claude-mem-plus=` or `^function claude-mem-plus`.
+  - Print "Removed legacy claude-mem-plus alias from <file>" so users know.
+- Update README + docs: canonical entry points are `npx claude-mem-plus <cmd>` and `bunx claude-mem-plus <cmd>`.
 
-**Verification:** Fresh install creates no shell-config mutations. Existing user with the alias runs uninstall — alias is gone. `which claude-mem` after uninstall returns nothing.
+**Verification:** Fresh install creates no shell-config mutations. Existing user with the alias runs uninstall — alias is gone. `which claude-mem-plus` after uninstall returns nothing.
 
 ---
 
@@ -291,12 +291,12 @@ Discovery showed multi-account is ~80% there: `DATA_DIR` is fully overridable, p
 1. **Item 1 — multiselect default:** `src/npx-cli/commands/install.ts:275-277` — change `initialValues: detected.filter(...).map(...)` to `initialValues: []`. Force explicit opt-in.
 2. **Item 3 — install-shutdown-before-overwrite:** Extract `uninstall.ts:109-132` (HTTP shutdown + poll) to `src/services/install/shutdown-helper.ts`. Call it from both `uninstall.ts` and `install.ts` before `copyPluginToMarketplace`.
 3. **Item 4 — uninstall path coverage:** `src/npx-cli/commands/uninstall.ts` — add removal of:
-   - `~/.npm/_npx/*/node_modules/claude-mem`
-   - `~/.cache/claude-cli-nodejs/*/mcp-logs-plugin-claude-mem-*`
-   - `~/.claude/plugins/data/claude-mem-thedotmack/`
+   - `~/.npm/_npx/*/node_modules/claude-mem-plus`
+   - `~/.cache/claude-cli-nodejs/*/mcp-logs-plugin-claude-mem-plus-*`
+   - `~/.claude/plugins/data/claude-mem-plus-thedotmack/`
    - Cascade shutdown to chroma-mcp (call its shutdown endpoint or kill PID).
 4. **Item 6 — real port query:** `install.ts:545` — after `smart-install.js` completes, hit `http://127.0.0.1:<settingsPort>/api/health` and report the actually-bound port. If health fails, just print "worker not yet ready" and exit cleanly.
-5. **Item 5 — documentation:** Add to install summary output: "Close all Claude Code sessions before uninstalling, or `~/.claude-mem` will be recreated by active hooks."
+5. **Item 5 — documentation:** Add to install summary output: "Close all Claude Code sessions before uninstalling, or `~/.claude-mem-plus` will be recreated by active hooks."
 
 ### Close
 
@@ -307,7 +307,7 @@ Discovery showed multi-account is ~80% there: `DATA_DIR` is fully overridable, p
 
 - Fresh install on a clean VM: only the IDEs the user explicitly checks are installed.
 - Reinstall while worker is running: install succeeds, no "overwrite" loop.
-- Uninstall + `find ~/.npm ~/.cache ~/.claude -name "*claude-mem*"` returns empty.
+- Uninstall + `find ~/.npm ~/.cache ~/.claude -name "*claude-mem-plus*"` returns empty.
 - Install summary prints the actual port when the user has overridden via env or settings.
 
 ---
@@ -330,7 +330,7 @@ Full sqlite-vec migration is a separate plan (would require replacing the embedd
 
 ### Verification
 
-- Fresh install on a clean machine: `~/.claude-mem/chroma/` populates, `chroma_query_documents` returns results without errors.
+- Fresh install on a clean machine: `~/.claude-mem-plus/chroma/` populates, `chroma_query_documents` returns results without errors.
 - No "No module named 'httpcore'" error in worker logs (closes #2046, #2085).
 - Force a chroma-mcp timeout (e.g. kill the subprocess); confirm the worker reconnects after backoff without spawning duplicate subprocesses (closes #2102).
 

@@ -2,8 +2,8 @@
 import path from 'path';
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'fs';
 
-export const CONTEXT_TAG_OPEN = '<claude-mem-context>';
-export const CONTEXT_TAG_CLOSE = '</claude-mem-context>';
+export const CONTEXT_TAG_OPEN = '<claude-mem-plus-context>';
+export const CONTEXT_TAG_CLOSE = '</claude-mem-plus-context>';
 
 export function injectContextIntoMarkdownFile(
   filePath: string,

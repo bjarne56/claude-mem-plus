@@ -64,7 +64,7 @@ Uses 3-layer progressive disclosure: search → timeline → get_observations
 ┌─────────────────────────────────────────────────────────────────┐
 │ 0. Setup Hook Fires (version-check.js)                          │
 │    Sub-100ms read of .install-version; on mismatch prints       │
-│    "run: npx claude-mem repair" to stderr. Always exits 0.      │
+│    "run: npx claude-mem-plus repair" to stderr. Always exits 0.      │
 └─────────────────────────────────────────────────────────────────┘
                               ↓
 ┌─────────────────────────────────────────────────────────────────┐
@@ -103,7 +103,7 @@ Uses 3-layer progressive disclosure: search → timeline → get_observations
 ## Directory Structure
 
 ```
-claude-mem/
+claude-mem-plus/
 ├── src/
 │   ├── hooks/                  # TypeScript hook implementations (built via esbuild)
 │   ├── sdk/                    # Claude Agent SDK integration
@@ -150,7 +150,7 @@ The plugin registers a Setup-phase `version-check.js` plus five lifecycle hooks.
 - **PostToolUse** (matcher `*`) → `hook claude-code observation`
 - **Stop** → `hook claude-code summarize` (summary generation)
 
-The actual runtime install (Bun, uv, `bun install`) is performed by `npx claude-mem install` / `npx claude-mem repair` with a visible installer spinner; the Setup hook itself only reads the `.install-version` marker.
+The actual runtime install (Bun, uv, `bun install`) is performed by `npx claude-mem-plus install` / `npx claude-mem-plus repair` with a visible installer spinner; the Setup hook itself only reads the `.install-version` marker.
 
 See [Plugin Hooks](/architecture/hooks) for detailed hook documentation.
 
@@ -169,7 +169,7 @@ SQLite3 with bun:sqlite driver featuring:
 - FTS5 virtual tables for full-text search
 - SessionStore for CRUD operations
 - SessionSearch for FTS5 queries
-- Location: `~/.claude-mem/claude-mem.db`
+- Location: `~/.claude-mem-plus/claude-mem.db`
 
 See [Database Architecture](/architecture/database) for schema and FTS5 search.
 

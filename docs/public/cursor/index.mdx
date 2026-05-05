@@ -47,8 +47,8 @@ If you're using Cursor without a Claude Code subscription:
 
 ```bash
 # Clone and build
-git clone https://github.com/thedotmack/claude-mem.git
-cd claude-mem && bun install && bun run build
+git clone https://github.com/thedotmack/claude-mem-plus.git
+cd claude-mem-plus && bun install && bun run build
 
 # Run interactive setup wizard
 bun run cursor:setup
@@ -70,11 +70,11 @@ If you have Claude Code installed:
 
 ```bash
 # Install the plugin (if not already)
-/plugin marketplace add thedotmack/claude-mem
-/plugin install claude-mem
+/plugin marketplace add thedotmack/claude-mem-plus
+/plugin install claude-mem-plus
 
 # Install Cursor hooks
-claude-mem cursor install
+claude-mem-plus cursor install
 ```
 
 The plugin uses Claude's SDK by default but you can switch to Gemini or OpenRouter anytime.
@@ -102,7 +102,7 @@ The plugin uses Claude's SDK by default but you can switch to Gemini or OpenRout
 
 ## Quick Commands Reference
 
-After installation, these commands are available from the claude-mem directory:
+After installation, these commands are available from the claude-mem-plus directory:
 
 | Command | Description |
 |---------|-------------|

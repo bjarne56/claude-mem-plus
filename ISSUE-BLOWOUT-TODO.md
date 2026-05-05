@@ -12,17 +12,17 @@ Released: **v12.3.2** on 2026-04-19
 2. Be cynical — most bug reports are surface-level; the real issue is usually overengineered band-aids
 3. After every `npm run build-and-sync`, verify observations flow:
    ```bash
-   sleep 5 && sqlite3 ~/.claude-mem/claude-mem.db "SELECT COUNT(*) FROM observations WHERE created_at_epoch > (strftime('%s','now') - 120) * 1000"
+   sleep 5 && sqlite3 ~/.claude-mem-plus/claude-mem.db "SELECT COUNT(*) FROM observations WHERE created_at_epoch > (strftime('%s','now') - 120) * 1000"
    ```
 4. If observations stop flowing, that's a regression — fix it before continuing
 
 ### Docker isolation
-- **Port 37777**: Host's live bun worker (YOUR claude-mem instance — don't touch)
-- **Port 37778**: Another agent's docker container (`claude-mem-dev`) — hands off
-- **Your docker**: Use tag `claude-mem:blowout`, data dir `.docker-blowout-data/`
+- **Port 37777**: Host's live bun worker (YOUR claude-mem-plus instance — don't touch)
+- **Port 37778**: Another agent's docker container (`claude-mem-plus-dev`) — hands off
+- **Your docker**: Use tag `claude-mem-plus:blowout`, data dir `.docker-blowout-data/`
   ```bash
-  TAG=claude-mem:blowout docker/claude-mem/build.sh
-  HOST_MEM_DIR=$(pwd)/.docker-blowout-data TAG=claude-mem:blowout docker/claude-mem/run.sh
+  TAG=claude-mem-plus:blowout docker/claude-mem-plus/build.sh
+  HOST_MEM_DIR=$(pwd)/.docker-blowout-data TAG=claude-mem-plus:blowout docker/claude-mem-plus/run.sh
   ```
 - Check observations in docker DB:
   ```bash
@@ -35,13 +35,13 @@ Released: **v12.3.2** on 2026-04-19
    - CodeRabbit and Greptile post inline comments — read, fix, commit, push, reply
    - `claude-review` is a CI check — just needs to pass
    - CodeRabbit can take 5-10 min to process after each push
-3. When all reviews pass: `gh pr merge <PR#> --repo thedotmack/claude-mem --squash --delete-branch --admin`
-4. Close resolved issues: `for issue in <numbers>; do gh issue close $issue --repo thedotmack/claude-mem --comment "Fixed in PR #XXXX"; done`
+3. When all reviews pass: `gh pr merge <PR#> --repo thedotmack/claude-mem-plus --squash --delete-branch --admin`
+4. Close resolved issues: `for issue in <numbers>; do gh issue close $issue --repo thedotmack/claude-mem-plus --comment "Fixed in PR #XXXX"; done`
 5. Version bump:
    ```bash
-   cd ~/Scripts/claude-mem
+   cd ~/Scripts/claude-mem-plus
    git pull origin main
-   # Run /version-bump patch (or use the skill: claude-mem:version-bump)
+   # Run /version-bump patch (or use the skill: claude-mem-plus:version-bump)
    # It handles: version files → build → commit → tag → push → gh release → changelog
    ```
 
@@ -73,7 +73,7 @@ Released: **v12.3.2** on 2026-04-19
 | 1896 | hooks | PreToolUse file-context caps Read to limit:1 | CLOSED — already fixed (mtime comparison at file-context.ts:255-267) |
 | 1903 | hooks | PostToolUse/Stop/SessionEnd never fire | CLOSED — no-repro (hooks.json correct; Claude Code 12.0.1 platform bug) |
 | 1932 | security | Admin endpoints spoofable requireLocalhost | FIXED — bearer token auth on all API endpoints |
-| 1933 | security | Unauthenticated HTTP API exposes 30+ endpoints | FIXED — auto-generated token at ~/.claude-mem/worker-auth-token (mode 0600) |
+| 1933 | security | Unauthenticated HTTP API exposes 30+ endpoints | FIXED — auto-generated token at ~/.claude-mem-plus/worker-auth-token (mode 0600) |
 | 1934 | security | watch.context.path written without validation | FIXED — path traversal protection validates against project root / data dir |
 | 1935 | security | Unbounded input, no rate limits | FIXED — 5MB body limit (was 50MB), 300 req/min/IP rate limiter |
 | 1936 | security | Multi-user macOS shared port cross-user MCP | FIXED — per-user port derivation from UID (37700 + uid%100) |
@@ -96,7 +96,7 @@ Released: **v12.3.2** on 2026-04-19
 | 1874 | worker | processAgentResponse deletes queued messages on non-XML output | FIXED — mark messages failed (with retry) instead of confirming |
 | 1867 | worker | Queue processor dies while /health stays green | FIXED — activeSessions count added to /health endpoint |
 
-Also fixed (not an issue): docker/claude-mem/run.sh nounset-safe TTY_ARGS expansion.
+Also fixed (not an issue): docker/claude-mem-plus/run.sh nounset-safe TTY_ARGS expansion.
 Also fixed (Greptile review): cached isFts5Available() at construction time.
 
 ## Remaining — CRITICAL (5)

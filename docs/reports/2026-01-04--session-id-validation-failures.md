@@ -318,7 +318,7 @@ These failures indicate a fundamental mismatch between expected and actual behav
 
 ## 9. References
 
-- **Test File:** `/Users/alexnewman/Scripts/claude-mem/tests/session_id_usage_validation.test.ts`
-- **Implementation:** `/Users/alexnewman/Scripts/claude-mem/src/services/sqlite/SessionStore.ts`
-- **SDKAgent:** `/Users/alexnewman/Scripts/claude-mem/src/services/worker/SDKAgent.ts`
-- **Documentation:** `/Users/alexnewman/Scripts/claude-mem/docs/SESSION_ID_ARCHITECTURE.md`
+- **Test File:** `/Users/alexnewman/Scripts/claude-mem-plus/tests/session_id_usage_validation.test.ts`
+- **Implementation:** `/Users/alexnewman/Scripts/claude-mem-plus/src/services/sqlite/SessionStore.ts`
+- **SDKAgent:** `/Users/alexnewman/Scripts/claude-mem-plus/src/services/worker/SDKAgent.ts`
+- **Documentation:** `/Users/alexnewman/Scripts/claude-mem-plus/docs/SESSION_ID_ARCHITECTURE.md`

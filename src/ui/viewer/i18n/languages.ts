@@ -1,6 +1,6 @@
 /**
  * 31 种支持语言清单
- * - 来源:upstream claude-mem 已有 plugin/modes/code--{lang}.json 翻译列表
+ * - 来源:upstream claude-mem-plus 已有 plugin/modes/code--{lang}.json 翻译列表
  * - 与 CLAUDE_MEM_MODE 后缀一一对应:`code--zh` ↔ 'zh', `code` ↔ 'en'
  * - RTL 标记给 viewer 容器加 dir="rtl"
  */

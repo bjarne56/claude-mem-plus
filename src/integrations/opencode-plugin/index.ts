@@ -97,7 +97,7 @@ function workerPostFireAndForget(
   }).catch((error: unknown) => {
     const message = error instanceof Error ? error.message : String(error);
     if (!message.includes("ECONNREFUSED")) {
-      console.warn(`[claude-mem] Worker POST ${path} failed: ${message}`);
+      console.warn(`[claude-mem-plus] Worker POST ${path} failed: ${message}`);
     }
   });
 }
@@ -106,14 +106,14 @@ async function workerGetText(path: string): Promise<string | null> {
   try {
     const response = await fetch(`${WORKER_BASE_URL}${path}`, { headers: JSON_HEADERS });
     if (!response.ok) {
-      console.warn(`[claude-mem] Worker GET ${path} returned ${response.status}`);
+      console.warn(`[claude-mem-plus] Worker GET ${path} returned ${response.status}`);
       return null;
     }
     return await response.text();
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
     if (!message.includes("ECONNREFUSED")) {
-      console.warn(`[claude-mem] Worker GET ${path} failed: ${message}`);
+      console.warn(`[claude-mem-plus] Worker GET ${path} failed: ${message}`);
     }
     return null;
   }
@@ -144,7 +144,7 @@ function getOrCreateContentSessionId(openCodeSessionId: string): string {
 export const ClaudeMemPlugin = async (ctx: OpenCodePluginContext) => {
   const projectName = ctx.project?.name || "opencode";
 
-  console.log(`[claude-mem] OpenCode plugin loading (project: ${projectName})`);
+  console.log(`[claude-mem-plus] OpenCode plugin loading (project: ${projectName})`);
 
   return {
     hooks: {
@@ -247,7 +247,7 @@ export const ClaudeMemPlugin = async (ctx: OpenCodePluginContext) => {
     tool: {
       claude_mem_search: {
         description:
-          "Search claude-mem memory database for past observations, sessions, and context",
+          "Search claude-mem-plus memory database for past observations, sessions, and context",
         args: {
           query: z.string().describe("Search query for memory observations"),
         },
@@ -264,14 +264,14 @@ export const ClaudeMemPlugin = async (ctx: OpenCodePluginContext) => {
           );
 
           if (!text) {
-            return "claude-mem worker is not running. Start it with: npx claude-mem start";
+            return "claude-mem-plus worker is not running. Start it with: npx claude-mem-plus start";
           }
 
           let data: any;
           try {
             data = JSON.parse(text);
           } catch (error: unknown) {
-            console.warn('[claude-mem] Failed to parse search results:', error instanceof Error ? error.message : String(error));
+            console.warn('[claude-mem-plus] Failed to parse search results:', error instanceof Error ? error.message : String(error));
             return "Failed to parse search results.";
           }
 

@@ -5,7 +5,7 @@ import path from 'path';
 import { createProcessRegistry, isPidAlive } from '../../src/supervisor/process-registry.js';
 
 function makeTempDir(): string {
-  return path.join(tmpdir(), `claude-mem-supervisor-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+  return path.join(tmpdir(), `claude-mem-plus-supervisor-${Date.now()}-${Math.random().toString(36).slice(2)}`);
 }
 
 const tempDirs: string[] = [];

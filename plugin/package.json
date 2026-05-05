@@ -1,8 +1,8 @@
 {
-  "name": "claude-mem-plugin",
+  "name": "claude-mem-plus-plugin",
   "version": "12.6.1",
   "private": true,
-  "description": "Runtime dependencies for claude-mem bundled hooks",
+  "description": "Runtime dependencies for claude-mem-plus bundled hooks",
   "type": "module",
   "dependencies": {
     "zod": "^4.3.6",

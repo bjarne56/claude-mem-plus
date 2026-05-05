@@ -12,7 +12,7 @@ description: "Install Claude-Mem plugin for persistent memory across sessions"
 Install and configure Claude-Mem with a single command:
 
 ```bash
-npx claude-mem install
+npx claude-mem-plus install
 ```
 
 The interactive installer will:
@@ -29,20 +29,20 @@ The interactive installer will:
 Install Claude-Mem directly from the plugin marketplace inside Claude Code:
 
 ```bash
-/plugin marketplace add thedotmack/claude-mem
-/plugin install claude-mem
+/plugin marketplace add thedotmack/claude-mem-plus
+/plugin install claude-mem-plus
 ```
 
 Both methods will automatically configure hooks and start the worker service. Start a new Claude Code session and you'll see context from previous sessions automatically loaded.
 
-> **Important:** Claude-Mem is published on npm, but running `npm install -g claude-mem` installs the
+> **Important:** Claude-Mem is published on npm, but running `npm install -g claude-mem-plus` installs the
 > **SDK/library only**. It does **not** register plugin hooks or start the worker service.
-> Always install via `npx claude-mem install` or the `/plugin` commands above.
+> Always install via `npx claude-mem-plus install` or the `/plugin` commands above.
 
 ## System Requirements
 
 - **Node.js**: 20.0.0 or higher
-- **Bun** ≥ 1.0 (auto-installed by `npx claude-mem install` if missing)
+- **Bun** ≥ 1.0 (auto-installed by `npx claude-mem-plus install` if missing)
 - **uv** (auto-installed if missing — provides Python for Chroma's embedding service)
 - **Claude Code** or another supported IDE (Cursor, Gemini CLI, Windsurf, OpenCode, Codex CLI, OpenClaw)
 - **SQLite 3**: bundled via `bun:sqlite`
@@ -55,8 +55,8 @@ For development or testing, you can clone and build from source:
 
 ```bash
 # Clone the repository
-git clone https://github.com/thedotmack/claude-mem.git
-cd claude-mem
+git clone https://github.com/thedotmack/claude-mem-plus.git
+cd claude-mem-plus
 
 # Install dependencies
 npm install
@@ -76,7 +76,7 @@ npm run worker:status
 
 #### 1. Automatic Dependency Installation
 
-Dependencies are installed automatically by `npx claude-mem install` and `npx claude-mem repair`. Heavy lifting (Bun + uv install, `bun install` inside the plugin cache) happens behind a visible installer spinner. The Setup hook only performs a sub-100ms `version-check.js` read of the `.install-version` marker — on mismatch it prints `run: npx claude-mem repair` to stderr and exits 0, so it never blocks a session. Works cross-platform on Windows, macOS, and Linux.
+Dependencies are installed automatically by `npx claude-mem-plus install` and `npx claude-mem-plus repair`. Heavy lifting (Bun + uv install, `bun install` inside the plugin cache) happens behind a visible installer spinner. The Setup hook only performs a sub-100ms `version-check.js` read of the `.install-version` marker — on mismatch it prints `run: npx claude-mem-plus repair` to stderr and exits 0, so it never blocks a session. Works cross-platform on Windows, macOS, and Linux.
 
 #### 2. Verify Plugin Installation
 
@@ -87,12 +87,12 @@ cat plugin/hooks/hooks.json
 
 #### 3. Data Directory Location
 
-Data is stored in `~/.claude-mem/`:
-- Database: `~/.claude-mem/claude-mem.db`
-- PID file: `~/.claude-mem/.worker.pid`
-- Port file: `~/.claude-mem/.worker.port`
-- Logs: `~/.claude-mem/logs/worker-YYYY-MM-DD.log`
-- Settings: `~/.claude-mem/settings.json`
+Data is stored in `~/.claude-mem-plus/`:
+- Database: `~/.claude-mem-plus/claude-mem.db`
+- PID file: `~/.claude-mem-plus/.worker.pid`
+- Port file: `~/.claude-mem-plus/.worker.port`
+- Logs: `~/.claude-mem-plus/logs/worker-YYYY-MM-DD.log`
+- Settings: `~/.claude-mem-plus/settings.json`
 
 Override with environment variable:
 ```bash
@@ -113,9 +113,9 @@ npm run test:context
 
 ## Upgrading
 
-Upgrades are automatic when updating via the plugin marketplace. After an external upgrade (for example `claude plugin update`), the Setup hook detects a version-marker mismatch and asks you to run `npx claude-mem repair`, which installs any missing runtime dependencies and refreshes the marker.
+Upgrades are automatic when updating via the plugin marketplace. After an external upgrade (for example `claude plugin update`), the Setup hook detects a version-marker mismatch and asks you to run `npx claude-mem-plus repair`, which installs any missing runtime dependencies and refreshes the marker.
 
-See [CHANGELOG](https://github.com/thedotmack/claude-mem/blob/main/CHANGELOG.md) for complete version history.
+See [CHANGELOG](https://github.com/thedotmack/claude-mem-plus/blob/main/CHANGELOG.md) for complete version history.
 
 ## Next Steps
 

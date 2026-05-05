@@ -5,7 +5,7 @@ description: "Build queryable AI brains from your observation history"
 
 # Knowledge Agents
 
-Knowledge agents let you compile a slice of your claude-mem observation history into a **queryable "brain"** that answers questions conversationally. Instead of getting raw search results back, you get synthesized, grounded answers drawn from your actual project history -- decisions, discoveries, bugfixes, and features.
+Knowledge agents let you compile a slice of your claude-mem-plus observation history into a **queryable "brain"** that answers questions conversationally. Instead of getting raw search results back, you get synthesized, grounded answers drawn from your actual project history -- decisions, discoveries, bugfixes, and features.
 
 ## Quick Start
 
@@ -16,7 +16,7 @@ Three ways to use knowledge agents, from simplest to most powerful.
 Use the `/knowledge-agent` skill or the MCP tools directly:
 
 ```
-build_corpus name="hooks-expertise" query="hooks architecture" project="claude-mem" limit=200
+build_corpus name="hooks-expertise" query="hooks architecture" project="claude-mem-plus" limit=200
 ```
 
 This searches your observation history, collects matching records, and saves them as a corpus file. Then prime it — this loads the corpus into a Claude session's context window:
@@ -84,13 +84,13 @@ curl -X POST http://localhost:37777/api/corpus \
   -d '{
     "name": "hooks-expertise",
     "query": "hooks architecture",
-    "project": "claude-mem",
+    "project": "claude-mem-plus",
     "types": ["decision", "discovery"],
     "limit": 200
   }'
 ```
 
-Under the hood, `CorpusBuilder` searches your observations, hydrates full records, parses structured fields (facts, concepts, files), calculates stats, and writes everything to `~/.claude-mem/corpora/hooks-expertise.corpus.json`.
+Under the hood, `CorpusBuilder` searches your observations, hydrates full records, parses structured fields (facts, concepts, files), calculates stats, and writes everything to `~/.claude-mem-plus/corpora/hooks-expertise.corpus.json`.
 
 ### 2. Prime the Knowledge Agent
 
@@ -156,7 +156,7 @@ reprime_corpus ──┘                          |
                         SessionStore         |   query() + resume
                                              |
                                         CorpusStore
-                                    (~/.claude-mem/corpora/)
+                                    (~/.claude-mem-plus/corpora/)
 ```
 
 **Key insight:** The Agent SDK's `resume` option lets you prime a session once (upload the corpus), save the `session_id`, and resume it for every future question. The corpus stays in context permanently -- no re-uploading, no prompt caching tricks. The 1M token context window makes this viable: 2,000 observations at ~300 tokens each fits comfortably.

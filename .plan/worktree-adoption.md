@@ -34,7 +34,7 @@ Findings consolidated from three parallel discovery subagents. The following are
 | Context injection endpoint | `src/services/worker/http/routes/SearchRoutes.ts` | 211–253 | `handleContextInject` wires `projects` comma-separated query param into `generateContext` |
 | Context entry point | `src/services/context/ContextBuilder.ts` | 126–183 | `generateContext()` picks `queryObservationsMulti` when `projects.length > 1` |
 | Chroma metadata attach (observations) | `src/services/sync/ChromaSync.ts` | 132–140 | `baseMetadata` object — includes `project`, `sqlite_id`, etc. This is where `merged_into_project` is added. |
-| Chroma collection architecture | `src/services/sync/ChromaSync.ts` | 806 (comment) | **Single shared collection `cm__claude-mem`**, scoped by metadata. Do NOT create a per-merged collection. |
+| Chroma collection architecture | `src/services/sync/ChromaSync.ts` | 806 (comment) | **Single shared collection `cm__claude-mem-plus`**, scoped by metadata. Do NOT create a per-merged collection. |
 | Chroma filter build (read side) | `src/services/sync/SearchManager.ts` | 174–177 | `whereFilter = { project: options.project }` — extended with `$or` in Phase 3 |
 | Chroma update API | `src/services/sync/ChromaSync.ts` (grep) | — | `chroma_update_documents` via MCP — used by existing sync flows |
 | CLI entrypoint switch | `src/npx-cli/index.ts` | 28–169 | Plain `switch (command)`, dynamic `import()` of `./commands/<name>.ts`. No commander/cac. |
@@ -44,7 +44,7 @@ Findings consolidated from three parallel discovery subagents. The following are
 ### Anti-patterns (do NOT do these)
 
 - Do NOT overwrite `observations.project` or `session_summaries.project`. These are immutable provenance.
-- Do NOT create a new Chroma collection for merged observations. Deployment uses a single shared `cm__claude-mem` collection.
+- Do NOT create a new Chroma collection for merged observations. Deployment uses a single shared `cm__claude-mem-plus` collection.
 - Do NOT introduce a `gh` CLI dependency. Codebase has no `gh` usage outside `.github/workflows/`. Use `git` subprocesses only.
 - Do NOT use SQLite's unsupported `ALTER TABLE ... ADD COLUMN IF NOT EXISTS` syntax. Use the `PRAGMA table_info` guard instead.
 - Do NOT use a CLI framework (commander, cac, yargs). The codebase uses hand-rolled `switch (command)` + `process.argv.slice(2)`.
@@ -94,10 +94,10 @@ Call from `runAllMigrations()` — append immediately after the last existing `e
 ### Verification
 
 - Start the worker. Migration logs show no error.
-- `sqlite3 ~/.claude-mem/claude-mem.db ".schema observations"` shows `merged_into_project TEXT`.
+- `sqlite3 ~/.claude-mem-plus/claude-mem.db ".schema observations"` shows `merged_into_project TEXT`.
 - Same for `session_summaries`.
 - Restart worker → no ALTER TABLE error (guard worked).
-- `sqlite3 ~/.claude-mem/claude-mem.db ".indices observations"` lists `idx_observations_merged_into`.
+- `sqlite3 ~/.claude-mem-plus/claude-mem.db ".indices observations"` lists `idx_observations_merged_into`.
 
 ### Anti-pattern guards
 
@@ -210,7 +210,7 @@ Mirror `runOneTimeCwdRemap` in `ProcessManager.ts:680–830` for DB lifecycle (o
 
 - Dry-run against a repo with one known-merged worktree: result shows correct `adoptedObservations`, DB unchanged, no Chroma writes.
 - Real run: `SELECT COUNT(*) FROM observations WHERE merged_into_project IS NOT NULL` matches `adoptedObservations`.
-- Chroma: `chroma_get_documents` with `where: { merged_into_project: 'claude-mem' }` returns the same row count.
+- Chroma: `chroma_get_documents` with `where: { merged_into_project: 'claude-mem-plus' }` returns the same row count.
 - Re-run: `adoptedObservations = 0`, `chromaUpdates = 0` (both idempotent).
 - Simulate Chroma outage (stop chroma): adoption logs `CHROMA_SYNC` error, `chromaFailed > 0`, SQL still stamps. Next run with Chroma back up reconciles the delta.
 
@@ -310,10 +310,10 @@ This makes every new observation Chroma-compatible with the Phase 3b filter from
 
 ### Verification
 
-- Before adoption: context-inject API for `claude-mem` returns N observations.
-- After adoption of `claude-mem/dar-es-salaam`: API returns N + M (M = count of dar-es-salaam's own observations).
-- Semantic search via Chroma (`/search` endpoint or MCP) with `project=claude-mem` returns dar-es-salaam-origin rows too.
-- Worktree-local queries (`projects=[claude-mem, claude-mem/dar-es-salaam]`) still return `[parent + own]` unchanged.
+- Before adoption: context-inject API for `claude-mem-plus` returns N observations.
+- After adoption of `claude-mem-plus/dar-es-salaam`: API returns N + M (M = count of dar-es-salaam's own observations).
+- Semantic search via Chroma (`/search` endpoint or MCP) with `project=claude-mem-plus` returns dar-es-salaam-origin rows too.
+- Worktree-local queries (`projects=[claude-mem-plus, claude-mem-plus/dar-es-salaam]`) still return `[parent + own]` unchanged.
 - SQL EXPLAIN on the extended WHERE shows it uses `idx_observations_project` OR `idx_observations_merged_into` (both indices hit).
 
 ### Anti-pattern guards
@@ -378,7 +378,7 @@ try {
 
 ## Phase 5 — CLI escape hatch
 
-**What to implement**: `claude-mem adopt [--branch <name>] [--dry-run]` — covers squash-merge where `git branch --merged` returns nothing, and provides a manual override for any adoption run.
+**What to implement**: `claude-mem-plus adopt [--branch <name>] [--dry-run]` — covers squash-merge where `git branch --merged` returns nothing, and provides a manual override for any adoption run.
 
 ### Files touched
 
@@ -442,9 +442,9 @@ case 'adopt': {
 
 ### Verification
 
-- `npx claude-mem adopt --dry-run` in a repo with merged worktrees prints what WOULD be adopted without writing.
-- `npx claude-mem adopt` writes + prints counts.
-- `npx claude-mem adopt --branch feature/foo` forces adoption of that branch even if `git branch --merged` doesn't include it (squash case).
+- `npx claude-mem-plus adopt --dry-run` in a repo with merged worktrees prints what WOULD be adopted without writing.
+- `npx claude-mem-plus adopt` writes + prints counts.
+- `npx claude-mem-plus adopt --branch feature/foo` forces adoption of that branch even if `git branch --merged` doesn't include it (squash case).
 - `bun scripts/adopt-worktrees.ts --apply` equivalent to the CLI.
 - Help text / unknown command still reports the existing error (CLI pattern preserved).
 
@@ -512,9 +512,9 @@ Add CSS for `.card-merged-badge` — subtle secondary chip style (muted color, s
 
 ### Integration tests
 
-- Start worker → create synthetic observations under `claude-mem/test-wt` → simulate branch merge (`git merge`) → restart worker → context-inject API for `claude-mem` returns test-wt observations.
-- Same flow with a squash-merge → auto-adoption misses → run `claude-mem adopt --branch test-wt` → API now returns them.
-- Re-run `claude-mem adopt` twice: second run reports `adoptedObservations: 0, chromaUpdates: 0`.
+- Start worker → create synthetic observations under `claude-mem-plus/test-wt` → simulate branch merge (`git merge`) → restart worker → context-inject API for `claude-mem-plus` returns test-wt observations.
+- Same flow with a squash-merge → auto-adoption misses → run `claude-mem-plus adopt --branch test-wt` → API now returns them.
+- Re-run `claude-mem-plus adopt` twice: second run reports `adoptedObservations: 0, chromaUpdates: 0`.
 
 ### Anti-pattern grep checks
 

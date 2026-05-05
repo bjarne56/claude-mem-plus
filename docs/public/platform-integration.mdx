@@ -1,11 +1,11 @@
 ---
 title: Platform Integration Guide
-description: Complete reference for integrating claude-mem worker service into VSCode extensions, IDE plugins, and CLI tools
+description: Complete reference for integrating claude-mem-plus worker service into VSCode extensions, IDE plugins, and CLI tools
 icon: plug
 ---
 
 <Note>
-**Target Audience:** Developers building claude-mem integrations (VSCode extensions, IDE plugins, CLI tools).
+**Target Audience:** Developers building claude-mem-plus integrations (VSCode extensions, IDE plugins, CLI tools).
 </Note>
 
 ## Quick Reference
@@ -15,7 +15,7 @@ icon: plug
 ```typescript
 // Resolve the worker port at runtime. The default is per-user (37700 + uid % 100),
 // or whatever the user set via CLAUDE_MEM_WORKER_PORT / settings.json. Read it from
-// process.env.CLAUDE_MEM_WORKER_PORT, then ~/.claude-mem/settings.json
+// process.env.CLAUDE_MEM_WORKER_PORT, then ~/.claude-mem-plus/settings.json
 // (CLAUDE_MEM_WORKER_PORT key), then fall back to the deterministic default.
 const WORKER_BASE_URL = `http://127.0.0.1:${workerPort}`;
 ```
@@ -170,7 +170,7 @@ Content-Type: application/json
 
 <Info>
 **Privacy Check:** Skips if user prompt was entirely wrapped in `<private>` tags.
-**Tag Stripping:** Removes `<private>` and `<claude-mem-context>` tags before storage.
+**Tag Stripping:** Removes `<private>` and `<claude-mem-plus-context>` tags before storage.
 **Auto-Start:** Ensures SDK agent generator is running to process the queue.
 </Info>
 
@@ -317,7 +317,7 @@ GET /api/stats
     "port": 37742
   },
   "database": {
-    "path": "~/.claude-mem/claude-mem.db",
+    "path": "~/.claude-mem-plus/claude-mem.db",
     "size": 1048576,
     "observations": 500,
     "sessions": 50,
@@ -334,7 +334,7 @@ GET /api/projects
 
 ```json Response
 {
-  "projects": ["claude-mem", "other-project", ...]
+  "projects": ["claude-mem-plus", "other-project", ...]
 }
 ```
 
@@ -892,13 +892,13 @@ const searchTool: SearchTool = {
 };
 
 // Register tool
-vscode.lm.registerTool('claude-mem-search', searchTool);
+vscode.lm.registerTool('claude-mem-plus-search', searchTool);
 ```
 
 #### Chat Participant Implementation
 
 ```typescript
-const participant = vscode.chat.createChatParticipant('claude-mem', async (request, context, stream, token) => {
+const participant = vscode.chat.createChatParticipant('claude-mem-plus', async (request, context, stream, token) => {
   const claudeSessionId = context.session.id;
 
   // First message in conversation - no initialization needed
@@ -993,7 +993,7 @@ async function isWorkerHealthy(): Promise<boolean> {
 <Info>
 The worker automatically strips privacy tags before storage:
 - `<private>content</private>` - User-level privacy control
-- `<claude-mem-context>content</claude-mem-context>` - System-level tag (prevents recursive storage)
+- `<claude-mem-plus-context>content</claude-mem-plus-context>` - System-level tag (prevents recursive storage)
 
 **Privacy Check:** Observations/summaries are skipped if the entire user prompt was wrapped in `<private>` tags.
 </Info>
@@ -1086,7 +1086,7 @@ esbuild.build({
 
 ```json
 {
-  "name": "claude-mem-vscode",
+  "name": "claude-mem-plus-vscode",
   "displayName": "Claude-Mem",
   "version": "1.0.0",
   "engines": {
@@ -1099,14 +1099,14 @@ esbuild.build({
   "contributes": {
     "chatParticipants": [
       {
-        "id": "claude-mem",
+        "id": "claude-mem-plus",
         "name": "memory",
         "description": "Search your persistent memory"
       }
     ],
     "languageModelTools": [
       {
-        "name": "claude-mem-search",
+        "name": "claude-mem-plus-search",
         "displayName": "Search Memory",
         "description": "Search persistent memory for observations, sessions, and prompts"
       }
@@ -1414,7 +1414,7 @@ import { WorkerClient } from './WorkerClient';
 export function registerSearchTool(context: vscode.ExtensionContext) {
   const client = new WorkerClient();
 
-  const searchTool = vscode.lm.registerTool('claude-mem-search', {
+  const searchTool = vscode.lm.registerTool('claude-mem-plus-search', {
     description: 'Search persistent memory for observations, sessions, and prompts',
     inputSchema: {
       type: 'object',
@@ -1531,10 +1531,10 @@ const userMessage = '<private>API key: sk-1234567890</private>';
 ## Additional Resources
 
 <CardGroup cols={2}>
-  <Card title="Documentation" icon="book" href="https://claude-mem.ai">
-    Complete claude-mem documentation
+  <Card title="Documentation" icon="book" href="https://claude-mem-plus.ai">
+    Complete claude-mem-plus documentation
   </Card>
-  <Card title="GitHub" icon="github" href="https://github.com/thedotmack/claude-mem">
+  <Card title="GitHub" icon="github" href="https://github.com/thedotmack/claude-mem-plus">
     Source code and issue tracker
   </Card>
   <Card title="Worker Service" icon="server" href="/architecture/worker-service">

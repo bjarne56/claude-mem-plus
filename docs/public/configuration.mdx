@@ -7,7 +7,7 @@ description: "Environment variables and settings for Claude-Mem"
 
 ## Settings File
 
-Settings are managed in `~/.claude-mem/settings.json`. The file is auto-created with defaults on first run.
+Settings are managed in `~/.claude-mem-plus/settings.json`. The file is auto-created with defaults on first run.
 
 ### Core Settings
 
@@ -19,7 +19,7 @@ Settings are managed in `~/.claude-mem/settings.json`. The file is auto-created 
 | `CLAUDE_MEM_CONTEXT_OBSERVATIONS` | `50`                        | Number of observations to inject      |
 | `CLAUDE_MEM_WORKER_PORT`      | `37700 + (uid % 100)`           | Worker service port (per-user default; override for fixed port) |
 | `CLAUDE_MEM_WORKER_HOST`      | `127.0.0.1`                     | Worker service host address           |
-| `CLAUDE_MEM_DATA_DIR`         | `~/.claude-mem`                 | Data root — every other path (database, chroma, logs, settings.json, worker.pid) derives from this |
+| `CLAUDE_MEM_DATA_DIR`         | `~/.claude-mem-plus`                 | Data root — every other path (database, chroma, logs, settings.json, worker.pid) derives from this |
 | `CLAUDE_MEM_SKIP_TOOLS`       | `ListMcpResourcesTool,SlashCommand,Skill,TodoWrite,AskUserQuestion` | Comma-separated tools to exclude from observations |
 
 ### Gemini Provider Settings
@@ -40,7 +40,7 @@ See [Gemini Provider](usage/gemini-provider) for detailed configuration and free
 | `CLAUDE_MEM_OPENROUTER_MAX_CONTEXT_MESSAGES` | `20`                        | Max messages in conversation history  |
 | `CLAUDE_MEM_OPENROUTER_MAX_TOKENS`           | `100000`                    | Token budget safety limit             |
 | `CLAUDE_MEM_OPENROUTER_SITE_URL`             | —                           | Optional: URL for analytics           |
-| `CLAUDE_MEM_OPENROUTER_APP_NAME`             | `claude-mem`                | Optional: App name for analytics      |
+| `CLAUDE_MEM_OPENROUTER_APP_NAME`             | `claude-mem-plus`                | Optional: App name for analytics      |
 
 See [OpenRouter Provider](usage/openrouter-provider) for detailed configuration, free model list, and usage guide.
 
@@ -48,7 +48,7 @@ See [OpenRouter Provider](usage/openrouter-provider) for detailed configuration,
 
 | Setting                       | Default                         | Description                           |
 |-------------------------------|---------------------------------|---------------------------------------|
-| `CLAUDE_MEM_DATA_DIR`         | `~/.claude-mem`                 | Data directory location               |
+| `CLAUDE_MEM_DATA_DIR`         | `~/.claude-mem-plus`                 | Data directory location               |
 | `CLAUDE_MEM_LOG_LEVEL`        | `INFO`                          | Log verbosity (DEBUG, INFO, WARN, ERROR, SILENT) |
 | `CLAUDE_MEM_PYTHON_VERSION`   | `3.13`                          | Python version for chroma-mcp         |
 | `CLAUDE_CODE_PATH`            | _(auto-detect)_                 | Path to Claude Code CLI (for Windows) |
@@ -67,11 +67,11 @@ Configure which Claude model compresses your observations (only applies when `CL
 
 ### Picking via the Installer
 
-`npx claude-mem install` prompts for the Claude model (when the Claude provider is selected) and persists the choice to `~/.claude-mem/settings.json`.
+`npx claude-mem-plus install` prompts for the Claude model (when the Claude provider is selected) and persists the choice to `~/.claude-mem-plus/settings.json`.
 
 ### Manual Configuration
 
-Edit `~/.claude-mem/settings.json`:
+Edit `~/.claude-mem-plus/settings.json`:
 
 ```json
 {
@@ -110,13 +110,13 @@ Configure the active workflow mode and language.
 ### Data Directory Structure
 
 The data directory location depends on the environment:
-- **Production (installed plugin)**: `~/.claude-mem/` (always, regardless of CLAUDE_PLUGIN_ROOT)
+- **Production (installed plugin)**: `~/.claude-mem-plus/` (always, regardless of CLAUDE_PLUGIN_ROOT)
 - **Development**: Can be overridden with `CLAUDE_MEM_DATA_DIR`
 
 ```
-~/.claude-mem/
+~/.claude-mem-plus/
 ├── claude-mem.db           # SQLite database
-├── .install-version        # Version marker written by `npx claude-mem install`/`repair`
+├── .install-version        # Version marker written by `npx claude-mem-plus install`/`repair`
 ├── settings.json           # Worker port + provider/model settings
 └── logs/
     ├── worker-out.log      # Worker stdout logs
@@ -167,7 +167,7 @@ Claude-Mem provides MCP search tools for querying your project history.
 
 Search operations are provided via:
 - **MCP Server**: 3 tools (search, timeline, get_observations) with progressive disclosure
-- **HTTP API**: 10 endpoints on the worker service port (per-user, default `37700 + (uid % 100)`; see `~/.claude-mem/settings.json`)
+- **HTTP API**: 10 endpoints on the worker service port (per-user, default `37700 + (uid % 100)`; see `~/.claude-mem-plus/settings.json`)
 - **Auto-Invocation**: Claude recognizes natural language queries about past work
 
 ## Version Channel
@@ -176,7 +176,7 @@ Claude-Mem supports switching between stable and beta versions via the web viewe
 
 ### Accessing Version Channel
 
-1. Open the viewer at the worker URL (default `http://127.0.0.1:<worker-port>`; the active port is the value of `CLAUDE_MEM_WORKER_PORT` in `~/.claude-mem/settings.json`)
+1. Open the viewer at the worker URL (default `http://127.0.0.1:<worker-port>`; the active port is the value of `CLAUDE_MEM_WORKER_PORT` in `~/.claude-mem-plus/settings.json`)
 2. Click the Settings gear icon
 3. Find the **Version Channel** section
 
@@ -291,7 +291,7 @@ Token economics help you understand the value of cached observations vs. re-read
 
 ### Manual Configuration
 
-Settings are stored in `~/.claude-mem/settings.json`:
+Settings are stored in `~/.claude-mem-plus/settings.json`:
 
 ```json
 {
@@ -313,11 +313,11 @@ Settings are stored in `~/.claude-mem/settings.json`:
 
 ## Customization
 
-Settings can be customized in `~/.claude-mem/settings.json`.
+Settings can be customized in `~/.claude-mem-plus/settings.json`.
 
 ### Custom Data Directory
 
-Edit `~/.claude-mem/settings.json`:
+Edit `~/.claude-mem-plus/settings.json`:
 ```json
 {
   "CLAUDE_MEM_DATA_DIR": "/custom/path"
@@ -326,7 +326,7 @@ Edit `~/.claude-mem/settings.json`:
 
 ### Custom Worker Port
 
-Edit `~/.claude-mem/settings.json`:
+Edit `~/.claude-mem-plus/settings.json`:
 ```json
 {
   "CLAUDE_MEM_WORKER_PORT": "38000"
@@ -340,7 +340,7 @@ npm run worker:restart
 
 ### Custom Model
 
-Edit `~/.claude-mem/settings.json`:
+Edit `~/.claude-mem-plus/settings.json`:
 ```json
 {
   "CLAUDE_MEM_MODEL": "opus"
@@ -355,7 +355,7 @@ npm run worker:restart
 
 ### Custom Skip Tools
 
-Control which tools are excluded from observations. Edit `~/.claude-mem/settings.json`:
+Control which tools are excluded from observations. Edit `~/.claude-mem-plus/settings.json`:
 ```json
 {
   "CLAUDE_MEM_SKIP_TOOLS": "ListMcpResourcesTool,SlashCommand,Skill"
@@ -389,7 +389,7 @@ Hook timeouts are written into `plugin/hooks/hooks.json` by the installer. The c
 - PostToolUse (observation): 120s
 - Stop (summary): 120s
 
-The Setup hook never installs anything — runtime install (Bun, uv, `bun install`) happens in `npx claude-mem install` / `npx claude-mem repair` outside the session lifecycle.
+The Setup hook never installs anything — runtime install (Bun, uv, `bun install`) happens in `npx claude-mem-plus install` / `npx claude-mem-plus repair` outside the session lifecycle.
 
 ### Worker Memory Limit
 
@@ -400,7 +400,7 @@ The worker service is managed by Bun and will automatically restart if it encoun
 Enable debug logging:
 
 ```bash
-export DEBUG=claude-mem:*
+export DEBUG=claude-mem-plus:*
 npm run worker:restart
 npm run worker:logs
 ```

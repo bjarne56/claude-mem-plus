@@ -86,8 +86,8 @@ function writeTranscriptWatchConfig(config: TranscriptWatchConfig): void {
 function removeCodexAgentsMdContext(): void {
   if (!existsSync(CODEX_AGENTS_MD_PATH)) return;
 
-  const startTag = '<claude-mem-context>';
-  const endTag = '</claude-mem-context>';
+  const startTag = '<claude-mem-plus-context>';
+  const endTag = '</claude-mem-plus-context>';
 
   try {
     readAndStripContextTags(startTag, endTag);
@@ -151,12 +151,12 @@ Transcript watch config: ${DEFAULT_CONFIG_PATH}
 Context files: <workspace>/AGENTS.md
 
 How it works:
-  - claude-mem watches Codex session JSONL files for new activity
+  - claude-mem-plus watches Codex session JSONL files for new activity
   - No hooks needed -- transcript watching is fully automatic
   - Context from past sessions is injected via AGENTS.md in the active Codex workspace
 
 Next steps:
-  1. Start claude-mem worker: npx claude-mem start
+  1. Start claude-mem-plus worker: npx claude-mem-plus start
   2. Use Codex CLI as usual -- memory capture is automatic!
 `);
 }
@@ -190,7 +190,7 @@ export function uninstallCodexCli(): number {
   cleanupLegacyCodexAgentsMdContext();
 
   console.log('\nUninstallation complete!');
-  console.log('Restart claude-mem worker to apply changes.\n');
+  console.log('Restart claude-mem-plus worker to apply changes.\n');
 
   return 0;
 }

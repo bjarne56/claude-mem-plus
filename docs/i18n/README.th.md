@@ -2,11 +2,11 @@
 
 <h1 align="center">
   <br>
-  <a href="https://github.com/thedotmack/claude-mem">
+  <a href="https://github.com/thedotmack/claude-mem-plus">
     <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/thedotmack/claude-mem/main/docs/public/claude-mem-logo-for-dark-mode.webp">
-      <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/thedotmack/claude-mem/main/docs/public/claude-mem-logo-for-light-mode.webp">
-      <img src="https://raw.githubusercontent.com/thedotmack/claude-mem/main/docs/public/claude-mem-logo-for-light-mode.webp" alt="Claude-Mem" width="400">
+      <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/thedotmack/claude-mem-plus/main/docs/public/claude-mem-plus-logo-for-dark-mode.webp">
+      <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/thedotmack/claude-mem-plus/main/docs/public/claude-mem-plus-logo-for-light-mode.webp">
+      <img src="https://raw.githubusercontent.com/thedotmack/claude-mem-plus/main/docs/public/claude-mem-plus-logo-for-light-mode.webp" alt="Claude-Mem" width="400">
     </picture>
   </a>
   <br>
@@ -65,9 +65,9 @@
 <p align="center">
   <a href="https://trendshift.io/repositories/15496" target="_blank">
     <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/thedotmack/claude-mem/main/docs/public/trendshift-badge-dark.svg">
-      <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/thedotmack/claude-mem/main/docs/public/trendshift-badge.svg">
-      <img src="https://raw.githubusercontent.com/thedotmack/claude-mem/main/docs/public/trendshift-badge.svg" alt="thedotmack/claude-mem | Trendshift" width="250" height="55"/>
+      <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/thedotmack/claude-mem-plus/main/docs/public/trendshift-badge-dark.svg">
+      <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/thedotmack/claude-mem-plus/main/docs/public/trendshift-badge.svg">
+      <img src="https://raw.githubusercontent.com/thedotmack/claude-mem-plus/main/docs/public/trendshift-badge.svg" alt="thedotmack/claude-mem-plus | Trendshift" width="250" height="55"/>
     </picture>
   </a>
 </p>
@@ -75,9 +75,9 @@
 <br>
 
 <p align="center">
-  <a href="https://github.com/thedotmack/claude-mem">
+  <a href="https://github.com/thedotmack/claude-mem-plus">
     <picture>
-      <img src="https://raw.githubusercontent.com/thedotmack/claude-mem/main/docs/public/cm-preview.gif" alt="Claude-Mem Preview" width="800">
+      <img src="https://raw.githubusercontent.com/thedotmack/claude-mem-plus/main/docs/public/cm-preview.gif" alt="Claude-Mem Preview" width="800">
     </picture>
   </a>
 </p>
@@ -103,9 +103,9 @@
 เริ่มเซสชัน Claude Code ใหม่ในเทอร์มินัลและป้อนคำสั่งต่อไปนี้:
 
 ```
-> /plugin marketplace add thedotmack/claude-mem
+> /plugin marketplace add thedotmack/claude-mem-plus
 
-> /plugin install claude-mem
+> /plugin install claude-mem-plus
 ```
 
 รีสตาร์ท Claude Code บริบทจากเซสชันก่อนหน้าจะปรากฏในเซสชันใหม่โดยอัตโนมัติ
@@ -127,35 +127,35 @@
 
 ## เอกสาร
 
-📚 **[ดูเอกสารฉบับเต็ม](https://docs.claude-mem.ai/)** - เรียกดูบนเว็บไซต์อย่างเป็นทางการ
+📚 **[ดูเอกสารฉบับเต็ม](https://docs.claude-mem-plus.ai/)** - เรียกดูบนเว็บไซต์อย่างเป็นทางการ
 
 ### เริ่มต้นใช้งาน
 
-- **[คู่มือการติดตั้ง](https://docs.claude-mem.ai/installation)** - เริ่มต้นอย่างรวดเร็วและการติดตั้งขั้นสูง
-- **[คู่มือการใช้งาน](https://docs.claude-mem.ai/usage/getting-started)** - วิธีที่ Claude-Mem ทำงานโดยอัตโนมัติ
-- **[เครื่องมือค้นหา](https://docs.claude-mem.ai/usage/search-tools)** - สืบค้นประวัติโปรเจกต์ของคุณด้วยภาษาธรรมชาติ
-- **[คุณสมบัติ Beta](https://docs.claude-mem.ai/beta-features)** - ลองคุณสมบัติทดลองเช่น Endless Mode
+- **[คู่มือการติดตั้ง](https://docs.claude-mem-plus.ai/installation)** - เริ่มต้นอย่างรวดเร็วและการติดตั้งขั้นสูง
+- **[คู่มือการใช้งาน](https://docs.claude-mem-plus.ai/usage/getting-started)** - วิธีที่ Claude-Mem ทำงานโดยอัตโนมัติ
+- **[เครื่องมือค้นหา](https://docs.claude-mem-plus.ai/usage/search-tools)** - สืบค้นประวัติโปรเจกต์ของคุณด้วยภาษาธรรมชาติ
+- **[คุณสมบัติ Beta](https://docs.claude-mem-plus.ai/beta-features)** - ลองคุณสมบัติทดลองเช่น Endless Mode
 
 ### แนวปฏิบัติที่ดี
 
-- **[Context Engineering](https://docs.claude-mem.ai/context-engineering)** - หลักการปรับบริบทสำหรับเอเจนต์ AI
-- **[Progressive Disclosure](https://docs.claude-mem.ai/progressive-disclosure)** - ปรัชญาเบื้องหลังกลยุทธ์การเตรียมบริบทของ Claude-Mem
+- **[Context Engineering](https://docs.claude-mem-plus.ai/context-engineering)** - หลักการปรับบริบทสำหรับเอเจนต์ AI
+- **[Progressive Disclosure](https://docs.claude-mem-plus.ai/progressive-disclosure)** - ปรัชญาเบื้องหลังกลยุทธ์การเตรียมบริบทของ Claude-Mem
 
 ### สถาปัตยกรรม
 
-- **[ภาพรวม](https://docs.claude-mem.ai/architecture/overview)** - ส่วนประกอบของระบบและการไหลของข้อมูล
-- **[วิวัฒนาการของสถาปัตยกรรม](https://docs.claude-mem.ai/architecture-evolution)** - การเดินทางจาก v3 สู่ v5
-- **[สถาปัตยกรรม Hooks](https://docs.claude-mem.ai/hooks-architecture)** - วิธีที่ Claude-Mem ใช้ lifecycle hooks
-- **[การอ้างอิง Hooks](https://docs.claude-mem.ai/architecture/hooks)** - อธิบาย hook scripts ทั้ง 7 ตัว
-- **[Worker Service](https://docs.claude-mem.ai/architecture/worker-service)** - HTTP API และการจัดการ Bun
-- **[ฐานข้อมูล](https://docs.claude-mem.ai/architecture/database)** - SQLite schema และการค้นหา FTS5
-- **[สถาปัตยกรรมการค้นหา](https://docs.claude-mem.ai/architecture/search-architecture)** - การค้นหาแบบไฮบริดด้วยฐานข้อมูลเวกเตอร์ Chroma
+- **[ภาพรวม](https://docs.claude-mem-plus.ai/architecture/overview)** - ส่วนประกอบของระบบและการไหลของข้อมูล
+- **[วิวัฒนาการของสถาปัตยกรรม](https://docs.claude-mem-plus.ai/architecture-evolution)** - การเดินทางจาก v3 สู่ v5
+- **[สถาปัตยกรรม Hooks](https://docs.claude-mem-plus.ai/hooks-architecture)** - วิธีที่ Claude-Mem ใช้ lifecycle hooks
+- **[การอ้างอิง Hooks](https://docs.claude-mem-plus.ai/architecture/hooks)** - อธิบาย hook scripts ทั้ง 7 ตัว
+- **[Worker Service](https://docs.claude-mem-plus.ai/architecture/worker-service)** - HTTP API และการจัดการ Bun
+- **[ฐานข้อมูล](https://docs.claude-mem-plus.ai/architecture/database)** - SQLite schema และการค้นหา FTS5
+- **[สถาปัตยกรรมการค้นหา](https://docs.claude-mem-plus.ai/architecture/search-architecture)** - การค้นหาแบบไฮบริดด้วยฐานข้อมูลเวกเตอร์ Chroma
 
 ### การกำหนดค่าและการพัฒนา
 
-- **[การกำหนดค่า](https://docs.claude-mem.ai/configuration)** - ตัวแปรสภาพแวดล้อมและการตั้งค่า
-- **[การพัฒนา](https://docs.claude-mem.ai/development)** - การสร้าง การทดสอบ การมีส่วนร่วม
-- **[การแก้ไขปัญหา](https://docs.claude-mem.ai/troubleshooting)** - ปัญหาและการแก้ไขทั่วไป
+- **[การกำหนดค่า](https://docs.claude-mem-plus.ai/configuration)** - ตัวแปรสภาพแวดล้อมและการตั้งค่า
+- **[การพัฒนา](https://docs.claude-mem-plus.ai/development)** - การสร้าง การทดสอบ การมีส่วนร่วม
+- **[การแก้ไขปัญหา](https://docs.claude-mem-plus.ai/troubleshooting)** - ปัญหาและการแก้ไขทั่วไป
 
 ---
 
@@ -170,7 +170,7 @@
 5. **mem-search Skill** - คิวรีภาษาธรรมชาติพร้อมการเปิดเผยแบบก้าวหน้า
 6. **Chroma Vector Database** - การค้นหาแบบไฮบริดทางความหมาย + คีย์เวิร์ดสำหรับการดึงบริบทอัจฉริยะ
 
-ดู [ภาพรวมสถาปัตยกรรม](https://docs.claude-mem.ai/architecture/overview) สำหรับรายละเอียด
+ดู [ภาพรวมสถาปัตยกรรม](https://docs.claude-mem-plus.ai/architecture/overview) สำหรับรายละเอียด
 
 ---
 
@@ -205,7 +205,7 @@ Claude-Mem ให้บริการการค้นหาอัจฉริ
 "What was happening when we added the viewer UI?"
 ```
 
-ดู [คู่มือเครื่องมือค้นหา](https://docs.claude-mem.ai/usage/search-tools) สำหรับตัวอย่างโดยละเอียด
+ดู [คู่มือเครื่องมือค้นหา](https://docs.claude-mem-plus.ai/usage/search-tools) สำหรับตัวอย่างโดยละเอียด
 
 ---
 
@@ -213,7 +213,7 @@ Claude-Mem ให้บริการการค้นหาอัจฉริ
 
 Claude-Mem นำเสนอ **beta channel** พร้อมคุณสมบัติทดลองเช่น **Endless Mode** (สถาปัตยกรรมหน่วยความจำแบบชีวมิติสำหรับเซสชันที่ขยายออกไป) สลับระหว่างเวอร์ชันเสถียรและเบต้าจาก web viewer UI ที่ http://localhost:37777 → Settings
 
-ดู **[เอกสารคุณสมบัติ Beta](https://docs.claude-mem.ai/beta-features)** สำหรับรายละเอียดเกี่ยวกับ Endless Mode และวิธีการลอง
+ดู **[เอกสารคุณสมบัติ Beta](https://docs.claude-mem-plus.ai/beta-features)** สำหรับรายละเอียดเกี่ยวกับ Endless Mode และวิธีการลอง
 
 ---
 
@@ -229,15 +229,15 @@ Claude-Mem นำเสนอ **beta channel** พร้อมคุณสมบ
 
 ## การกำหนดค่า
 
-การตั้งค่าจะถูกจัดการใน `~/.claude-mem/settings.json` (สร้างอัตโนมัติพร้อมค่าเริ่มต้นในการรันครั้งแรก) กำหนดค่าโมเดล AI พอร์ต worker ไดเรกทอรีข้อมูล ระดับ log และการตั้งค่าการฉีดบริบท
+การตั้งค่าจะถูกจัดการใน `~/.claude-mem-plus/settings.json` (สร้างอัตโนมัติพร้อมค่าเริ่มต้นในการรันครั้งแรก) กำหนดค่าโมเดล AI พอร์ต worker ไดเรกทอรีข้อมูล ระดับ log และการตั้งค่าการฉีดบริบท
 
-ดู **[คู่มือการกำหนดค่า](https://docs.claude-mem.ai/configuration)** สำหรับการตั้งค่าทั้งหมดที่มีและตัวอย่าง
+ดู **[คู่มือการกำหนดค่า](https://docs.claude-mem-plus.ai/configuration)** สำหรับการตั้งค่าทั้งหมดที่มีและตัวอย่าง
 
 ---
 
 ## การพัฒนา
 
-ดู **[คู่มือการพัฒนา](https://docs.claude-mem.ai/development)** สำหรับคำแนะนำการสร้าง การทดสอบ และขั้นตอนการมีส่วนร่วม
+ดู **[คู่มือการพัฒนา](https://docs.claude-mem-plus.ai/development)** สำหรับคำแนะนำการสร้าง การทดสอบ และขั้นตอนการมีส่วนร่วม
 
 ---
 
@@ -245,7 +245,7 @@ Claude-Mem นำเสนอ **beta channel** พร้อมคุณสมบ
 
 หากพบปัญหา อธิบายปัญหาให้ Claude ฟังและทักษะ troubleshoot จะวินิจฉัยและให้การแก้ไขโดยอัตโนมัติ
 
-ดู **[คู่มือการแก้ไขปัญหา](https://docs.claude-mem.ai/troubleshooting)** สำหรับปัญหาและการแก้ไขทั่วไป
+ดู **[คู่มือการแก้ไขปัญหา](https://docs.claude-mem-plus.ai/troubleshooting)** สำหรับปัญหาและการแก้ไขทั่วไป
 
 ---
 
@@ -268,7 +268,7 @@ npm run bug-report
 4. อัปเดตเอกสาร
 5. ส่ง Pull Request
 
-ดู [คู่มือการพัฒนา](https://docs.claude-mem.ai/development) สำหรับขั้นตอนการมีส่วนร่วม
+ดู [คู่มือการพัฒนา](https://docs.claude-mem-plus.ai/development) สำหรับขั้นตอนการมีส่วนร่วม
 
 ---
 
@@ -294,8 +294,8 @@ Copyright (C) 2025 Alex Newman (@thedotmack) สงวนลิขสิทธ�
 ## การสนับสนุน
 
 - **เอกสาร**: [docs/](docs/)
-- **ปัญหา**: [GitHub Issues](https://github.com/thedotmack/claude-mem/issues)
-- **Repository**: [github.com/thedotmack/claude-mem](https://github.com/thedotmack/claude-mem)
+- **ปัญหา**: [GitHub Issues](https://github.com/thedotmack/claude-mem-plus/issues)
+- **Repository**: [github.com/thedotmack/claude-mem-plus](https://github.com/thedotmack/claude-mem-plus)
 - **ผู้เขียน**: Alex Newman ([@thedotmack](https://github.com/thedotmack))
 
 ---

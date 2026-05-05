@@ -9,7 +9,7 @@ assignees: ''
 
 ## Before submitting
 
-- [ ] I searched [existing issues](https://github.com/thedotmack/claude-mem/issues) and confirmed this is not a duplicate
+- [ ] I searched [existing issues](https://github.com/thedotmack/claude-mem-plus/issues) and confirmed this is not a duplicate
 
 ---
 
@@ -61,8 +61,8 @@ What you expected to happen.
 
 ### Logs
 Worker logs are located at:
-- **Path**: `~/.claude-mem/logs/worker-YYYY-MM-DD.log`
-- **Example**: `~/.claude-mem/logs/worker-2025-12-14.log`
+- **Path**: `~/.claude-mem-plus/logs/worker-YYYY-MM-DD.log`
+- **Example**: `~/.claude-mem-plus/logs/worker-2025-12-14.log`
 
 Please paste relevant log entries (last 50 lines or error messages):
 

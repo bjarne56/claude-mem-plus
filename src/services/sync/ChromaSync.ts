@@ -943,9 +943,9 @@ export class ChromaSync {
 
   /**
    * Backfill all projects that have observations in SQLite but may be missing from Chroma.
-   * Uses a single shared ChromaSync('claude-mem') instance and Chroma connection.
+   * Uses a single shared ChromaSync('claude-mem-plus') instance and Chroma connection.
    * Per-project scoping is passed as a parameter to ensureBackfilled(), avoiding
-   * instance state mutation. All documents land in the cm__claude-mem collection
+   * instance state mutation. All documents land in the cm__claude-mem-plus collection
    * with project scoped via metadata, matching how DatabaseManager and SearchManager operate.
    * Designed to be called fire-and-forget on worker startup.
    *
@@ -967,7 +967,7 @@ export class ChromaSync {
     let sync: ChromaSync | undefined;
     try {
       db = storeOverride ?? new SessionStore();
-      sync = new ChromaSync('claude-mem');
+      sync = new ChromaSync('claude-mem-plus');
     } catch (error) {
       logger.error('CHROMA_SYNC', 'Failed to initialize backfill resources',
         {}, error instanceof Error ? error : new Error(String(error)));

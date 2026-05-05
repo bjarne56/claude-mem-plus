@@ -1,5 +1,5 @@
 /**
- * `npx claude-mem sync ...` — cmem-sync client 子命令分发
+ * `npx claude-mem-plus sync ...` — cmem-sync client 子命令分发
  *
  * 所有子命令通过 worker 的 /api/sync/* 路由完成实际工作:
  *   - SyncManager 用 bun:sqlite,必须在 Bun 进程内跑
@@ -27,8 +27,8 @@ import { isPluginInstalled } from '../utils/paths.js';
 
 function ensureInstalled(): void {
   if (!isPluginInstalled()) {
-    console.error(pc.red('claude-mem 未安装。'));
-    console.error(`运行: ${pc.bold('npx claude-mem install')}`);
+    console.error(pc.red('claude-mem-plus 未安装。'));
+    console.error(`运行: ${pc.bold('npx claude-mem-plus install')}`);
     process.exit(1);
   }
 }
@@ -51,7 +51,7 @@ async function callWorker<T>(method: string, path: string, body?: unknown): Prom
     const cause = (e as { cause?: { code?: string } }).cause;
     if (cause?.code === 'ECONNREFUSED') {
       console.error(pc.red('Worker 未运行。'));
-      console.error(`先启动: ${pc.bold('npx claude-mem start')}`);
+      console.error(`先启动: ${pc.bold('npx claude-mem-plus start')}`);
       process.exit(1);
     }
     throw e;
@@ -239,7 +239,7 @@ async function cmdShareProject(args: string[]): Promise<void> {
   ensureInstalled();
   const name = args[0];
   if (!name) {
-    console.error(pc.red('用法: claude-mem sync share-project <name> --with <user> [--mode <mode>]'));
+    console.error(pc.red('用法: claude-mem-plus sync share-project <name> --with <user> [--mode <mode>]'));
     process.exit(1);
   }
   const target = parseFlag(args, '--with');
@@ -267,7 +267,7 @@ async function cmdUnshareProject(args: string[]): Promise<void> {
   ensureInstalled();
   const name = args[0];
   if (!name) {
-    console.error(pc.red('用法: claude-mem sync unshare-project <name> [--target <user|public|link>]'));
+    console.error(pc.red('用法: claude-mem-plus sync unshare-project <name> [--target <user|public|link>]'));
     process.exit(1);
   }
   const target = parseFlag(args, '--target') ?? 'user';
@@ -279,7 +279,7 @@ async function cmdForkProject(args: string[]): Promise<void> {
   ensureInstalled();
   const ref = args[0];
   if (!ref || !ref.includes('/')) {
-    console.error(pc.red('用法: claude-mem sync fork-project <user>/<name> [--name <new>]'));
+    console.error(pc.red('用法: claude-mem-plus sync fork-project <user>/<name> [--name <new>]'));
     process.exit(1);
   }
   const [user, project] = ref.split('/');
@@ -332,21 +332,21 @@ export async function runSyncCommand(args: string[]): Promise<void> {
 
 function printSyncHelp(): void {
   console.log(`
-${pc.bold('claude-mem sync')} — cmem-sync 客户端
+${pc.bold('claude-mem-plus sync')} — cmem-sync 客户端
 
-  ${pc.cyan('claude-mem sync login --server <url>')}        交互式登录并注册本机器
-  ${pc.cyan('claude-mem sync logout')}                       清本地 token
-  ${pc.cyan('claude-mem sync register --server <url>')}      新用户注册
-  ${pc.cyan('claude-mem sync status')}                       同步状态
-  ${pc.cyan('claude-mem sync push')}                         手动 push
-  ${pc.cyan('claude-mem sync pull')}                         手动 pull
-  ${pc.cyan('claude-mem sync me')}                           当前用户/机器
-  ${pc.cyan('claude-mem sync projects')}                     列出项目 + 共享状态
-  ${pc.cyan('claude-mem sync share-project <name> --with <user> [--mode <mode>]')}
-  ${pc.cyan('claude-mem sync share-project <name> --public [--mode <mode>]')}
-  ${pc.cyan('claude-mem sync share-project <name> --link [--mode <mode>]')}
-  ${pc.cyan('claude-mem sync unshare-project <name> [--target user|public|link]')}
-  ${pc.cyan('claude-mem sync fork-project <user>/<name> [--name <new>]')}
+  ${pc.cyan('claude-mem-plus sync login --server <url>')}        交互式登录并注册本机器
+  ${pc.cyan('claude-mem-plus sync logout')}                       清本地 token
+  ${pc.cyan('claude-mem-plus sync register --server <url>')}      新用户注册
+  ${pc.cyan('claude-mem-plus sync status')}                       同步状态
+  ${pc.cyan('claude-mem-plus sync push')}                         手动 push
+  ${pc.cyan('claude-mem-plus sync pull')}                         手动 pull
+  ${pc.cyan('claude-mem-plus sync me')}                           当前用户/机器
+  ${pc.cyan('claude-mem-plus sync projects')}                     列出项目 + 共享状态
+  ${pc.cyan('claude-mem-plus sync share-project <name> --with <user> [--mode <mode>]')}
+  ${pc.cyan('claude-mem-plus sync share-project <name> --public [--mode <mode>]')}
+  ${pc.cyan('claude-mem-plus sync share-project <name> --link [--mode <mode>]')}
+  ${pc.cyan('claude-mem-plus sync unshare-project <name> [--target user|public|link]')}
+  ${pc.cyan('claude-mem-plus sync fork-project <user>/<name> [--name <new>]')}
 
 ${pc.dim('share-mode: read-only | fork-allowed | auto-copy(默认 read-only)')}
 `);

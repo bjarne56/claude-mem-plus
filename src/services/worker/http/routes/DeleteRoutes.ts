@@ -5,6 +5,7 @@
  *   DELETE /api/observations/:id          软删一条 observation → trash_observations
  *   DELETE /api/sessions/:id              软删一个 session → trash_sessions(级联其 obs/sum/prompt)
  *   DELETE /api/projects/:name            软删项目所有 session → trash_*
+ *   POST   /api/projects/:name/rename     物理改名(UPDATE 主表 + trash 表 + payload JSON)
  *   GET    /api/trash                     列回收站(三类,按 deleted_at_epoch desc)
  *   POST   /api/trash/:type/:trashId/restore   从 trash 表恢复回主表
  *   DELETE /api/trash/:type/:trashId      永久删除单行
@@ -69,6 +70,7 @@ export class DeleteRoutes extends BaseRouteHandler {
     app.delete('/api/observations/:id', requireLocalhost, this.wrapHandler(this.handleDeleteObservation));
     app.delete('/api/sessions/:id', requireLocalhost, this.wrapHandler(this.handleDeleteSession));
     app.delete('/api/projects/:name', requireLocalhost, this.wrapHandler(this.handleDeleteProject));
+    app.post('/api/projects/:name/rename', requireLocalhost, this.wrapHandler(this.handleRenameProject));
     // 回收站 CRUD ——
     // 注意:Express 按注册顺序匹配,具体路径必须先于通配路径
     // 否则 /api/trash/projects/foo/restore 会被 /api/trash/:type/:trashId/restore 抢走,
@@ -87,6 +89,7 @@ export class DeleteRoutes extends BaseRouteHandler {
         'DELETE /api/observations/:id',
         'DELETE /api/sessions/:id',
         'DELETE /api/projects/:name',
+        'POST /api/projects/:name/rename',
         'GET /api/trash',
         'POST /api/trash/:type/:trashId/restore',
         'DELETE /api/trash/:type/:trashId',
@@ -300,6 +303,123 @@ export class DeleteRoutes extends BaseRouteHandler {
       ok: true,
       deleted: { sessions: sessionRows.length, observations: counts.observations, summaries: counts.summaries },
     });
+  };
+
+  // POST /api/projects/:name/rename  body: { newName: string }
+  // 物理改名:UPDATE 主表 / 软删影子表 / 影子表 payload JSON 内的 project 字段
+  // 不改:shared_view / projects_sync / sync_pending_downgrades(cmem-sync 与 server 端绑定的同步元数据)
+  // 不改派生逻辑:下次同 cwd 触发 hook 仍按 basename 写入旧名,本接口仅整理历史
+  private handleRenameProject = async (req: Request, res: Response): Promise<void> => {
+    this.ensureTrashTables();
+    const oldName = req.params.name;
+    if (!oldName) {
+      this.badRequest(res, 'Missing project name');
+      return;
+    }
+
+    const rawNew = (req.body && typeof (req.body as Record<string, unknown>).newName === 'string')
+      ? ((req.body as Record<string, string>).newName as string)
+      : '';
+    const newName = rawNew.trim();
+
+    if (!newName) {
+      this.badRequest(res, 'newName must be a non-empty string');
+      return;
+    }
+    if (newName === oldName) {
+      this.badRequest(res, 'newName must differ from current name');
+      return;
+    }
+    if (newName.length > 200) {
+      this.badRequest(res, 'newName too long (max 200 chars)');
+      return;
+    }
+    if (/[\x00-\x1f]/.test(newName)) {
+      this.badRequest(res, 'newName contains control characters');
+      return;
+    }
+
+    const db = this.dbManager.getDatabase();
+
+    const exists = db.query('SELECT 1 FROM sdk_sessions WHERE project = ? LIMIT 1').get(oldName);
+    if (!exists) {
+      this.notFound(res, `No sessions for project "${oldName}"`);
+      return;
+    }
+
+    // 与现有项目重名 = 静默合并,默认拒绝(回收站里也算冲突,以免 restore 时撞)
+    const conflict =
+      db.query('SELECT 1 FROM sdk_sessions WHERE project = ? LIMIT 1').get(newName) ||
+      db.query('SELECT 1 FROM observations WHERE project = ? LIMIT 1').get(newName) ||
+      db.query('SELECT 1 FROM session_summaries WHERE project = ? LIMIT 1').get(newName);
+    if (conflict) {
+      res.status(409).json({
+        error: `Project "${newName}" already exists; refusing to merge silently`,
+        code: 'NAME_CONFLICT',
+      });
+      return;
+    }
+
+    const totals = {
+      sessions: 0,
+      observations: 0,
+      summaries: 0,
+      mergedObs: 0,
+      mergedSum: 0,
+      trashObs: 0,
+      trashSess: 0,
+      trashSum: 0,
+    };
+
+    const tx = db.transaction(() => {
+      totals.sessions = db.prepare('UPDATE sdk_sessions SET project = ? WHERE project = ?')
+        .run(newName, oldName).changes;
+      totals.observations = db.prepare('UPDATE observations SET project = ? WHERE project = ?')
+        .run(newName, oldName).changes;
+      totals.summaries = db.prepare('UPDATE session_summaries SET project = ? WHERE project = ?')
+        .run(newName, oldName).changes;
+      totals.mergedObs = db.prepare('UPDATE observations SET merged_into_project = ? WHERE merged_into_project = ?')
+        .run(newName, oldName).changes;
+      totals.mergedSum = db.prepare('UPDATE session_summaries SET merged_into_project = ? WHERE merged_into_project = ?')
+        .run(newName, oldName).changes;
+
+      // trash 表:列 + payload JSON 一起改,否则 restore 出来的还是旧名
+      const trashTables: Array<{ table: string; counter: 'trashObs' | 'trashSess' | 'trashSum' }> = [
+        { table: 'trash_observations', counter: 'trashObs' },
+        { table: 'trash_sessions',     counter: 'trashSess' },
+        { table: 'trash_summaries',    counter: 'trashSum' },
+      ];
+      for (const { table, counter } of trashTables) {
+        const rows = db.query(`SELECT trash_id, payload FROM ${table} WHERE project = ?`)
+          .all(oldName) as Array<{ trash_id: number; payload: string }>;
+        const update = db.prepare(`UPDATE ${table} SET project = ?, payload = ? WHERE trash_id = ?`);
+        for (const row of rows) {
+          let payloadOut = row.payload;
+          try {
+            const parsed = JSON.parse(row.payload) as Record<string, unknown>;
+            if (parsed.project === oldName) parsed.project = newName;
+            if (parsed.merged_into_project === oldName) parsed.merged_into_project = newName;
+            payloadOut = JSON.stringify(parsed);
+          } catch {
+            // payload 已损坏,只改列名
+          }
+          update.run(newName, payloadOut, row.trash_id);
+          totals[counter] += 1;
+        }
+      }
+    });
+    tx();
+
+    this.rebroadcastProjects();
+    // 通知 viewer 把内存里 live observations / summaries / prompts 中 project===old 的项 patch 成 new
+    // 否则因 useSSE 累积旧 project 字段 + dedup 优先 live,UI 会一直显示旧名直到刷页
+    this.sseBroadcaster.broadcast({
+      type: 'project_renamed',
+      oldName,
+      newName,
+    });
+    logger.info('SYSTEM', 'Project renamed', { oldName, newName, ...totals });
+    res.json({ ok: true, oldName, newName, updated: totals });
   };
 
   private softDeleteSessions(

@@ -76,7 +76,7 @@ export class LogsRoutes extends BaseRouteHandler {
     const dataDir = SettingsDefaultsManager.get('CLAUDE_MEM_DATA_DIR');
     const logsDir = join(dataDir, 'logs');
     const date = new Date().toISOString().split('T')[0];
-    return join(logsDir, `claude-mem-${date}.log`);
+    return join(logsDir, `claude-mem-plus-${date}.log`);
   }
 
   private getLogsDir(): string {

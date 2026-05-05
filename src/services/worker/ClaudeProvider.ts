@@ -187,7 +187,7 @@ export class ClaudeProvider {
         abortController: session.abortController,
         pathToClaudeCodeExecutable: claudePath,
         spawnClaudeCodeProcess: createSdkSpawnFactory(session.sessionDbId),
-        env: isolatedEnv,  // Use isolated credentials from ~/.claude-mem/.env, not process.env
+        env: isolatedEnv,  // Use isolated credentials from ~/.claude-mem-plus/.env, not process.env
         mcpServers: {},
         settingSources: [],
         strictMcpConfig: true,
@@ -313,7 +313,7 @@ export class ClaudeProvider {
           }
 
           if (typeof textContent === 'string' && textContent.includes('Invalid API key')) {
-            throw new Error('Invalid API key: check your API key configuration in ~/.claude-mem/settings.json or ~/.claude-mem/.env');
+            throw new Error('Invalid API key: check your API key configuration in ~/.claude-mem-plus/settings.json or ~/.claude-mem-plus/.env');
           }
 
           await processAgentResponse(

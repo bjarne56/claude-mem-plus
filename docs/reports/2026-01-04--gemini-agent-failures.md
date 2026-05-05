@@ -70,12 +70,12 @@ The primary root cause is that the test session fixtures are incomplete. The `Ac
 ## 3. Current Implementation Status
 
 ### GeminiAgent.ts
-- Located at: `/Users/alexnewman/Scripts/claude-mem/src/services/worker/GeminiAgent.ts`
+- Located at: `/Users/alexnewman/Scripts/claude-mem-plus/src/services/worker/GeminiAgent.ts`
 - Uses shared `processAgentResponse()` from ResponseProcessor module
 - Properly validates `memorySessionId` before storage (line 71 in ResponseProcessor.ts)
 
 ### ResponseProcessor.ts
-- Located at: `/Users/alexnewman/Scripts/claude-mem/src/services/worker/agents/ResponseProcessor.ts`
+- Located at: `/Users/alexnewman/Scripts/claude-mem-plus/src/services/worker/agents/ResponseProcessor.ts`
 - Contains strict validation at lines 70-73:
   ```typescript
   if (!session.memorySessionId) {
@@ -251,7 +251,7 @@ mock.module('../src/shared/SettingsDefaultsManager', () => ({
     }),
     get: (key: string) => {
       if (key === 'CLAUDE_MEM_LOG_LEVEL') return 'INFO';
-      if (key === 'CLAUDE_MEM_DATA_DIR') return '/tmp/test-claude-mem';
+      if (key === 'CLAUDE_MEM_DATA_DIR') return '/tmp/test-claude-mem-plus';
       return '';
     }
   }
@@ -310,8 +310,8 @@ Received message: "Gemini API error: 400 - {...API key not valid...}"
 
 ## 8. Related Files
 
-- `/Users/alexnewman/Scripts/claude-mem/tests/gemini_agent.test.ts` - Test file
-- `/Users/alexnewman/Scripts/claude-mem/src/services/worker/GeminiAgent.ts` - Implementation
-- `/Users/alexnewman/Scripts/claude-mem/src/services/worker/agents/ResponseProcessor.ts` - Shared processor
-- `/Users/alexnewman/Scripts/claude-mem/src/services/worker/agents/FallbackErrorHandler.ts` - Fallback logic
-- `/Users/alexnewman/Scripts/claude-mem/src/services/worker-types.ts` - ActiveSession type definition
+- `/Users/alexnewman/Scripts/claude-mem-plus/tests/gemini_agent.test.ts` - Test file
+- `/Users/alexnewman/Scripts/claude-mem-plus/src/services/worker/GeminiAgent.ts` - Implementation
+- `/Users/alexnewman/Scripts/claude-mem-plus/src/services/worker/agents/ResponseProcessor.ts` - Shared processor
+- `/Users/alexnewman/Scripts/claude-mem-plus/src/services/worker/agents/FallbackErrorHandler.ts` - Fallback logic
+- `/Users/alexnewman/Scripts/claude-mem-plus/src/services/worker-types.ts` - ActiveSession type definition

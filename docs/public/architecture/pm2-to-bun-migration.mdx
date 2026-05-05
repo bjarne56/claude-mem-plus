@@ -6,7 +6,7 @@ description: "Complete technical documentation for the process management and da
 <Note>
 **Historical Migration Documentation**
 
-This document describes the PM2 to Bun migration that occurred in v7.1.0 (December 2025). If you're installing claude-mem for the first time, this migration has already been completed and you can use the current Bun-based system documented in the main guides.
+This document describes the PM2 to Bun migration that occurred in v7.1.0 (December 2025). If you're installing claude-mem-plus for the first time, this migration has already been completed and you can use the current Bun-based system documented in the main guides.
 
 This documentation is preserved for users upgrading from versions older than v7.1.0.
 </Note>
@@ -49,20 +49,20 @@ Both migrations are **automatic** and **transparent** to end users. The first ti
 <Accordion title="Process Management (PM2)">
 **Component**: PM2 (Process Manager 2)
 - **Package**: `pm2` npm dependency
-- **Process Name**: `claude-mem-worker`
+- **Process Name**: `claude-mem-plus-worker`
 - **Management**: External PM2 daemon manages lifecycle
 - **Discovery**: `pm2 list`, `pm2 describe` commands
 - **Auto-restart**: PM2 automatically restarts on crash
-- **Logs**: `~/.pm2/logs/claude-mem-worker-*.log`
-- **PID File**: `~/.pm2/pids/claude-mem-worker.pid`
+- **Logs**: `~/.pm2/logs/claude-mem-plus-worker-*.log`
+- **PID File**: `~/.pm2/pids/claude-mem-plus-worker.pid`
 
 **Lifecycle Commands**:
 ```bash
 pm2 start <script>           # Start worker
-pm2 stop claude-mem-worker   # Stop worker
-pm2 restart claude-mem-worker # Restart worker
-pm2 delete claude-mem-worker  # Remove from PM2
-pm2 logs claude-mem-worker    # View logs
+pm2 stop claude-mem-plus-worker   # Stop worker
+pm2 restart claude-mem-plus-worker # Restart worker
+pm2 delete claude-mem-plus-worker  # Remove from PM2
+pm2 logs claude-mem-plus-worker    # View logs
 ```
 
 **Pain Points**:
@@ -98,9 +98,9 @@ pm2 logs claude-mem-worker    # View logs
 - **Management**: Direct process control via PID file
 - **Discovery**: PID file + process existence check + HTTP health check
 - **Auto-restart**: Hook-triggered restart on failure detection
-- **Logs**: `~/.claude-mem/logs/worker-YYYY-MM-DD.log`
-- **PID File**: `~/.claude-mem/.worker.pid`
-- **Port File**: `~/.claude-mem/.worker.port` (new)
+- **Logs**: `~/.claude-mem-plus/logs/worker-YYYY-MM-DD.log`
+- **PID File**: `~/.claude-mem-plus/.worker.pid`
+- **Port File**: `~/.claude-mem-plus/.worker.port` (new)
 
 **Lifecycle Commands**:
 ```bash
@@ -114,12 +114,12 @@ npm run worker:logs     # View logs
 **Core Mechanisms**:
 
 1. **PID File Management**:
-   - File: `~/.claude-mem/.worker.pid`
+   - File: `~/.claude-mem-plus/.worker.pid`
    - Content: Process ID (e.g., "35557")
    - Validation: Process existence via `kill(pid, 0)` signal
 
 2. **Port File Management**:
-   - File: `~/.claude-mem/.worker.port`
+   - File: `~/.claude-mem-plus/.worker.port`
    - Content: Two lines (port number, PID)
    - Purpose: Track port binding and validate PID match
 
@@ -151,7 +151,7 @@ npm run worker:logs     # View logs
 
 **Compatibility**:
 - SQLite database format: **Unchanged**
-- Database file: `~/.claude-mem/claude-mem.db` (same location)
+- Database file: `~/.claude-mem-plus/claude-mem.db` (same location)
 - Query syntax: **Identical** (both use SQLite SQL)
 </Accordion>
 </AccordionGroup>
@@ -170,7 +170,7 @@ const pm2MigratedMarker = join(DATA_DIR, '.pm2-migrated');
 
 if (!existsSync(pm2MigratedMarker)) {
   try {
-    spawnSync('pm2', ['delete', 'claude-mem-worker'], { stdio: 'ignore' });
+    spawnSync('pm2', ['delete', 'claude-mem-plus-worker'], { stdio: 'ignore' });
     // Mark migration as complete
     writeFileSync(pm2MigratedMarker, new Date().toISOString(), 'utf-8');
     logger.debug('SYSTEM', 'PM2 cleanup completed and marked');
@@ -188,16 +188,16 @@ if (!existsSync(pm2MigratedMarker)) {
 SessionStart, UserPromptSubmit, or PostToolUse hooks execute using new 7.1.0 code
 </Step>
 <Step title="Worker Status Check">
-`ensureWorkerRunning()` checks if `~/.claude-mem/.worker.pid` exists (it doesn't for first run after update)
+`ensureWorkerRunning()` checks if `~/.claude-mem-plus/.worker.pid` exists (it doesn't for first run after update)
 </Step>
 <Step title="Start Worker Decision">
 Worker not running → Call `startWorker()`
 </Step>
 <Step title="Migration Check">
-Check if `~/.claude-mem/.pm2-migrated` exists
+Check if `~/.claude-mem-plus/.pm2-migrated` exists
 </Step>
 <Step title="PM2 Cleanup">
-Execute `pm2 delete claude-mem-worker` (errors ignored), create marker file
+Execute `pm2 delete claude-mem-plus-worker` (errors ignored), create marker file
 </Step>
 <Step title="New Worker Start">
 Spawn new Bun-managed worker process with PID and port files
@@ -206,7 +206,7 @@ Spawn new Bun-managed worker process with PID and port files
 
 ### Marker File
 
-**Location**: `~/.claude-mem/.pm2-migrated`
+**Location**: `~/.claude-mem-plus/.pm2-migrated`
 
 **Content**: ISO 8601 timestamp
 ```
@@ -236,8 +236,8 @@ This is the critical migration moment. The process takes approximately 2-5 secon
 1. **Hook fires** (SessionStart most common)
 2. **Worker status check**: No PID file → worker not running
 3. **Migration check**: No marker file → run PM2 cleanup
-4. **PM2 cleanup**: `pm2 delete claude-mem-worker` (old worker terminated)
-5. **Marker creation**: `~/.claude-mem/.pm2-migrated` with timestamp
+4. **PM2 cleanup**: `pm2 delete claude-mem-plus-worker` (old worker terminated)
+5. **Marker creation**: `~/.claude-mem-plus/.pm2-migrated` with timestamp
 6. **New worker start**: Bun process spawned, PID/port files created
 7. **Verification**: Process check + HTTP health check
 8. **Hook completes**: Claude Code session starts normally
@@ -304,42 +304,42 @@ No migration logic runs on subsequent sessions.
 |-----------|-----------|-------|
 | `pm2 list` | `npm run worker:status` | Shows worker status |
 | `pm2 start <script>` | `npm run worker:start` | Start worker |
-| `pm2 stop claude-mem-worker` | `npm run worker:stop` | Stop worker |
-| `pm2 restart claude-mem-worker` | `npm run worker:restart` | Restart worker |
-| `pm2 delete claude-mem-worker` | `npm run worker:stop` | Remove worker |
-| `pm2 logs claude-mem-worker` | `npm run worker:logs` | View logs |
-| `pm2 describe claude-mem-worker` | `npm run worker:status` | Detailed status |
+| `pm2 stop claude-mem-plus-worker` | `npm run worker:stop` | Stop worker |
+| `pm2 restart claude-mem-plus-worker` | `npm run worker:restart` | Restart worker |
+| `pm2 delete claude-mem-plus-worker` | `npm run worker:stop` | Remove worker |
+| `pm2 logs claude-mem-plus-worker` | `npm run worker:logs` | View logs |
+| `pm2 describe claude-mem-plus-worker` | `npm run worker:status` | Detailed status |
 | `pm2 monit` | No equivalent | PM2-specific monitoring |
 
 ### File Location Changes
 
 **Logs**:
 ```
-Old: ~/.pm2/logs/claude-mem-worker-out.log
-     ~/.pm2/logs/claude-mem-worker-error.log
+Old: ~/.pm2/logs/claude-mem-plus-worker-out.log
+     ~/.pm2/logs/claude-mem-plus-worker-error.log
 
-New: ~/.claude-mem/logs/worker-YYYY-MM-DD.log
+New: ~/.claude-mem-plus/logs/worker-YYYY-MM-DD.log
 ```
 
 **PID Files**:
 ```
-Old: ~/.pm2/pids/claude-mem-worker.pid
+Old: ~/.pm2/pids/claude-mem-plus-worker.pid
 
-New: ~/.claude-mem/.worker.pid
+New: ~/.claude-mem-plus/.worker.pid
 ```
 
 **Process State**:
 ```
 Old: PM2 daemon memory (pm2 save)
 
-New: ~/.claude-mem/.worker.pid
-     ~/.claude-mem/.worker.port
-     ~/.claude-mem/.pm2-migrated (all platforms)
+New: ~/.claude-mem-plus/.worker.pid
+     ~/.claude-mem-plus/.worker.port
+     ~/.claude-mem-plus/.pm2-migrated (all platforms)
 ```
 
 **Database** (unchanged):
 ```
-Same: ~/.claude-mem/claude-mem.db
+Same: ~/.claude-mem-plus/claude-mem.db
 ```
 
 ### User-Visible Changes
@@ -350,7 +350,7 @@ $ pm2 list
 ┌────┬────────────────────┬─────────┬─────────┬──────────┐
 │ id │ name               │ status  │ restart │ uptime   │
 ├────┼────────────────────┼─────────┼─────────┼──────────┤
-│ 0  │ claude-mem-worker  │ online  │ 0       │ 2d 5h    │
+│ 0  │ claude-mem-plus-worker  │ online  │ 0       │ 2d 5h    │
 └────┴────────────────────┴─────────┴─────────┴──────────┘
 ```
 
@@ -384,9 +384,9 @@ After migration, these PM2 files may remain (safe to delete):
 pm2 kill
 rm -rf ~/.pm2
 
-# Or just remove claude-mem logs
-rm -f ~/.pm2/logs/claude-mem-worker-*.log
-rm -f ~/.pm2/pids/claude-mem-worker.pid
+# Or just remove claude-mem-plus logs
+rm -f ~/.pm2/logs/claude-mem-plus-worker-*.log
+rm -f ~/.pm2/pids/claude-mem-plus-worker.pid
 ```
 
 ## File System State
@@ -395,7 +395,7 @@ rm -f ~/.pm2/pids/claude-mem-worker.pid
 
 **Before Migration** (PM2 system):
 ```
-~/.claude-mem/
+~/.claude-mem-plus/
 ├── claude-mem.db          # Database (unchanged)
 ├── chroma/                # Vector embeddings (unchanged)
 ├── logs/                  # Application logs (unchanged)
@@ -403,16 +403,16 @@ rm -f ~/.pm2/pids/claude-mem-worker.pid
 
 ~/.pm2/
 ├── logs/
-│   ├── claude-mem-worker-out.log
-│   └── claude-mem-worker-error.log
+│   ├── claude-mem-plus-worker-out.log
+│   └── claude-mem-plus-worker-error.log
 ├── pids/
-│   └── claude-mem-worker.pid
+│   └── claude-mem-plus-worker.pid
 └── pm2.log
 ```
 
 **After Migration** (Bun system):
 ```
-~/.claude-mem/
+~/.claude-mem-plus/
 ├── claude-mem.db          # Database (same file)
 ├── chroma/                # Vector embeddings (unchanged)
 ├── logs/
@@ -437,18 +437,18 @@ This is rare but can happen if PM2 has watch mode enabled or the process is manu
 </Warning>
 
 **Symptoms**:
-- `pm2 list` still shows `claude-mem-worker`
+- `pm2 list` still shows `claude-mem-plus-worker`
 - Port conflict errors in logs
 - Worker fails to start
 
 **Resolution**:
 ```bash
 # Manual cleanup
-pm2 delete claude-mem-worker
+pm2 delete claude-mem-plus-worker
 pm2 save  # Persist the deletion
 
 # Force re-migration (optional)
-rm ~/.claude-mem/.pm2-migrated
+rm ~/.claude-mem-plus/.pm2-migrated
 
 # Restart worker
 npm run worker:restart
@@ -465,8 +465,8 @@ npm run worker:restart
 
 **Manual Resolution**:
 ```bash
-rm ~/.claude-mem/.worker.pid
-rm ~/.claude-mem/.worker.port
+rm ~/.claude-mem-plus/.worker.pid
+rm ~/.claude-mem-plus/.worker.port
 npm run worker:start
 ```
 
@@ -505,7 +505,7 @@ git checkout <pre-7.1.0-tag>
 npm install && npm run build && npm run sync-marketplace
 
 # 2. Start PM2 worker
-pm2 start plugin/scripts/worker-cli.js --name claude-mem-worker
+pm2 start plugin/scripts/worker-cli.js --name claude-mem-plus-worker
 
 # 3. Update to new version
 git checkout main
@@ -515,8 +515,8 @@ npm install && npm run build && npm run sync-marketplace
 node plugin/scripts/session-start-hook.js
 
 # 5. Verify migration
-pm2 list  # Should NOT show claude-mem-worker
-cat ~/.claude-mem/.pm2-migrated  # Should exist
+pm2 list  # Should NOT show claude-mem-plus-worker
+cat ~/.claude-mem-plus/.pm2-migrated  # Should exist
 npm run worker:status  # Should show Bun worker running
 ```
 

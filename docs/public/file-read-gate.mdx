@@ -1,6 +1,6 @@
 ---
 title: "File Read Gate"
-description: "How claude-mem intercepts file reads to save tokens using observation history"
+description: "How claude-mem-plus intercepts file reads to save tokens using observation history"
 ---
 
 # File Read Gate
@@ -140,7 +140,7 @@ Files smaller than **1,500 bytes** always pass through the gate without intercep
 
 ### Project Exclusions
 
-Projects matching patterns in `CLAUDE_MEM_EXCLUDED_PROJECTS` skip the gate entirely. Configure this in `~/.claude-mem/settings.json`:
+Projects matching patterns in `CLAUDE_MEM_EXCLUDED_PROJECTS` skip the gate entirely. Configure this in `~/.claude-mem-plus/settings.json`:
 
 ```json
 {
@@ -157,7 +157,7 @@ The File Read Gate is implemented as a PreToolUse hook on the `Read` tool matche
    ~/.claude/settings.json
    ```
 
-2. Find the claude-mem hooks section under `hooks.PreToolUse` and remove the entry with the `Read` matcher.
+2. Find the claude-mem-plus hooks section under `hooks.PreToolUse` and remove the entry with the `Read` matcher.
 
 Alternatively, if you want to keep the gate installed but bypass it for a specific read, Claude can ask you to allow the read -- the gate's deny decision is presented to the user, who can override it.
 
@@ -169,7 +169,7 @@ Disabling the gate means Claude will read full files every time, which increases
 
 ## How It Fits Together
 
-The File Read Gate is one piece of claude-mem's layered context strategy:
+The File Read Gate is one piece of claude-mem-plus's layered context strategy:
 
 1. **Session Start**: Inject timeline of recent observations (layer 1 -- metadata)
 2. **File Read Gate**: Intercept reads with observation history (layer 1 -- metadata)

@@ -55,7 +55,7 @@ for (const { lang, needed } of queue) {
 
 These are short descriptions shown next to slash commands in a CLI; keep them
 concise, technical, and idiomatic. Preserve:
-- Technical terms / proper names (claude-mem, tree-sitter, AST, subagent, etc.)
+- Technical terms / proper names (claude-mem-plus, tree-sitter, AST, subagent, etc.)
 - Backticks, code spans, file names, variable names
 - Markdown punctuation
 - The natural sentence boundaries (do not merge or split sentences)

@@ -4,7 +4,7 @@ import { Database } from 'bun:sqlite';
 import { homedir } from 'os';
 import { join } from 'path';
 
-const DB_PATH = join(homedir(), '.claude-mem', 'claude-mem.db');
+const DB_PATH = join(homedir(), '.claude-mem-plus', 'claude-mem.db');
 
 const TIME_WINDOW_MODES = {
   strict: 5,      // 5 seconds - only exact duplicates from same batch

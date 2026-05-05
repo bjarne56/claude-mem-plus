@@ -5,7 +5,7 @@ import path from 'path';
 import { validateWorkerPidFile, type ValidateWorkerPidStatus } from '../../src/supervisor/index.js';
 
 function makeTempDir(): string {
-  const dir = path.join(tmpdir(), `claude-mem-index-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+  const dir = path.join(tmpdir(), `claude-mem-plus-index-${Date.now()}-${Math.random().toString(36).slice(2)}`);
   mkdirSync(dir, { recursive: true });
   return dir;
 }

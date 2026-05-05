@@ -1,11 +1,11 @@
 {
   "name": "claude-mem-plus",
   "version": "12.6.1",
-  "description": "claude-mem fork with cmem-sync (cross-machine sync via self-hosted cmem-server), 31-language UI, soft-delete + trash, public registration page. Pairs with bjarne56/cmem-server.",
+  "description": "claude-mem-plus fork with cmem-sync (cross-machine sync via self-hosted cmem-server), 31-language UI, soft-delete + trash, public registration page. Pairs with bjarne56/cmem-server.",
   "keywords": [
     "claude",
     "claude-code",
-    "claude-mem",
+    "claude-mem-plus",
     "claude-agent-sdk",
     "mcp",
     "plugin",
@@ -33,7 +33,7 @@
   },
   "type": "module",
   "bin": {
-    "claude-mem": "./dist/npx-cli/index.js"
+    "claude-mem-plus": "./dist/npx-cli/index.js"
   },
   "exports": {
     ".": {
@@ -71,11 +71,11 @@
     "sync-marketplace": "node scripts/sync-marketplace.cjs",
     "sync-marketplace:force": "node scripts/sync-marketplace.cjs --force",
     "build:binaries": "node scripts/build-worker-binary.js",
-    "build:cli-binary": "bun build --compile --minify ./src/services/worker-service.ts --outfile plugin/scripts/claude-mem",
+    "build:cli-binary": "bun build --compile --minify ./src/services/worker-service.ts --outfile plugin/scripts/claude-mem-plus",
     "pack:release": "bash scripts/pack-release.sh",
     "pack:release:dry": "bash scripts/pack-release.sh --dry-run",
-    "worker:logs": "tail -n 50 ~/.claude-mem/logs/worker-$(date +%Y-%m-%d).log",
-    "worker:tail": "tail -f 50 ~/.claude-mem/logs/worker-$(date +%Y-%m-%d).log",
+    "worker:logs": "tail -n 50 ~/.claude-mem-plus/logs/worker-$(date +%Y-%m-%d).log",
+    "worker:tail": "tail -f 50 ~/.claude-mem-plus/logs/worker-$(date +%Y-%m-%d).log",
     "changelog:generate": "node scripts/generate-changelog.js",
     "discord:notify": "node scripts/discord-release-notify.js",
     "worker:start": "bun plugin/scripts/worker-service.cjs start",

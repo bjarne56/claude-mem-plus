@@ -133,7 +133,7 @@ export class ApiClient {
   private serverUrl(): string {
     const url = this.state.get().server_url;
     if (!url) {
-      throw makeApiError('NO_SERVER_URL', 'sync server URL 未配置;先运行 claude-mem sync login --server <url>', 0);
+      throw makeApiError('NO_SERVER_URL', 'sync server URL 未配置;先运行 claude-mem-plus sync login --server <url>', 0);
     }
     return url.replace(/\/$/, '');
   }

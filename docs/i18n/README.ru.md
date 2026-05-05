@@ -3,11 +3,11 @@
 ---
 <h1 align="center">
   <br>
-  <a href="https://github.com/thedotmack/claude-mem">
+  <a href="https://github.com/thedotmack/claude-mem-plus">
     <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/thedotmack/claude-mem/main/docs/public/claude-mem-logo-for-dark-mode.webp">
-      <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/thedotmack/claude-mem/main/docs/public/claude-mem-logo-for-light-mode.webp">
-      <img src="https://raw.githubusercontent.com/thedotmack/claude-mem/main/docs/public/claude-mem-logo-for-light-mode.webp" alt="Claude-Mem" width="400">
+      <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/thedotmack/claude-mem-plus/main/docs/public/claude-mem-plus-logo-for-dark-mode.webp">
+      <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/thedotmack/claude-mem-plus/main/docs/public/claude-mem-plus-logo-for-light-mode.webp">
+      <img src="https://raw.githubusercontent.com/thedotmack/claude-mem-plus/main/docs/public/claude-mem-plus-logo-for-light-mode.webp" alt="Claude-Mem" width="400">
     </picture>
   </a>
   <br>
@@ -66,9 +66,9 @@
 <p align="center">
   <a href="https://trendshift.io/repositories/15496" target="_blank">
     <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/thedotmack/claude-mem/main/docs/public/trendshift-badge-dark.svg">
-      <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/thedotmack/claude-mem/main/docs/public/trendshift-badge.svg">
-      <img src="https://raw.githubusercontent.com/thedotmack/claude-mem/main/docs/public/trendshift-badge.svg" alt="thedotmack/claude-mem | Trendshift" width="250" height="55"/>
+      <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/thedotmack/claude-mem-plus/main/docs/public/trendshift-badge-dark.svg">
+      <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/thedotmack/claude-mem-plus/main/docs/public/trendshift-badge.svg">
+      <img src="https://raw.githubusercontent.com/thedotmack/claude-mem-plus/main/docs/public/trendshift-badge.svg" alt="thedotmack/claude-mem-plus | Trendshift" width="250" height="55"/>
     </picture>
   </a>
 </p>
@@ -76,9 +76,9 @@
 <br>
 
 <p align="center">
-  <a href="https://github.com/thedotmack/claude-mem">
+  <a href="https://github.com/thedotmack/claude-mem-plus">
     <picture>
-      <img src="https://raw.githubusercontent.com/thedotmack/claude-mem/main/docs/public/cm-preview.gif" alt="Claude-Mem Preview" width="800">
+      <img src="https://raw.githubusercontent.com/thedotmack/claude-mem-plus/main/docs/public/cm-preview.gif" alt="Claude-Mem Preview" width="800">
     </picture>
   </a>
 </p>
@@ -104,9 +104,9 @@
 Запустите новый сеанс Claude Code в терминале и введите следующие команды:
 
 ```
-> /plugin marketplace add thedotmack/claude-mem
+> /plugin marketplace add thedotmack/claude-mem-plus
 
-> /plugin install claude-mem
+> /plugin install claude-mem-plus
 ```
 
 Перезапустите Claude Code. Контекст из предыдущих сеансов будет автоматически появляться в новых сеансах.
@@ -128,35 +128,35 @@
 
 ## Документация
 
-📚 **[Просмотреть полную документацию](https://docs.claude-mem.ai/)** - Просмотр на официальном сайте
+📚 **[Просмотреть полную документацию](https://docs.claude-mem-plus.ai/)** - Просмотр на официальном сайте
 
 ### Начало работы
 
-- **[Руководство по установке](https://docs.claude-mem.ai/installation)** - Быстрый старт и продвинутая установка
-- **[Руководство по использованию](https://docs.claude-mem.ai/usage/getting-started)** - Как Claude-Mem работает автоматически
-- **[Инструменты поиска](https://docs.claude-mem.ai/usage/search-tools)** - Запросы к истории проекта на естественном языке
-- **[Бета-функции](https://docs.claude-mem.ai/beta-features)** - Попробуйте экспериментальные функции, такие как режим Endless
+- **[Руководство по установке](https://docs.claude-mem-plus.ai/installation)** - Быстрый старт и продвинутая установка
+- **[Руководство по использованию](https://docs.claude-mem-plus.ai/usage/getting-started)** - Как Claude-Mem работает автоматически
+- **[Инструменты поиска](https://docs.claude-mem-plus.ai/usage/search-tools)** - Запросы к истории проекта на естественном языке
+- **[Бета-функции](https://docs.claude-mem-plus.ai/beta-features)** - Попробуйте экспериментальные функции, такие как режим Endless
 
 ### Лучшие практики
 
-- **[Инженерия контекста](https://docs.claude-mem.ai/context-engineering)** - Принципы оптимизации контекста для AI-агентов
-- **[Прогрессивное раскрытие](https://docs.claude-mem.ai/progressive-disclosure)** - Философия стратегии подготовки контекста в Claude-Mem
+- **[Инженерия контекста](https://docs.claude-mem-plus.ai/context-engineering)** - Принципы оптимизации контекста для AI-агентов
+- **[Прогрессивное раскрытие](https://docs.claude-mem-plus.ai/progressive-disclosure)** - Философия стратегии подготовки контекста в Claude-Mem
 
 ### Архитектура
 
-- **[Обзор](https://docs.claude-mem.ai/architecture/overview)** - Компоненты системы и поток данных
-- **[Эволюция архитектуры](https://docs.claude-mem.ai/architecture-evolution)** - Путь от v3 к v5
-- **[Архитектура хуков](https://docs.claude-mem.ai/hooks-architecture)** - Как Claude-Mem использует хуки жизненного цикла
-- **[Справочник по хукам](https://docs.claude-mem.ai/architecture/hooks)** - Объяснение 7 скриптов хуков
-- **[Сервис Worker](https://docs.claude-mem.ai/architecture/worker-service)** - HTTP API и управление Bun
-- **[База данных](https://docs.claude-mem.ai/architecture/database)** - Схема SQLite и поиск FTS5
-- **[Архитектура поиска](https://docs.claude-mem.ai/architecture/search-architecture)** - Гибридный поиск с векторной базой данных Chroma
+- **[Обзор](https://docs.claude-mem-plus.ai/architecture/overview)** - Компоненты системы и поток данных
+- **[Эволюция архитектуры](https://docs.claude-mem-plus.ai/architecture-evolution)** - Путь от v3 к v5
+- **[Архитектура хуков](https://docs.claude-mem-plus.ai/hooks-architecture)** - Как Claude-Mem использует хуки жизненного цикла
+- **[Справочник по хукам](https://docs.claude-mem-plus.ai/architecture/hooks)** - Объяснение 7 скриптов хуков
+- **[Сервис Worker](https://docs.claude-mem-plus.ai/architecture/worker-service)** - HTTP API и управление Bun
+- **[База данных](https://docs.claude-mem-plus.ai/architecture/database)** - Схема SQLite и поиск FTS5
+- **[Архитектура поиска](https://docs.claude-mem-plus.ai/architecture/search-architecture)** - Гибридный поиск с векторной базой данных Chroma
 
 ### Конфигурация и разработка
 
-- **[Конфигурация](https://docs.claude-mem.ai/configuration)** - Переменные окружения и настройки
-- **[Разработка](https://docs.claude-mem.ai/development)** - Сборка, тестирование, участие в разработке
-- **[Устранение неполадок](https://docs.claude-mem.ai/troubleshooting)** - Распространенные проблемы и решения
+- **[Конфигурация](https://docs.claude-mem-plus.ai/configuration)** - Переменные окружения и настройки
+- **[Разработка](https://docs.claude-mem-plus.ai/development)** - Сборка, тестирование, участие в разработке
+- **[Устранение неполадок](https://docs.claude-mem-plus.ai/troubleshooting)** - Распространенные проблемы и решения
 
 ---
 
@@ -171,7 +171,7 @@
 5. **Навык mem-search** - Запросы на естественном языке с прогрессивным раскрытием
 6. **Векторная база данных Chroma** - Гибридный семантический + ключевой поиск для интеллектуального извлечения контекста
 
-Подробности см. в [Обзоре архитектуры](https://docs.claude-mem.ai/architecture/overview).
+Подробности см. в [Обзоре архитектуры](https://docs.claude-mem-plus.ai/architecture/overview).
 
 ---
 
@@ -206,7 +206,7 @@ Claude-Mem предоставляет интеллектуальный поис�
 "Что происходило, когда мы добавляли интерфейс просмотра?"
 ```
 
-Подробные примеры см. в [Руководстве по инструментам поиска](https://docs.claude-mem.ai/usage/search-tools).
+Подробные примеры см. в [Руководстве по инструментам поиска](https://docs.claude-mem-plus.ai/usage/search-tools).
 
 ---
 
@@ -214,7 +214,7 @@ Claude-Mem предоставляет интеллектуальный поис�
 
 Claude-Mem предлагает **бета-канал** с экспериментальными функциями, такими как **режим Endless** (биомиметическая архитектура памяти для расширенных сеансов). Переключайтесь между стабильной и бета-версиями из веб-интерфейса на http://localhost:37777 → Settings.
 
-Подробности о режиме Endless и способах его опробовать см. в **[Документации по бета-функциям](https://docs.claude-mem.ai/beta-features)**.
+Подробности о режиме Endless и способах его опробовать см. в **[Документации по бета-функциям](https://docs.claude-mem-plus.ai/beta-features)**.
 
 ---
 
@@ -230,15 +230,15 @@ Claude-Mem предлагает **бета-канал** с эксперимен�
 
 ## Конфигурация
 
-Настройки управляются в `~/.claude-mem/settings.json` (автоматически создается с настройками по умолчанию при первом запуске). Настройте AI-модель, порт worker, директорию данных, уровень логирования и параметры внедрения контекста.
+Настройки управляются в `~/.claude-mem-plus/settings.json` (автоматически создается с настройками по умолчанию при первом запуске). Настройте AI-модель, порт worker, директорию данных, уровень логирования и параметры внедрения контекста.
 
-Все доступные настройки и примеры см. в **[Руководстве по конфигурации](https://docs.claude-mem.ai/configuration)**.
+Все доступные настройки и примеры см. в **[Руководстве по конфигурации](https://docs.claude-mem-plus.ai/configuration)**.
 
 ---
 
 ## Разработка
 
-Инструкции по сборке, тестированию и процессу участия в разработке см. в **[Руководстве по разработке](https://docs.claude-mem.ai/development)**.
+Инструкции по сборке, тестированию и процессу участия в разработке см. в **[Руководстве по разработке](https://docs.claude-mem-plus.ai/development)**.
 
 ---
 
@@ -246,7 +246,7 @@ Claude-Mem предлагает **бета-канал** с эксперимен�
 
 При возникновении проблем опишите проблему Claude, и навык устранения неполадок автоматически выполнит диагностику и предоставит исправления.
 
-Распространенные проблемы и решения см. в **[Руководстве по устранению неполадок](https://docs.claude-mem.ai/troubleshooting)**.
+Распространенные проблемы и решения см. в **[Руководстве по устранению неполадок](https://docs.claude-mem-plus.ai/troubleshooting)**.
 
 ---
 
@@ -269,7 +269,7 @@ npm run bug-report
 4. Обновите документацию
 5. Отправьте Pull Request
 
-Процесс участия см. в [Руководстве по разработке](https://docs.claude-mem.ai/development).
+Процесс участия см. в [Руководстве по разработке](https://docs.claude-mem-plus.ai/development).
 
 ---
 
@@ -295,8 +295,8 @@ Copyright (C) 2025 Alex Newman (@thedotmack). Все права защищены
 ## Поддержка
 
 - **Документация**: [docs/](docs/)
-- **Проблемы**: [GitHub Issues](https://github.com/thedotmack/claude-mem/issues)
-- **Репозиторий**: [github.com/thedotmack/claude-mem](https://github.com/thedotmack/claude-mem)
+- **Проблемы**: [GitHub Issues](https://github.com/thedotmack/claude-mem-plus/issues)
+- **Репозиторий**: [github.com/thedotmack/claude-mem-plus](https://github.com/thedotmack/claude-mem-plus)
 - **Автор**: Alex Newman ([@thedotmack](https://github.com/thedotmack))
 
 ---

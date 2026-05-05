@@ -47,7 +47,7 @@ export type FeedItem =
   | (UserPrompt & { itemType: 'prompt' });
 
 export interface StreamEvent {
-  type: 'initial_load' | 'new_observation' | 'new_summary' | 'new_prompt' | 'processing_status';
+  type: 'initial_load' | 'new_observation' | 'new_summary' | 'new_prompt' | 'processing_status' | 'project_renamed';
   observations?: Observation[];
   summaries?: Summary[];
   prompts?: UserPrompt[];
@@ -57,6 +57,9 @@ export interface StreamEvent {
   prompt?: UserPrompt;
   isProcessing?: boolean;
   queueDepth?: number;
+  // project_renamed 专用
+  oldName?: string;
+  newName?: string;
 }
 
 export interface ProjectCatalog {

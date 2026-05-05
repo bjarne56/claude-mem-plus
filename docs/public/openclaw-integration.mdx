@@ -6,14 +6,14 @@ icon: dragon
 
 ## Overview
 
-The OpenClaw plugin gives claude-mem persistent memory to agents running on the [OpenClaw](https://openclaw.ai) gateway. It handles three things:
+The OpenClaw plugin gives claude-mem-plus persistent memory to agents running on the [OpenClaw](https://openclaw.ai) gateway. It handles three things:
 
-1. **Observation recording** — Captures tool usage from OpenClaw's embedded runner and sends it to the claude-mem worker for AI processing
+1. **Observation recording** — Captures tool usage from OpenClaw's embedded runner and sends it to the claude-mem-plus worker for AI processing
 2. **System prompt context injection** — Injects the observation timeline into each agent's system prompt via the `before_prompt_build` hook, keeping `MEMORY.md` free for agent-curated memory
 3. **Observation feed** — Streams new observations to messaging channels (Telegram, Discord, Slack, etc.) in real-time via SSE
 
 <Info>
-OpenClaw's embedded runner (`pi-embedded`) calls the Anthropic API directly without spawning a `claude` process, so claude-mem's standard hooks never fire. This plugin bridges that gap by using OpenClaw's event system to capture the same data.
+OpenClaw's embedded runner (`pi-embedded`) calls the Anthropic API directly without spawning a `claude` process, so claude-mem-plus's standard hooks never fire. This plugin bridges that gap by using OpenClaw's event system to capture the same data.
 </Info>
 
 ## How It Works
@@ -79,7 +79,7 @@ The SSE connection uses exponential backoff (1s → 30s) for automatic reconnect
 
 ## Setting Up the Observation Feed
 
-The observation feed sends a formatted message to your OpenClaw channel every time claude-mem creates a new observation. Each message includes the observation title and subtitle so you can follow along as your agents work.
+The observation feed sends a formatted message to your OpenClaw channel every time claude-mem-plus creates a new observation. Each message includes the observation title and subtitle so you can follow along as your agents work.
 
 Messages look like this in your channel:
 
@@ -192,12 +192,12 @@ The observation feed works with any channel that your OpenClaw gateway has confi
 
 ### Step 2: Add the config to your gateway
 
-Add the `observationFeed` block to your claude-mem plugin config in your OpenClaw gateway configuration:
+Add the `observationFeed` block to your claude-mem-plus plugin config in your OpenClaw gateway configuration:
 
 ```json
 {
   "plugins": {
-    "claude-mem": {
+    "claude-mem-plus": {
       "enabled": true,
       "config": {
         "project": "my-project",
@@ -222,9 +222,9 @@ After starting the gateway, check that the feed is connected:
 
 1. **Check the logs** — You should see:
    ```
-   [claude-mem] Observation feed starting — channel: telegram, target: 123456789
-   [claude-mem] Connecting to SSE stream at http://localhost:37777/stream
-   [claude-mem] Connected to SSE stream
+   [claude-mem-plus] Observation feed starting — channel: telegram, target: 123456789
+   [claude-mem-plus] Connecting to SSE stream at http://localhost:37777/stream
+   [claude-mem-plus] Connected to SSE stream
    ```
 
 2. **Use the status command** — Run `/claude_mem_feed` in any OpenClaw chat to see:
@@ -278,12 +278,12 @@ curl -fsSL https://install.cmem.ai/openclaw.sh | bash -s -- --upgrade
 
 ### Manual Configuration
 
-Add `claude-mem` to your OpenClaw gateway's plugin configuration:
+Add `claude-mem-plus` to your OpenClaw gateway's plugin configuration:
 
 ```json
 {
   "plugins": {
-    "claude-mem": {
+    "claude-mem-plus": {
       "enabled": true,
       "config": {
         "project": "my-project",
@@ -301,7 +301,7 @@ Add `claude-mem` to your OpenClaw gateway's plugin configuration:
 ```
 
 <Note>
-The claude-mem worker service must be running on the same machine as the OpenClaw gateway. The plugin communicates with it via HTTP on `localhost:37777`.
+The claude-mem-plus worker service must be running on the same machine as the OpenClaw gateway. The plugin communicates with it via HTTP on `localhost:37777`.
 </Note>
 
 ## Configuration
@@ -319,7 +319,7 @@ The claude-mem worker service must be running on the same machine as the OpenCla
 </ParamField>
 
 <ParamField body="workerPort" type="number" default={37777}>
-  Port for the claude-mem worker service. Override if your worker runs on a non-default port.
+  Port for the claude-mem-plus worker service. Override if your worker runs on a non-default port.
 </ParamField>
 
 <ParamField body="observationFeed.enabled" type="boolean" default={false}>
@@ -358,7 +358,7 @@ Returns worker status, port, active session count, and observation feed connecti
 
 ## Architecture
 
-The plugin uses HTTP calls to the already-running claude-mem worker service rather than spawning subprocesses. This means:
+The plugin uses HTTP calls to the already-running claude-mem-plus worker service rather than spawning subprocesses. This means:
 
 - No `bun` dependency required on the gateway
 - No process spawn overhead per event
@@ -367,7 +367,7 @@ The plugin uses HTTP calls to the already-running claude-mem worker service rath
 
 ### Session Tracking
 
-Each OpenClaw agent session gets a unique `contentSessionId` (format: `openclaw-<sessionKey>-<timestamp>`) that maps to a claude-mem session in the worker. The plugin tracks:
+Each OpenClaw agent session gets a unique `contentSessionId` (format: `openclaw-<sessionKey>-<timestamp>`) that maps to a claude-mem-plus session in the worker. The plugin tracks:
 
 - `sessionIds` — Maps OpenClaw session keys to content session IDs
 - `contextCache` — TTL cache (60s) for context injection responses, keyed by project

@@ -15,8 +15,8 @@ Give your Cursor AI persistent memory across sessions. Your agent remembers what
 
 ```bash
 # Clone and build
-git clone https://github.com/thedotmack/claude-mem.git
-cd claude-mem && bun install && bun run build
+git clone https://github.com/thedotmack/claude-mem-plus.git
+cd claude-mem-plus && bun install && bun run build
 
 # Interactive setup (configures provider + installs hooks)
 bun run cursor:setup
@@ -34,7 +34,7 @@ bun run cursor:setup
 
 ## Overview
 
-The hooks bridge Cursor's hook system to claude-mem's worker API, allowing:
+The hooks bridge Cursor's hook system to claude-mem-plus's worker API, allowing:
 - **Session Management**: Initialize sessions and generate summaries
 - **Observation Capture**: Record MCP tool usage, shell commands, and file edits
 - **Worker Readiness**: Ensure the worker is running before prompt submission
@@ -43,15 +43,15 @@ The hooks bridge Cursor's hook system to claude-mem's worker API, allowing:
 
 Context is automatically injected via Cursor's **Rules** system:
 
-1. **Install**: `claude-mem cursor install` generates initial context
-2. **Stop hook**: Updates context in `.cursor/rules/claude-mem-context.mdc` after each session
+1. **Install**: `claude-mem-plus cursor install` generates initial context
+2. **Stop hook**: Updates context in `.cursor/rules/claude-mem-plus-context.mdc` after each session
 3. **Cursor**: Automatically includes this rule in ALL chat sessions
 
 **The context updates after each session ends**, so the next session sees fresh context.
 
 ### Additional Access Methods
 
-- **MCP Tools**: Configure claude-mem's MCP server for `search`, `timeline`, `get_observations` tools
+- **MCP Tools**: Configure claude-mem-plus's MCP server for `search`, `timeline`, `get_observations` tools
 - **Web Viewer**: Access context at `http://localhost:37777`
 - **Manual Request**: Ask the agent to search memory
 
@@ -63,10 +63,10 @@ See [CONTEXT-INJECTION.md](CONTEXT-INJECTION.md) for details.
 
 ```bash
 # Install globally for all projects (recommended)
-claude-mem cursor install user
+claude-mem-plus cursor install user
 
 # Or install for current project only
-claude-mem cursor install
+claude-mem-plus cursor install
 ```
 
 ### Manual Installation
@@ -103,21 +103,21 @@ chmod +x .cursor/hooks/*.sh
 
 1. **Start the worker**:
    ```bash
-   claude-mem start
+   claude-mem-plus start
    ```
 
 2. **Restart Cursor** to load the hooks
 
 3. **Verify installation**:
    ```bash
-   claude-mem cursor status
+   claude-mem-plus cursor status
    ```
 
 ## Hook Mappings
 
 | Cursor Hook | Script | Purpose |
 |-------------|--------|---------|
-| `beforeSubmitPrompt` | `session-init.sh` | Initialize claude-mem session |
+| `beforeSubmitPrompt` | `session-init.sh` | Initialize claude-mem-plus session |
 | `beforeSubmitPrompt` | `context-inject.sh` | Ensure worker is running |
 | `afterMCPExecution` | `save-observation.sh` | Capture MCP tool usage |
 | `afterShellExecution` | `save-observation.sh` | Capture shell command execution |
@@ -128,18 +128,18 @@ chmod +x .cursor/hooks/*.sh
 
 ### Session Initialization (`session-init.sh`)
 - Called before each prompt submission
-- Initializes a new session in claude-mem using `conversation_id` as the session ID
+- Initializes a new session in claude-mem-plus using `conversation_id` as the session ID
 - Extracts project name from workspace root
 - Outputs `{"continue": true}` to allow prompt submission
 
 ### Context Hook (`context-inject.sh`)
-- Ensures claude-mem worker is running before session
+- Ensures claude-mem-plus worker is running before session
 - Outputs `{"continue": true}` to allow prompt submission
 - Note: Context file is updated by `session-summary.sh` (stop hook), not here
 
 ### Observation Capture (`save-observation.sh`)
 - Captures MCP tool executions and shell commands
-- Maps them to claude-mem's observation format
+- Maps them to claude-mem-plus's observation format
 - Sends to `/api/sessions/observations` endpoint (fire-and-forget)
 
 ### File Edit Capture (`save-file-edit.sh`)
@@ -149,12 +149,12 @@ chmod +x .cursor/hooks/*.sh
 
 ### Session Summary (`session-summary.sh`)
 - Called when agent loop ends (stop hook)
-- Requests summary generation from claude-mem
-- **Updates context file** in `.cursor/rules/claude-mem-context.mdc` for next session
+- Requests summary generation from claude-mem-plus
+- **Updates context file** in `.cursor/rules/claude-mem-plus-context.mdc` for next session
 
 ## Configuration
 
-The hooks read configuration from `~/.claude-mem/settings.json`:
+The hooks read configuration from `~/.claude-mem-plus/settings.json`:
 
 - `CLAUDE_MEM_WORKER_PORT`: Worker port (default: 37777)
 - `CLAUDE_MEM_WORKER_HOST`: Worker host (default: 127.0.0.1)
@@ -197,12 +197,12 @@ Install on Ubuntu: `apt-get install jq curl`
 
 2. Check worker logs:
    ```bash
-   tail -f ~/.claude-mem/logs/worker-$(date +%Y-%m-%d).log
+   tail -f ~/.claude-mem-plus/logs/worker-$(date +%Y-%m-%d).log
    ```
 
 3. Restart worker:
    ```bash
-   claude-mem restart
+   claude-mem-plus restart
    ```
 
 ### Observations not being saved
@@ -241,6 +241,6 @@ Install on Ubuntu: `apt-get install jq curl`
 
 ## See Also
 
-- [Claude-Mem Documentation](https://docs.claude-mem.ai)
+- [Claude-Mem Documentation](https://docs.claude-mem-plus.ai)
 - [Cursor Hooks Reference](../docs/context/cursor-hooks-reference.md)
-- [Claude-Mem Architecture](https://docs.claude-mem.ai/architecture/overview)
+- [Claude-Mem Architecture](https://docs.claude-mem-plus.ai/architecture/overview)

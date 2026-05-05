@@ -265,7 +265,7 @@ export async function adoptMergedWorktrees(opts: {
   }
 
   if (!dryRun && adoptedSqliteIds.length > 0) {
-    const chromaSync = new ChromaSync('claude-mem');
+    const chromaSync = new ChromaSync('claude-mem-plus');
     try {
       await chromaSync.updateMergedIntoProject(adoptedSqliteIds, parentProject);
       result.chromaUpdates = adoptedSqliteIds.length;

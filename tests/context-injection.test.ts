@@ -26,8 +26,8 @@ describe('Context Injection', () => {
 
   describe('tag constants', () => {
     it('exports correct open and close tags', () => {
-      expect(CONTEXT_TAG_OPEN).toBe('<claude-mem-context>');
-      expect(CONTEXT_TAG_CLOSE).toBe('</claude-mem-context>');
+      expect(CONTEXT_TAG_OPEN).toBe('<claude-mem-plus-context>');
+      expect(CONTEXT_TAG_CLOSE).toBe('</claude-mem-plus-context>');
     });
   });
 

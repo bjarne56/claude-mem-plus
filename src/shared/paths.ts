@@ -20,18 +20,25 @@ function resolveDataDir(): string {
     return process.env.CLAUDE_MEM_DATA_DIR;
   }
 
-  const defaultDataDir = join(homedir(), '.claude-mem');
-  const settingsPath = join(defaultDataDir, 'settings.json');
-  try {
-    if (existsSync(settingsPath)) {
-      const raw = JSON.parse(readFileSync(settingsPath, 'utf-8'));
-      const settings = raw.env ?? raw; 
-      if (settings.CLAUDE_MEM_DATA_DIR) {
-        return settings.CLAUDE_MEM_DATA_DIR;
+  // 新默认数据目录:.claude-mem-plus(本 fork);老用户的数据目录可能仍是 .claude-mem(上游),
+  // 这里按 新→老 顺序读 settings.json,任一命中就用其 CLAUDE_MEM_DATA_DIR 字段
+  const defaultDataDir = join(homedir(), '.claude-mem-plus');
+  const legacyDataDir = join(homedir(), '.claude-mem');
+  for (const candidate of [defaultDataDir, legacyDataDir]) {
+    const settingsPath = join(candidate, 'settings.json');
+    try {
+      if (existsSync(settingsPath)) {
+        const raw = JSON.parse(readFileSync(settingsPath, 'utf-8'));
+        const settings = raw.env ?? raw;
+        if (settings.CLAUDE_MEM_DATA_DIR) {
+          return settings.CLAUDE_MEM_DATA_DIR;
+        }
+        // settings.json 存在但没显式 CLAUDE_MEM_DATA_DIR → 用所在目录本身
+        return candidate;
       }
+    } catch {
+      // settings file missing or corrupt — try next candidate
     }
-  } catch {
-    // settings file missing or corrupt — fall through to default
   }
 
   return defaultDataDir;

@@ -1,6 +1,6 @@
 # 使用指南
 
-适用于 **claude-mem-plus**(claude-mem 的 fork,带 cmem-sync / 31 语言 / 回收站 / 公开注册)。
+适用于 **claude-mem-plus**(claude-mem-plus 的 fork,带 cmem-sync / 31 语言 / 回收站 / 公开注册)。
 
 > 安装见 [INSTALL.md](INSTALL.md)。故障见 [TROUBLESHOOTING.md](TROUBLESHOOTING.md)。
 > **必须配对** [bjarne56/cmem-server](https://github.com/bjarne56/cmem-server) 使用 sync 功能。
@@ -13,7 +13,7 @@
 
 ```bash
 # 看 worker 状态
-claude-mem status
+claude-mem-plus status
 
 # 打开 viewer
 open http://127.0.0.1:37701       # macOS
@@ -22,19 +22,19 @@ xdg-open http://127.0.0.1:37701   # Linux
 
 viewer 加载完会:
 - 自动检测浏览器语言(31 种语言下拉,带搜索)
-- 把 `~/.claude-mem/settings.json` 的 `CLAUDE_MEM_MODE` 同步到选择的语言
+- 把 `~/.claude-mem-plus/settings.json` 的 `CLAUDE_MEM_MODE` 同步到选择的语言
 - 显示 Header 项目下拉、Feed 列表、Console 抽屉、Sync 浮动按钮
 
 ---
 
 ## 2. 让 claude-code 开始记忆
 
-claude-mem 的核心价值是 **每次 Claude Code 会话结束后自动总结成 observation**,下次开新会话时按相关性注入。
+claude-mem-plus 的核心价值是 **每次 Claude Code 会话结束后自动总结成 observation**,下次开新会话时按相关性注入。
 
 只需:
 
 ```bash
-claude-mem install --ide claude-code
+claude-mem-plus install --ide claude-code
 ```
 
 (install-client.sh 已经自动跑过)
@@ -57,10 +57,10 @@ claude-mem install --ide claude-code
 
 ```bash
 # 注册新账号(如果还没有)
-claude-mem sync register --server https://cmem.example.com --invite-code <CODE>
+claude-mem-plus sync register --server https://cmem.example.com --invite-code <CODE>
 
 # 或登录已有账号
-claude-mem sync login --server https://cmem.example.com
+claude-mem-plus sync login --server https://cmem.example.com
 # 交互式 prompt:
 #   username: alice
 #   password: ********
@@ -73,17 +73,17 @@ claude-mem sync login --server https://cmem.example.com
 
 ```bash
 # 看当前同步状态
-claude-mem sync status
+claude-mem-plus sync status
 #   server: https://cmem.example.com
 #   user: alice  machine: my-mac
 #   pending push: 12  pending downgrades: 0
 #   last push: 2026-05-02 12:34   last pull: 2026-05-02 12:34
 
 # 手动 push 本地新 obs
-claude-mem sync push
+claude-mem-plus sync push
 
 # 拉服务器有的(自己其他机器 + 别人共享)
-claude-mem sync pull
+claude-mem-plus sync pull
 ```
 
 或者**自动同步**(viewer SyncSettingsModal 顶部开关):
@@ -120,19 +120,19 @@ claude-mem sync pull
 
 ```bash
 # 给 bob 一个人(fork-allowed,默认 mode)
-claude-mem sync share-project nginx-rce --with bob --mode fork-allowed
+claude-mem-plus sync share-project nginx-rce --with bob --mode fork-allowed
 
 # 一次给多人(逗号分隔)
-claude-mem sync share-project nginx-rce --with alice,bob,carol --mode read-only
+claude-mem-plus sync share-project nginx-rce --with alice,bob,carol --mode read-only
 
 # 公开
-claude-mem sync share-project nginx-rce --public --mode read-only
+claude-mem-plus sync share-project nginx-rce --public --mode read-only
 
 # 匿名链接(7 天过期)
-claude-mem sync share-project nginx-rce --link --mode read-only --expire 7d
+claude-mem-plus sync share-project nginx-rce --link --mode read-only --expire 7d
 
 # 撤销所有共享
-claude-mem sync unshare-project nginx-rce
+claude-mem-plus sync unshare-project nginx-rce
 ```
 
 ### viewer 共享(推荐)
@@ -147,11 +147,11 @@ claude-mem sync unshare-project nginx-rce
 
 ```bash
 # fork 整个项目(只在 fork-allowed 模式有效)
-claude-mem sync fork-project alice/nginx-rce
-claude-mem sync fork-project alice/nginx-rce --name my-fork-name
+claude-mem-plus sync fork-project alice/nginx-rce
+claude-mem-plus sync fork-project alice/nginx-rce --name my-fork-name
 
 # fork 单条 observation 到你的某个项目
-claude-mem sync fork 019xxx-abc --to-project my-research
+claude-mem-plus sync fork 019xxx-abc --to-project my-research
 ```
 
 ---
@@ -171,7 +171,7 @@ Server:同 user + 规范化后同名 → 视为同一 project,合并
 
 ```bash
 cd /path/to/your/project
-claude-mem sync project init    # 生成 .cmem-project.toml(应该 .gitignore)
+claude-mem-plus sync project init    # 生成 .cmem-project.toml(应该 .gitignore)
 ```
 
 文件长这样:
@@ -205,28 +205,28 @@ viewer Header 顶部按钮:**📦 回收站** 和 **🗑️ 删除当前项目**
 ## 7. CLI 命令清单
 
 ```
-# claude-mem 自身(upstream)
-claude-mem start / stop / restart / status
-claude-mem install --ide claude-code
-claude-mem update
-claude-mem --help
+# claude-mem-plus 自身(upstream)
+claude-mem-plus start / stop / restart / status
+claude-mem-plus install --ide claude-code
+claude-mem-plus update
+claude-mem-plus --help
 
 # cmem-sync 集成(本 fork)
-claude-mem sync register --server URL [--invite-code CODE] [--email X]
-claude-mem sync login --server URL
-claude-mem sync logout
-claude-mem sync status
-claude-mem sync push                                 # 手动 push 本地新 obs
-claude-mem sync pull                                 # 拉自己其他机器 + 别人共享
-claude-mem sync me                                   # 当前 user / machine
-claude-mem sync projects                             # 列项目 + 共享状态
-claude-mem sync share-project NAME --with USER[,USER2...] [--mode MODE]
-claude-mem sync share-project NAME --public [--mode MODE]
-claude-mem sync share-project NAME --link [--mode MODE] [--expire 7d]
-claude-mem sync unshare-project NAME
-claude-mem sync fork-project USER/NAME [--name NEW]
-claude-mem sync fork OBS_ID --to-project NAME
-claude-mem sync project init                         # 生成 .cmem-project.toml
+claude-mem-plus sync register --server URL [--invite-code CODE] [--email X]
+claude-mem-plus sync login --server URL
+claude-mem-plus sync logout
+claude-mem-plus sync status
+claude-mem-plus sync push                                 # 手动 push 本地新 obs
+claude-mem-plus sync pull                                 # 拉自己其他机器 + 别人共享
+claude-mem-plus sync me                                   # 当前 user / machine
+claude-mem-plus sync projects                             # 列项目 + 共享状态
+claude-mem-plus sync share-project NAME --with USER[,USER2...] [--mode MODE]
+claude-mem-plus sync share-project NAME --public [--mode MODE]
+claude-mem-plus sync share-project NAME --link [--mode MODE] [--expire 7d]
+claude-mem-plus sync unshare-project NAME
+claude-mem-plus sync fork-project USER/NAME [--name NEW]
+claude-mem-plus sync fork OBS_ID --to-project NAME
+claude-mem-plus sync project init                         # 生成 .cmem-project.toml
 ```
 
 每个命令 `--help` 看完整参数。
@@ -260,13 +260,13 @@ Header 右上从左到右:
 
 | 数据 | 路径 | 说明 |
 |---|---|---|
-| 主库 | `~/.claude-mem/claude-mem.db` | SQLite WAL,所有 obs / session / sync_state |
-| 向量索引 | `~/.claude-mem/chroma/` | Chroma persistent client |
-| 配置 | `~/.claude-mem/settings.json` | CLAUDE_MEM_MODE / 端口 / AI provider |
-| 日志 | `~/.claude-mem/logs/worker-YYYY-MM-DD.log` | 按日切割,默认保留 7 天 |
-| Worker PID | `~/.claude-mem/worker.pid` | 单进程锁 |
-| Worker 端口 | `~/.claude-mem/worker.port` | 启动时写,kit 用来连 |
-| transcripts | `~/.claude/projects/<encoded>/<uuid>.jsonl` | claude-code 自己写的对话原文(claude-mem 只读) |
+| 主库 | `~/.claude-mem-plus/claude-mem.db` | SQLite WAL,所有 obs / session / sync_state |
+| 向量索引 | `~/.claude-mem-plus/chroma/` | Chroma persistent client |
+| 配置 | `~/.claude-mem-plus/settings.json` | CLAUDE_MEM_MODE / 端口 / AI provider |
+| 日志 | `~/.claude-mem-plus/logs/worker-YYYY-MM-DD.log` | 按日切割,默认保留 7 天 |
+| Worker PID | `~/.claude-mem-plus/worker.pid` | 单进程锁 |
+| Worker 端口 | `~/.claude-mem-plus/worker.port` | 启动时写,kit 用来连 |
+| transcripts | `~/.claude/projects/<encoded>/<uuid>.jsonl` | claude-code 自己写的对话原文(claude-mem-plus 只读) |
 
 `CLAUDE_MEM_DATA_DIR` 可改父目录,所有上述路径都自动跟随。
 
@@ -276,7 +276,7 @@ Header 右上从左到右:
 
 - `<private>...</private>` 标签包起来的内容 **永远不会** 写进 db / chroma / 不会 sync 到 server。在 hook 层(edge)就剥离。
 - API token、cookie、ssh key 这类敏感字符串建议自己包 `<private>`,不依赖自动检测。
-- viewer 没有"导出全部"按钮 — 显式动作,要导出走 `claude-mem export` CLI。
+- viewer 没有"导出全部"按钮 — 显式动作,要导出走 `claude-mem-plus export` CLI。
 
 ---
 

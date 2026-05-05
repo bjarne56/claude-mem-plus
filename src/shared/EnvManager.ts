@@ -55,9 +55,9 @@ function parseEnvFile(content: string): Record<string, string> {
 
 function serializeEnvFile(env: Record<string, string>): string {
   const lines: string[] = [
-    '# claude-mem credentials',
-    '# This file stores API keys for claude-mem memory agent',
-    '# Edit this file or use claude-mem settings to configure',
+    '# claude-mem-plus credentials',
+    '# This file stores API keys for claude-mem-plus memory agent',
+    '# Edit this file or use claude-mem-plus settings to configure',
     '',
   ];
 
@@ -214,7 +214,7 @@ export async function buildIsolatedEnvWithFreshOAuth(
 
   if (!includeCredentials) return isolatedEnv;
 
-  // If the user already configured an ANTHROPIC_API_KEY in ~/.claude-mem/.env,
+  // If the user already configured an ANTHROPIC_API_KEY in ~/.claude-mem-plus/.env,
   // honor that and skip OAuth lookup entirely. API key auth is preferred when
   // explicitly configured because it's stateless and stable.
   if (isolatedEnv.ANTHROPIC_API_KEY) {
@@ -278,7 +278,7 @@ export function hasAnthropicApiKey(): boolean {
 
 export function getAuthMethodDescription(): string {
   if (hasAnthropicApiKey()) {
-    return 'API key (from ~/.claude-mem/.env)';
+    return 'API key (from ~/.claude-mem-plus/.env)';
   }
   // Note: this is a quick sync hint for logging — the authoritative OAuth
   // path is buildIsolatedEnvWithFreshOAuth() which reads the keychain at

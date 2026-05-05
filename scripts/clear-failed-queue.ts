@@ -9,7 +9,7 @@ interface CountRow { count: number }
 interface StatusRow { status: string; count: number }
 
 function resolveDbPath(): string {
-  const dataDir = process.env.CLAUDE_MEM_DATA_DIR || join(homedir(), '.claude-mem');
+  const dataDir = process.env.CLAUDE_MEM_DATA_DIR || join(homedir(), '.claude-mem-plus');
   return join(dataDir, 'claude-mem.db');
 }
 
@@ -54,7 +54,7 @@ Examples:
   bun scripts/clear-failed-queue.ts --all --force
 
 Notes:
-  Operates directly on ~/.claude-mem/claude-mem.db (or \$CLAUDE_MEM_DATA_DIR).
+  Operates directly on ~/.claude-mem-plus/claude-mem.db (or \$CLAUDE_MEM_DATA_DIR).
   Uses SQLite WAL mode so it is safe to run while the worker is running.
 `);
     process.exit(0);

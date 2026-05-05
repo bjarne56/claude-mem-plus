@@ -12,7 +12,7 @@ const codexPluginPath = path.join(rootDir, '.codex-plugin', 'plugin.json');
 const claudePluginPath = path.join(rootDir, '.claude-plugin', 'plugin.json');
 // fork: 也同步 plugin/.claude-plugin/plugin.json — readPluginVersion()
 // (npx-cli) 优先读这个文件,所以 version 必须保持和 root package.json 一致,
-// 否则 claude-mem --version 显示旧值 + plugin tree 显示旧版。
+// 否则 claude-mem-plus --version 显示旧值 + plugin tree 显示旧版。
 const pluginTreeManifestPath = path.join(rootDir, 'plugin', '.claude-plugin', 'plugin.json');
 
 function readJson(filePath) {

@@ -111,7 +111,7 @@ describe('SearchRoutes Welcome Hint', () => {
 
     expect(res.send).toHaveBeenCalledTimes(1);
     const body = (res.send as any).mock.calls[0][0] as string;
-    expect(body).toContain('# claude-mem status');
+    expect(body).toContain('# claude-mem-plus status');
     expect(body).toContain('/learn-codebase');
     expect(body).toContain('http://localhost:');
     expect(body).toContain('Memory injection starts on your second session in a project.');
