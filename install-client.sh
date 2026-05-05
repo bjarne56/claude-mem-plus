@@ -961,12 +961,12 @@ register_hooks() {
         info "预清理 marketplace plugin/(防旧版本残留)"
         command rm -rf "$mp_plugin"
     fi
-    # 自动选最新 model(claude-opus-4-7),避免交互问题卡 install 流程
+    # 自动选最新 model(claude-haiku-4-5-20251001),避免交互问题卡 install 流程
     # --no-auto-start 跳过 install 命令末尾的 worker 自启(本脚本 step 7 会自己启)
-    info "claude-mem-plus install --ide claude-code --model claude-opus-4-7 --no-auto-start"
-    claude-mem-plus install --ide claude-code --model claude-opus-4-7 --no-auto-start 2>&1 | tail -3 \
+    info "claude-mem-plus install --ide claude-code --model claude-haiku-4-5-20251001 --no-auto-start"
+    claude-mem-plus install --ide claude-code --model claude-haiku-4-5-20251001 --no-auto-start 2>&1 | tail -3 \
         && ok "hook 已注册" \
-        || warn "hook 注册可能失败,手动跑 'claude-mem-plus install --ide claude-code --model claude-opus-4-7'"
+        || warn "hook 注册可能失败,手动跑 'claude-mem-plus install --ide claude-code --model claude-haiku-4-5-20251001'"
 }
 
 # ── 检测系统 locale,规范化为 BCP-47 lang code ─────────
