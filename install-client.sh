@@ -442,6 +442,116 @@ _kill_legacy_chroma_mcp() {
     ok "  杀掉 ${#pids[@]} 个 legacy chroma-mcp 僵尸(指向 ~/.claude-mem/chroma)"
 }
 
+# 杀 fork 自己的 chroma-mcp(指向 claude-mem-plus/chroma 任意路径)
+# 用于 cmd_uninstall:worker 退出后 chroma-mcp 子进程不会自动回收,要主动杀
+_kill_fork_chroma_mcp() {
+    if ! command -v pgrep >/dev/null 2>&1; then
+        return 0
+    fi
+    local pids=()
+    local pid cmd
+    while IFS= read -r pid; do
+        [[ -z "$pid" ]] && continue
+        cmd=$(/bin/ps -o command= -p "$pid" 2>/dev/null || true)
+        case "$cmd" in
+            *claude-mem-plus/chroma*) pids+=("$pid") ;;
+        esac
+    done < <(pgrep -f 'chroma-mcp' 2>/dev/null)
+
+    if [[ ${#pids[@]} -eq 0 ]]; then
+        return 0
+    fi
+    kill -TERM "${pids[@]}" 2>/dev/null || true
+    sleep 1
+    local still=()
+    for pid in "${pids[@]}"; do
+        /bin/kill -0 "$pid" 2>/dev/null && still+=("$pid")
+    done
+    [[ ${#still[@]} -gt 0 ]] && kill -KILL "${still[@]}" 2>/dev/null || true
+    ok "  杀掉 ${#pids[@]} 个 fork chroma-mcp(指向 claude-mem-plus/chroma)"
+}
+
+# 清 fork 自己在 claude-code 配置里的注册(plugin / mcpServer)
+# 子脚本 claude-mem-un.sh 只清上游 'claude-mem@thedotmack',这里清 fork 'claude-mem-plus@thedotmack'
+_clean_fork_plugin_registrations() {
+    if ! command -v jq >/dev/null 2>&1; then
+        warn "  jq 未安装,跳过 fork plugin 注册清理"
+        return 0
+    fi
+    local files_keys=(
+        "$HOME/.claude/settings.json|enabledPlugins|claude-mem-plus@thedotmack"
+        "$HOME/.claude/plugins/installed_plugins.json|plugins|claude-mem-plus@thedotmack"
+        "$HOME/.claude.json|mcpServers|claude-mem-plus"
+    )
+    local entry
+    for entry in "${files_keys[@]}"; do
+        local f="${entry%%|*}"; local rest="${entry#*|}"
+        local section="${rest%%|*}"; local key="${rest##*|}"
+        [[ ! -f "$f" ]] && continue
+        # 看是否有这个 key 才动手(避免空写)
+        local has
+        has=$(jq -r --arg s "$section" --arg k "$key" 'if .[$s] and .[$s][$k] then "yes" else "no" end' "$f" 2>/dev/null)
+        if [[ "$has" != "yes" ]]; then
+            continue
+        fi
+        local ts; ts=$(date +%Y%m%d_%H%M%S)
+        command cp "$f" "${f}.bak.${ts}" 2>/dev/null
+        local tmp="${f}.tmp.$$"
+        if jq --arg s "$section" --arg k "$key" \
+            'if .[$s] then .[$s] |= del(.[$k]) else . end' "$f" > "$tmp" 2>/dev/null; then
+            mv "$tmp" "$f"
+            ok "  已清 $f.$section.$key (备份 ${f}.bak.${ts})"
+        else
+            rm -f "$tmp"
+            warn "  jq 编辑失败:$f"
+        fi
+    done
+}
+
+# 递归删 ~/.claude.json 里任何 key 以 claude-mem(:|@) / claude-mem-plus(:|@) 开头的项
+# 覆盖:skillUsage / commands / mcpServers / hooks / 等任何 Claude Code 写的命名空间统计数据
+_clean_claude_namespace_keys() {
+    local f="$HOME/.claude.json"
+    [[ ! -f "$f" ]] && return 0
+    if ! command -v jq >/dev/null 2>&1; then
+        warn "  jq 未安装,跳过 .claude.json 命名空间清理"
+        return 0
+    fi
+    # 先查有没有 match 的 key,避免空写
+    local has
+    has=$(jq -r '
+        any(.. | objects | keys[]?; test("^claude-mem(-plus)?([:@]|$)"))
+        | if . then "yes" else "no" end
+    ' "$f" 2>/dev/null)
+    if [[ "$has" != "yes" ]]; then
+        return 0
+    fi
+    local ts; ts=$(date +%Y%m%d_%H%M%S)
+    command cp "$f" "${f}.bak.${ts}" 2>/dev/null
+    local tmp="${f}.tmp.$$"
+    if jq '
+        walk(
+            if type == "object"
+            then with_entries(select(.key | test("^claude-mem(-plus)?([:@]|$)") | not))
+            else . end
+        )
+    ' "$f" > "$tmp" 2>/dev/null; then
+        mv "$tmp" "$f"
+        ok "  已清 .claude.json 里所有 claude-mem(-plus){:|@} 命名空间 key (备份 ${f}.bak.${ts})"
+    else
+        rm -f "$tmp"
+        warn "  jq walk 编辑失败:$f"
+    fi
+}
+
+# 清空 plugin marketplace cache 父目录(子目录被删后空了就删)
+_cleanup_marketplace_cache_parent() {
+    local parent="$HOME/.claude/plugins/cache/thedotmack"
+    if [[ -d "$parent" ]] && [[ -z "$(ls -A "$parent" 2>/dev/null)" ]]; then
+        command rmdir "$parent" 2>/dev/null && ok "  已删空 cache 父目录:$parent"
+    fi
+}
+
 # 清 rc 文件里所有 CLAUDE_MEM_DATA_DIR 注册行(bash/zsh export + fish set -gx)
 # 上游历史 install 版本写在 ~/.zshenv 等位置,fork plus 装完会被 env 拽到错路径
 _clean_data_dir_env_in_rc() {
@@ -842,10 +952,12 @@ register_hooks() {
         info "预清理 marketplace plugin/(防旧版本残留)"
         command rm -rf "$mp_plugin"
     fi
-    info "claude-mem-plus install --ide claude-code(注册 SessionStart / PostToolUse 等 hook)"
-    claude-mem-plus install --ide claude-code 2>&1 | tail -3 \
+    # 自动选最新 model(claude-opus-4-7),避免交互问题卡 install 流程
+    # --no-auto-start 跳过 install 命令末尾的 worker 自启(本脚本 step 7 会自己启)
+    info "claude-mem-plus install --ide claude-code --model claude-opus-4-7 --no-auto-start"
+    claude-mem-plus install --ide claude-code --model claude-opus-4-7 --no-auto-start 2>&1 | tail -3 \
         && ok "hook 已注册" \
-        || warn "hook 注册可能失败,手动跑 'claude-mem-plus install --ide claude-code'"
+        || warn "hook 注册可能失败,手动跑 'claude-mem-plus install --ide claude-code --model claude-opus-4-7'"
 }
 
 # ── 检测系统 locale,规范化为 BCP-47 lang code ─────────
@@ -1278,6 +1390,8 @@ cmd_uninstall() {
         claude-mem stop 2>&1 | head -2 || warn "claude-mem stop 失败,继续"
     fi
     _kill_stale_worker_processes
+    # 杀 fork 自己的 chroma-mcp 子进程(worker 退出后不会自动回收)
+    _kill_fork_chroma_mcp
     # 卸载时无条件清 legacy env / 上游 chroma-mcp 僵尸(走干净)
     _handle_legacy_residue uninstall
 
@@ -1371,6 +1485,28 @@ cmd_uninstall() {
         UN_DELETED_PATHS+=("$plugin_dir ($psz)")
         ok "marketplace 已清:$plugin_dir ($psz)"
     fi
+
+    # 5c-2) fork plugin marketplace cache(claude-code 装 plugin 时拉下来的,可能很大)
+    # 子脚本 claude-mem-un.sh 只清 cache/thedotmack/claude-mem(上游),这里清 plus
+    local fork_cache_dir="$HOME/.claude/plugins/cache/thedotmack/claude-mem-plus"
+    if [[ -d "$fork_cache_dir" ]] && [[ "$KEEP_DATA" -ne 1 ]]; then
+        local fcsz
+        fcsz=$(/usr/bin/du -sh "$fork_cache_dir" 2>/dev/null | command awk '{print $1}')
+        command rm -rf "$fork_cache_dir"
+        UN_DELETED_PATHS+=("$fork_cache_dir ($fcsz)")
+        ok "fork plugin cache 已清:$fork_cache_dir ($fcsz)"
+    fi
+
+    # 5d) 清 fork 自己在 claude-code 配置 JSON 里的注册
+    # 子脚本 claude-mem-un.sh 只清上游 'claude-mem@thedotmack',这里清 fork 'claude-mem-plus@thedotmack'
+    _clean_fork_plugin_registrations
+
+    # 5d-2) 清 ~/.claude.json 里所有 claude-mem-plus / claude-mem 命名空间残留
+    # (skillUsage / commands / hooks 等任何 section 下的 key,Claude Code 自己写的统计数据)
+    _clean_claude_namespace_keys
+
+    # 5e) plugin marketplace cache 父目录(子目录被删后空了就删)
+    _cleanup_marketplace_cache_parent
 
     step "6/6 Docker 资源清理(image 名含 claude-mem)"
     _cleanup_docker_resources

@@ -623,6 +623,38 @@ CLAUDE_JSON="$HOME/.claude.json"
 jq_edit "$CLAUDE_JSON" \
     'if .mcpServers then .mcpServers |= del(."claude-mem") else . end'
 
+# ── 4b. 兜底清 ~/.claude.json 里所有上游 claude-mem 命名空间 key ─────
+# 用 jq walk 递归扫所有 section(skillUsage / commands / hooks / 等),
+# 删任何 key 以 'claude-mem:' 或 'claude-mem@' 开头 *且不带 -plus*(只清上游,不碰 fork plus)
+# 跟 jq_edit step 4 的精确删除互补:这里覆盖任何 Claude Code 自己写的命名空间统计
+if [[ -f "$CLAUDE_JSON" ]] && command -v jq >/dev/null 2>&1; then
+    has=$(jq -r '
+        any(.. | objects | keys[]?; test("^claude-mem([:@]|$)"))
+        | if . then "yes" else "no" end
+    ' "$CLAUDE_JSON" 2>/dev/null)
+    if [[ "$has" == "yes" ]]; then
+        backup_file "$CLAUDE_JSON"
+        if [[ $DRY_RUN -eq 1 ]]; then
+            log "    ${DIM}[dry-run]${RESET} jq walk del .claude.json claude-mem(:|@) 命名空间 key"
+        else
+            tmp="${CLAUDE_JSON}.tmp.$$"
+            if jq '
+                walk(
+                    if type == "object"
+                    then with_entries(select(.key | test("^claude-mem([:@]|$)") | not))
+                    else . end
+                )
+            ' "$CLAUDE_JSON" > "$tmp" 2>/dev/null; then
+                mv "$tmp" "$CLAUDE_JSON"
+                ok "已清 ~/.claude.json 里所有 claude-mem(:|@) 上游命名空间 key"
+            else
+                rm -f "$tmp"
+                warn "jq walk 编辑失败:$CLAUDE_JSON"
+            fi
+        fi
+    fi
+fi
+
 # ── 5. npx / mcp-logs / shell alias 残留 ───────────────
 step "5/9  清理 npx 残留 / mcp 日志 / shell alias"
 
