@@ -472,7 +472,10 @@ _kill_fork_chroma_mcp() {
 }
 
 # 清 fork 自己在 claude-code 配置里的注册(plugin / mcpServer)
-# 子脚本 claude-mem-un.sh 只清上游 'claude-mem@bjarne56',这里清 fork 'claude-mem-plus@bjarne56'
+# 子脚本 claude-mem-un.sh 只清上游 'claude-mem@thedotmack'(注:thedotmack 是上游 marketplace 真名),
+# 这里清 fork 自己的两种 marketplace key:
+#   - claude-mem-plus@bjarne56(新 marketplace)
+#   - claude-mem-plus@thedotmack(老,fork 改名前装在 thedotmack marketplace 下的 user 用)
 _clean_fork_plugin_registrations() {
     if ! command -v jq >/dev/null 2>&1; then
         warn "  jq 未安装,跳过 fork plugin 注册清理"
@@ -480,7 +483,9 @@ _clean_fork_plugin_registrations() {
     fi
     local files_keys=(
         "$HOME/.claude/settings.json|enabledPlugins|claude-mem-plus@bjarne56"
+        "$HOME/.claude/settings.json|enabledPlugins|claude-mem-plus@thedotmack"
         "$HOME/.claude/plugins/installed_plugins.json|plugins|claude-mem-plus@bjarne56"
+        "$HOME/.claude/plugins/installed_plugins.json|plugins|claude-mem-plus@thedotmack"
         "$HOME/.claude.json|mcpServers|claude-mem-plus"
     )
     local entry
@@ -545,11 +550,15 @@ _clean_claude_namespace_keys() {
 }
 
 # 清空 plugin marketplace cache 父目录(子目录被删后空了就删)
+# 同时清两套 marketplace 父目录:bjarne56(新)+ thedotmack(fork 改名前的老 marketplace,
+# 上游本来也用 thedotmack,所以要看里面是不是空了再删,有上游残留就别删)
 _cleanup_marketplace_cache_parent() {
-    local parent="$HOME/.claude/plugins/cache/bjarne56"
-    if [[ -d "$parent" ]] && [[ -z "$(ls -A "$parent" 2>/dev/null)" ]]; then
-        command rmdir "$parent" 2>/dev/null && ok "  已删空 cache 父目录:$parent"
-    fi
+    local parent
+    for parent in "$HOME/.claude/plugins/cache/bjarne56" "$HOME/.claude/plugins/cache/thedotmack"; do
+        if [[ -d "$parent" ]] && [[ -z "$(ls -A "$parent" 2>/dev/null)" ]]; then
+            command rmdir "$parent" 2>/dev/null && ok "  已删空 cache 父目录:$parent"
+        fi
+    done
 }
 
 # 清 rc 文件里所有 CLAUDE_MEM_DATA_DIR 注册行(bash/zsh export + fish set -gx)
@@ -1476,25 +1485,40 @@ cmd_uninstall() {
         _cleanup_stale_data_dir "$HOME/.claude-mem-plus"
     fi
 
-    # 5c) marketplace plugin 目录(注意:_handle_legacy_residue 不动这,需要在这里处理)
-    local plugin_dir="$HOME/.claude/plugins/marketplaces/bjarne56"
-    if [[ -d "$plugin_dir" ]] && [[ "$KEEP_DATA" -ne 1 ]]; then
-        local psz
-        psz=$(/usr/bin/du -sh "$plugin_dir" 2>/dev/null | command awk '{print $1}')
-        command rm -rf "$plugin_dir"
-        UN_DELETED_PATHS+=("$plugin_dir ($psz)")
-        ok "marketplace 已清:$plugin_dir ($psz)"
+    # 5c) fork marketplace plugin 目录:同时清两套 marketplace
+    #     - marketplaces/bjarne56(新 marketplace,改名后)
+    #     - marketplaces/thedotmack(老 marketplace,fork 改名前装的 user 残留)
+    # 注意:thedotmack 也是上游 marketplace 真名,如果用户**只**装上游而没装 fork,
+    # marketplaces/thedotmack/ 里是上游 plugin,子脚本 claude-mem-un.sh 会清。这里
+    # 兜底重复清 marketplaces/thedotmack/plugin(若 fork 装在那里且子脚本漏了)
+    if [[ "$KEEP_DATA" -ne 1 ]]; then
+        local mp_dir
+        for mp_dir in "$HOME/.claude/plugins/marketplaces/bjarne56" \
+                      "$HOME/.claude/plugins/marketplaces/thedotmack"; do
+            if [[ -d "$mp_dir" ]]; then
+                local psz
+                psz=$(/usr/bin/du -sh "$mp_dir" 2>/dev/null | command awk '{print $1}')
+                command rm -rf "$mp_dir"
+                UN_DELETED_PATHS+=("$mp_dir ($psz)")
+                ok "marketplace 已清:$mp_dir ($psz)"
+            fi
+        done
     fi
 
     # 5c-2) fork plugin marketplace cache(claude-code 装 plugin 时拉下来的,可能很大)
-    # 子脚本 claude-mem-un.sh 只清 cache/bjarne56/claude-mem(上游),这里清 plus
-    local fork_cache_dir="$HOME/.claude/plugins/cache/bjarne56/claude-mem-plus"
-    if [[ -d "$fork_cache_dir" ]] && [[ "$KEEP_DATA" -ne 1 ]]; then
-        local fcsz
-        fcsz=$(/usr/bin/du -sh "$fork_cache_dir" 2>/dev/null | command awk '{print $1}')
-        command rm -rf "$fork_cache_dir"
-        UN_DELETED_PATHS+=("$fork_cache_dir ($fcsz)")
-        ok "fork plugin cache 已清:$fork_cache_dir ($fcsz)"
+    # 同时清两套 marketplace 下 claude-mem-plus cache
+    if [[ "$KEEP_DATA" -ne 1 ]]; then
+        local fork_cache_dir
+        for fork_cache_dir in "$HOME/.claude/plugins/cache/bjarne56/claude-mem-plus" \
+                              "$HOME/.claude/plugins/cache/thedotmack/claude-mem-plus"; do
+            if [[ -d "$fork_cache_dir" ]]; then
+                local fcsz
+                fcsz=$(/usr/bin/du -sh "$fork_cache_dir" 2>/dev/null | command awk '{print $1}')
+                command rm -rf "$fork_cache_dir"
+                UN_DELETED_PATHS+=("$fork_cache_dir ($fcsz)")
+                ok "fork plugin cache 已清:$fork_cache_dir ($fcsz)"
+            fi
+        done
     fi
 
     # 5d) 清 fork 自己在 claude-code 配置 JSON 里的注册
