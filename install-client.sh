@@ -964,9 +964,15 @@ register_hooks() {
     # 自动选最新 model(claude-haiku-4-5-20251001),避免交互问题卡 install 流程
     # --no-auto-start 跳过 install 命令末尾的 worker 自启(本脚本 step 7 会自己启)
     info "claude-mem-plus install --ide claude-code --model claude-haiku-4-5-20251001 --no-auto-start"
-    claude-mem-plus install --ide claude-code --model claude-haiku-4-5-20251001 --no-auto-start 2>&1 | tail -3 \
-        && ok "hook 已注册" \
-        || warn "hook 注册可能失败,手动跑 'claude-mem-plus install --ide claude-code --model claude-haiku-4-5-20251001'"
+    info "  (这一步包含 copyPluginToMarketplace + plugin npm install,可能 30s~2 分钟)"
+    # 不再用 | tail -3,让 install 命令的 stdout 流式显示(进度可见)
+    # 缩进 4 格区分本脚本输出
+    if claude-mem-plus install --ide claude-code --model claude-haiku-4-5-20251001 --no-auto-start 2>&1 \
+        | command sed 's/^/    /'; then
+        ok "hook 已注册"
+    else
+        warn "hook 注册可能失败,手动跑 'claude-mem-plus install --ide claude-code --model claude-haiku-4-5-20251001'"
+    fi
 }
 
 # ── 检测系统 locale,规范化为 BCP-47 lang code ─────────
