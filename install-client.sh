@@ -1477,7 +1477,13 @@ cmd_check() {
     step "6/7 Worker daemon"
     local pid_file="$data_dir/worker.pid"
     if [[ -f "$pid_file" ]]; then
-        local pid=$(command cat "$pid_file" 2>/dev/null)
+        # fork worker.pid 是 JSON({"pid":N,"port":P,...}),但老版本 / 手动写
+        # 可能是裸 PID。优先 grep 出 "pid": <num>,失败时回落到把整文件当裸 PID。
+        local pid raw
+        raw=$(command cat "$pid_file" 2>/dev/null)
+        pid=$(echo "$raw" | command grep -oE '"pid"[[:space:]]*:[[:space:]]*[0-9]+' \
+              | command grep -oE '[0-9]+' | command head -1)
+        [[ -z "$pid" ]] && pid=$(echo "$raw" | command tr -d '[:space:]')
         if [[ -n "$pid" ]] && command kill -0 "$pid" 2>/dev/null; then
             ok "worker 运行中 (PID $pid)"
             # 探活:用 _resolve_worker_port 统一解析(env > settings.json > worker.port > 公式默认)
