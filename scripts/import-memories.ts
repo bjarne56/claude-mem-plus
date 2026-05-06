@@ -1,8 +1,11 @@
 #!/usr/bin/env node
 
 import { existsSync, readFileSync } from 'fs';
+import { resolveWorkerPort } from './lib/resolve-worker-port';
 
-const WORKER_PORT = process.env.CLAUDE_MEM_WORKER_PORT || 37777;
+const WORKER_PORT = resolveWorkerPort({
+  warnFn: (msg) => console.warn(`[import-memories] ${msg}`),
+});
 const WORKER_URL = `http://127.0.0.1:${WORKER_PORT}`;
 
 async function importMemories(inputFile: string) {

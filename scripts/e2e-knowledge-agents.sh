@@ -1,7 +1,21 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-WORKER_URL="http://localhost:37777"
+# 默认 37777,自定义靠 CLAUDE_MEM_WORKER_PORT env(可由 user 覆盖)
+_resolve_worker_port() {
+    local data_dir="${CLAUDE_MEM_DATA_DIR:-$HOME/.claude-mem-plus}"
+    if [[ -n "${CLAUDE_MEM_WORKER_PORT:-}" ]]; then
+        echo "$CLAUDE_MEM_WORKER_PORT"; return 0
+    fi
+    if [[ -f "$data_dir/settings.json" ]]; then
+        local p
+        p=$(grep -oE '"CLAUDE_MEM_WORKER_PORT"[[:space:]]*:[[:space:]]*"?[0-9]+"?' "$data_dir/settings.json" 2>/dev/null \
+            | grep -oE '[0-9]+' | head -1)
+        [[ -n "$p" ]] && { echo "$p"; return 0; }
+    fi
+    echo 37777
+}
+WORKER_URL="http://localhost:$(_resolve_worker_port)"
 CORPUS_NAME="e2e-test-knowledge-agent"
 PASS_COUNT=0
 FAIL_COUNT=0

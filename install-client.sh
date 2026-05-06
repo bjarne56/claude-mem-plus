@@ -1356,11 +1356,11 @@ sync_login_optional() {
 #   非 0 退出 = 至少一项失败,便于自动化脚本判断。
 # ═══════════════════════════════════════════════════════════════
 # ── worker port 解析(单一权威源)──
-# 解析优先级(与 src/shared/SettingsDefaultsManager.ts + CLAUDE.md multi-account 约定一致):
-#   1. $CLAUDE_MEM_WORKER_PORT env(最高)
-#   2. $data_dir/settings.json 里的 CLAUDE_MEM_WORKER_PORT
+# 默认 37777(与上游 claude-mem 一致),自定义靠以下三层覆盖:
+#   1. $CLAUDE_MEM_WORKER_PORT env(最高,per-shell 自定义)
+#   2. $data_dir/settings.json 里 CLAUDE_MEM_WORKER_PORT(持久化自定义)
 #   3. $data_dir/worker.port 文件(老路径,兼容)
-#   4. 计算默认 37700 + (uid % 100)
+#   4. fallback 默认 37777(与 src/shared/SettingsDefaultsManager.ts 对齐)
 # 用法:port=$(_resolve_worker_port "$data_dir")
 _resolve_worker_port() {
     local data_dir="${1:-${CLAUDE_MEM_DATA_DIR:-$HOME/.claude-mem-plus}}"
@@ -1370,7 +1370,7 @@ _resolve_worker_port() {
     fi
     local settings="$data_dir/settings.json"
     if [[ -f "$settings" ]]; then
-        # grep 取 "CLAUDE_MEM_WORKER_PORT": "37701" 的数字部分(兼容 string / number)
+        # grep 取 "CLAUDE_MEM_WORKER_PORT": "37777" 的数字部分(兼容 string / number)
         local p
         p=$(command grep -oE '"CLAUDE_MEM_WORKER_PORT"[[:space:]]*:[[:space:]]*"?[0-9]+"?' "$settings" 2>/dev/null \
             | command grep -oE '[0-9]+' | command head -1)
@@ -1388,8 +1388,8 @@ _resolve_worker_port() {
             return 0
         fi
     fi
-    # 最后兜底:与 fork 默认公式一致(避免 multi-user 同机端口冲突)
-    echo $((37700 + ($(id -u) % 100)))
+    # 最后兜底:上游默认 37777
+    echo 37777
 }
 
 cmd_check() {

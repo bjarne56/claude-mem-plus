@@ -294,15 +294,14 @@ describe('SettingsDefaultsManager', () => {
   describe('get', () => {
     it('should return default value for key', () => {
       expect(SettingsDefaultsManager.get('CLAUDE_MEM_MODEL')).toBe('claude-haiku-4-5-20251001');
-      const expectedPort = String(37700 + ((process.getuid?.() ?? 77) % 100));
-      expect(SettingsDefaultsManager.get('CLAUDE_MEM_WORKER_PORT')).toBe(expectedPort);
+      // 默认 worker port 与上游 claude-mem 一致(37777),自定义靠 settings.json / env 覆盖
+      expect(SettingsDefaultsManager.get('CLAUDE_MEM_WORKER_PORT')).toBe('37777');
     });
   });
 
   describe('getInt', () => {
     it('should return integer value for numeric string', () => {
-      const expectedPort = 37700 + ((process.getuid?.() ?? 77) % 100);
-      expect(SettingsDefaultsManager.getInt('CLAUDE_MEM_WORKER_PORT')).toBe(expectedPort);
+      expect(SettingsDefaultsManager.getInt('CLAUDE_MEM_WORKER_PORT')).toBe(37777);
       expect(SettingsDefaultsManager.getInt('CLAUDE_MEM_CONTEXT_OBSERVATIONS')).toBe(50);
     });
   });
@@ -417,8 +416,7 @@ describe('SettingsDefaultsManager', () => {
 
       const result = SettingsDefaultsManager.loadFromFile(settingsPath);
 
-      const expectedDefault = String(37700 + ((process.getuid?.() ?? 77) % 100));
-      expect(defaults.CLAUDE_MEM_WORKER_PORT).toBe(expectedDefault);
+      expect(defaults.CLAUDE_MEM_WORKER_PORT).toBe('37777');
       expect(result.CLAUDE_MEM_WORKER_PORT).toBe('33333');
     });
   });

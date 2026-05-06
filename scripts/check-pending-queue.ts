@@ -1,22 +1,10 @@
 #!/usr/bin/env bun
 
-const DEFAULT_WORKER_PORT = 37777;
+import { resolveWorkerPort } from './lib/resolve-worker-port';
 
-function resolveWorkerPort(): number {
-  const raw = process.env.CLAUDE_MEM_WORKER_PORT;
-  if (raw === undefined || raw === '') return DEFAULT_WORKER_PORT;
-  const parsed = parseInt(raw, 10);
-  if (!Number.isInteger(parsed) || parsed < 1 || parsed > 65535) {
-    console.warn(
-      `[check-pending-queue] Invalid CLAUDE_MEM_WORKER_PORT=${JSON.stringify(raw)}; ` +
-        `falling back to ${DEFAULT_WORKER_PORT}`
-    );
-    return DEFAULT_WORKER_PORT;
-  }
-  return parsed;
-}
-
-const WORKER_PORT = resolveWorkerPort();
+const WORKER_PORT = resolveWorkerPort({
+  warnFn: (msg) => console.warn(`[check-pending-queue] ${msg}`),
+});
 const WORKER_URL = `http://127.0.0.1:${WORKER_PORT}`;
 const WORKER_FETCH_TIMEOUT_MS = 10_000;
 
@@ -127,7 +115,7 @@ Options:
   --process      Trigger processing without prompting
 
 Environment:
-  CLAUDE_MEM_WORKER_PORT  Worker port (default: 37777)
+  CLAUDE_MEM_WORKER_PORT  Worker port (默认 37777, 也可在 settings.json 设)
 
 Examples:
   # Check queue status interactively

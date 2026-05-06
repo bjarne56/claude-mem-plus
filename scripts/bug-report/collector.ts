@@ -3,6 +3,7 @@ import * as path from "path";
 import { exec } from "child_process";
 import { promisify } from "util";
 import * as os from "os";
+import { resolveWorkerPort } from "../lib/resolve-worker-port";
 
 const execAsync = promisify(exec);
 
@@ -244,7 +245,8 @@ export async function collectDiagnostics(
   };
 
   const pidInfo = await readPidFile(dataDir);
-  const workerPort = pidInfo?.port || 37777;
+  // pid 文件丢失时(常见 fork 异常),退到 settings.json + 公式默认,不再 hardcode 37777
+  const workerPort = pidInfo?.port || resolveWorkerPort();
 
   const [health, stats] = await Promise.all([
     checkWorkerHealth(workerPort),
