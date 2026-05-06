@@ -71,6 +71,56 @@ export class SessionStore {
     this.addObservationsMetadataColumn();
     this.dropDeadPendingMessagesColumns();
     this.dropWorkerPidColumn();
+    this.ensureProjectsTables();
+  }
+
+  // 项目身份/路径解耦(claude-mem-改造需求.md):新增 projects + project_paths 表,
+  // 给 observations/session_summaries/sdk_sessions 加 project_id 列(并行原 project
+  // TEXT 字段,不删,保兼容上游 schema + 给迁移脚本 fallback 路径)。
+  // schema_versions = 33
+  private ensureProjectsTables(): void {
+    const applied = this.db.prepare('SELECT version FROM schema_versions WHERE version = ?').get(33) as SchemaVersion | undefined;
+    if (applied) return;
+
+    // projects 表:稳定 ID 项目身份
+    this.db.run(`
+      CREATE TABLE IF NOT EXISTS projects (
+        id           TEXT    PRIMARY KEY,
+        name         TEXT    NOT NULL UNIQUE,
+        anchor_path  TEXT,
+        created_at   INTEGER NOT NULL,
+        updated_at   INTEGER NOT NULL
+      )
+    `);
+    this.db.run('CREATE INDEX IF NOT EXISTS idx_projects_name ON projects(name)');
+
+    // project_paths 表:项目→路径多对一(全局 path UNIQUE 防歧义)
+    this.db.run(`
+      CREATE TABLE IF NOT EXISTS project_paths (
+        id            INTEGER PRIMARY KEY AUTOINCREMENT,
+        project_id    TEXT    NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+        path          TEXT    NOT NULL UNIQUE,
+        added_at      INTEGER NOT NULL,
+        last_seen_at  INTEGER NOT NULL
+      )
+    `);
+    this.db.run('CREATE INDEX IF NOT EXISTS idx_project_paths_project ON project_paths(project_id)');
+    this.db.run('CREATE INDEX IF NOT EXISTS idx_project_paths_path ON project_paths(path)');
+
+    // 给现有表加 project_id 列(NULL 允许,迁移脚本回填)
+    const addProjectIdColumn = (table: string) => {
+      const cols = this.db.query(`PRAGMA table_info(${table})`).all() as TableColumnInfo[];
+      if (cols.length === 0) return;
+      if (cols.some(c => c.name === 'project_id')) return;
+      this.db.run(`ALTER TABLE ${table} ADD COLUMN project_id TEXT REFERENCES projects(id) ON DELETE SET NULL`);
+      this.db.run(`CREATE INDEX IF NOT EXISTS idx_${table}_project_id ON ${table}(project_id)`);
+    };
+    addProjectIdColumn('observations');
+    addProjectIdColumn('session_summaries');
+    addProjectIdColumn('sdk_sessions');
+
+    this.db.prepare('INSERT OR IGNORE INTO schema_versions (version, applied_at) VALUES (?, ?)').run(33, new Date().toISOString());
+    logger.info('DB', 'Created projects/project_paths tables and project_id columns (schema v33)');
   }
 
   private dropWorkerPidColumn(): void {
