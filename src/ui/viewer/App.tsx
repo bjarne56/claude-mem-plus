@@ -153,23 +153,8 @@ export function App() {
     }
   }, [t, refreshStats]);
 
-  // 项目重命名:物理 UPDATE 数据库,成功后让 Feed 重拉分页 + currentFilter 跟新名走
-  // 失败抛错,由 ContextSettingsModal 内部状态行展示
-  const handleRenameProject = useCallback(async (oldName: string, newName: string) => {
-    const res = await authFetch(`/api/projects/${encodeURIComponent(oldName)}/rename`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ newName }),
-    });
-    if (!res.ok) {
-      const body = await res.json().catch(() => ({}));
-      throw new Error(body.error || res.statusText);
-    }
-    setCurrentFilter(prev => (prev === oldName ? newName : prev));
-    setDeleteNonce(n => n + 1);
-    refreshStats();
-  }, [refreshStats]);
-
+  // 项目重命名/删除已迁移到 ProjectsManagerModal(右下角浮动按钮)
+  // 这里只保留 Header 那个"删当前 filter 项目"的快捷入口
   const handleDeleteProject = useCallback(async (project: string) => {
     const total = allObservations.length + allSummaries.length;
     if (!window.confirm(t('delete.confirmProject', { name: project, n: total }))) return;
@@ -228,7 +213,6 @@ export function App() {
         onSave={saveSettings}
         isSaving={isSaving}
         saveStatus={saveStatus}
-        onRenameProject={handleRenameProject}
       />
 
       <button
