@@ -156,7 +156,22 @@ claude-mem-plus sync fork 019xxx-abc --to-project my-research
 
 ---
 
-## 5. 跨机器项目识别
+## 5. 本机项目身份管理 (v12.6.5-plus.2+)
+
+旧版按 `basename(cwd)` 推导项目名,`/A/c` 和 `/B/c` 数据混在一起。
+新版引入 **8 位数字 project_id + 多路径绑定**,UI 完整 CRUD。
+
+入口:viewer 右下角 📁 浮动按钮 → 项目管理。
+
+支持:改名 / 增删路径(可弹窗 picker 浏览目录) / 合并项目 / `.claude-mem` 锚点 / `CLAUDE_MEM_PROJECT` env 锁定。
+
+详细见 [`projects-management.md`](projects-management.md)。
+
+> 与下面"跨机器项目识别"的关系:本节是**单机内**项目身份管理(本地 SQLite project_id);第 6 节的 cmem-sync 跨机器同步继续按 `(user, name)` 协调,两者正交。
+
+---
+
+## 6. 跨机器项目识别
 
 不同机器上 **同名项目自动合并**。`(user_id, project_name)` 在 server 唯一。
 
@@ -184,7 +199,7 @@ name = "nginx-rce"                              # 显示名,可改
 
 ---
 
-## 6. 软删除 + 回收站
+## 7. 软删除 + 回收站
 
 viewer Header 顶部按钮:**📦 回收站** 和 **🗑️ 删除当前项目**(选了项目时才出现)。
 
@@ -202,7 +217,7 @@ viewer Header 顶部按钮:**📦 回收站** 和 **🗑️ 删除当前项目**
 
 ---
 
-## 7. CLI 命令清单
+## 8. CLI 命令清单
 
 ```
 # claude-mem-plus 自身(upstream)
@@ -233,7 +248,7 @@ claude-mem-plus sync project init                         # 生成 .cmem-project
 
 ---
 
-## 8. viewer 操作快捷
+## 9. viewer 操作快捷
 
 ```
 Cmd-K (Mac) / Ctrl-K (Linux)    全局搜索
@@ -256,7 +271,7 @@ Header 右上从左到右:
 
 ---
 
-## 9. 数据存哪
+## 10. 数据存哪
 
 | 数据 | 路径 | 说明 |
 |---|---|---|
@@ -272,7 +287,7 @@ Header 右上从左到右:
 
 ---
 
-## 10. 隐私
+## 11. 隐私
 
 - `<private>...</private>` 标签包起来的内容 **永远不会** 写进 db / chroma / 不会 sync 到 server。在 hook 层(edge)就剥离。
 - API token、cookie、ssh key 这类敏感字符串建议自己包 `<private>`,不依赖自动检测。
@@ -280,6 +295,6 @@ Header 右上从左到右:
 
 ---
 
-## 11. 升级 / 卸载
+## 12. 升级 / 卸载
 
 见 [INSTALL.md § 7-8](INSTALL.md#7-升级)。

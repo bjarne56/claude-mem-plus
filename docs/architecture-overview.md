@@ -117,12 +117,16 @@ The conversion between them is handled by SessionStore and is critical for FK co
 
 | Table | Key fields | Purpose |
 |-------|-----------|---------|
-| sdk_sessions | content_session_id, memory_session_id, status | Session lifecycle |
-| observations | memory_session_id, type, title, narrative, content_hash | Tool usage observations |
-| session_summaries | memory_session_id, request, learned, completed | Session summaries |
+| sdk_sessions | content_session_id, memory_session_id, project_id, status | Session lifecycle |
+| observations | memory_session_id, project_id, type, title, narrative, content_hash | Tool usage observations |
+| session_summaries | memory_session_id, project_id, request, learned, completed | Session summaries |
 | user_prompts | content_session_id, prompt_text | User prompt history |
-| pending_messages | session_db_id, message_type | Per-session pending queue |
+| pending_messages | session_db_id, cwd, message_type | Per-session pending queue |
 | observation_feedback | observation_id, signal_type | Usage tracking |
+| **projects** (v33+) | id (8-digit INT PK), name UNIQUE, anchor_path | Project identity (fork) |
+| **project_paths** (v33+) | project_id FK, path UNIQUE, last_seen_at | Per-project path bindings |
+
+> `projects` / `project_paths` 解决 `basename(cwd)` 同名冲突;详见下方 **Project Identity**。
 
 ### ChromaDB (chroma.sqlite3)
 
@@ -136,6 +140,26 @@ obs_{id}_fact_1     -> second fact
 ```
 
 Accessed via chroma-mcp (MCP process), communication over stdio.
+
+## Project Identity (fork v12.6.5-plus.2+)
+
+旧上游用 `basename(cwd)` 推导 project,导致 `/A/c` 与 `/B/c` 共池。fork 引入稳定 ID 体系:
+
+- **项目身份** = 8 位数字 INTEGER (`projects.id`,UNIQUE,`Math.random` + INSERT 重试)
+- **路径绑定** = 多对一 (`project_paths`,全局 `path` UNIQUE,`realpath` 规范化)
+- **observations 等表** 加 `project_id` 列(并行原 `project` name 字段,**双写过渡**)
+
+**`ProjectStore.resolveProject(cwd)` 5 层优先级:**
+
+1. `CLAUDE_MEM_PROJECT` env(支持 8-digit id 或 name)
+2. `cwd/.claude-mem` 锚点文件(JSON 含 projectId)
+3. `project_paths` 精确匹配
+4. `project_paths` 父目录最长前缀
+5. 新建 + 自动登记 cwd
+
+**Schema migration 路径:** v33 建表 + 加列;v34 把 v33 阶段的临时 base62 ID 全部 rebuild 为 8 位 INTEGER PK(数据零损失,带历史数据备份)。
+
+**用户管理界面:** viewer 右下角 📁 → ProjectsManagerModal,完整 CRUD + 路径 picker。详见 [`projects-management.md`](projects-management.md)。
 
 ## Process Management
 
