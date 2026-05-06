@@ -3,7 +3,23 @@ import { createHash } from 'crypto';
 import { Database } from 'bun:sqlite';
 import { logger } from '../../../utils/logger.js';
 import { getProjectContext } from '../../../utils/project-name.js';
+import { ProjectStore } from '../ProjectStore.js';
 import type { ObservationInput, StoreObservationResult } from './types.js';
+
+// 双写过渡:写 observation 时同步把 cwd 解析到稳定 project_id,与原 .project name 字段并行
+// 不抛异常(任何 ProjectStore 错误都退化到 NULL,保留现有 .project name 行为完全不变)
+function resolveProjectIdSafely(db: Database, projectName: string): string | null {
+  try {
+    const ps = new ProjectStore(db);
+    const existing = ps.getByName(projectName);
+    if (existing) return existing.id;
+    // 没有 → resolveProject 走 5 层兜底(env > anchor > exact > prefix > 新建+登记)
+    return ps.resolveProject(process.cwd()).project.id;
+  } catch (err) {
+    logger.warn('PROJECT_ID', 'Failed to resolve project_id (双写降级到 NULL)', { projectName }, err as Error);
+    return null;
+  }
+}
 
 export function computeObservationContentHash(
   memorySessionId: string,
@@ -29,14 +45,15 @@ export function storeObservation(
   const timestampIso = new Date(timestampEpoch).toISOString();
 
   const resolvedProject = project || getProjectContext(process.cwd()).primary;
+  const resolvedProjectId = resolveProjectIdSafely(db, resolvedProject);
 
   const contentHash = computeObservationContentHash(memorySessionId, observation.title, observation.narrative);
 
   const stmt = db.prepare(`
     INSERT INTO observations
-    (memory_session_id, project, type, title, subtitle, facts, narrative, concepts,
+    (memory_session_id, project, project_id, type, title, subtitle, facts, narrative, concepts,
      files_read, files_modified, prompt_number, discovery_tokens, agent_type, agent_id, content_hash, created_at, created_at_epoch)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(memory_session_id, content_hash) DO NOTHING
     RETURNING id, created_at_epoch
   `);
@@ -44,6 +61,7 @@ export function storeObservation(
   const inserted = stmt.get(
     memorySessionId,
     resolvedProject,
+    resolvedProjectId,
     observation.type,
     observation.title,
     observation.subtitle,
