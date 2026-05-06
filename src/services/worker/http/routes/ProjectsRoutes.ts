@@ -6,8 +6,9 @@
 // claude-mem-改造需求.md 第 5 节后台编辑功能。
 
 import express, { Request, Response } from 'express';
-import { writeFileSync } from 'fs';
-import { join } from 'path';
+import { writeFileSync, readdirSync, statSync, existsSync } from 'fs';
+import { join, dirname, isAbsolute, resolve } from 'path';
+import { homedir } from 'os';
 import { BaseRouteHandler } from '../BaseRouteHandler.js';
 import { requireLocalhost } from '../../../server/Middleware.js';
 import { ProjectStore, ANCHOR_FILE_NAME, normalizePath } from '../../../sqlite/ProjectStore.js';
@@ -44,6 +45,9 @@ export class ProjectsRoutes extends BaseRouteHandler {
     // 锚点文件:在某 cwd 下写 .claude-mem 把目录绑定到 project
     app.post('/api/projects-v2/:id/anchor', requireLocalhost, this.wrapHandler(this.handleWriteAnchor));
 
+    // 目录浏览器:供 UI 弹窗 picker 用,只读列目录
+    app.get('/api/projects-v2/_/browse', requireLocalhost, this.wrapHandler(this.handleBrowse));
+
     logger.info('SYSTEM', 'ProjectsRoutes registered', {
       routes: [
         'GET /api/projects-v2',
@@ -56,9 +60,72 @@ export class ProjectsRoutes extends BaseRouteHandler {
         'DELETE /api/projects-v2/:id/paths/:pathId',
         'POST /api/projects-v2/:id/merge',
         'POST /api/projects-v2/:id/anchor',
+        'GET /api/projects-v2/_/browse?path=...',
       ],
     });
   }
+
+  // ── 目录浏览器(localhost-only,只读)────────────────────────
+  // 供 UI 弹窗 file picker 用。返回当前 path 的子目录列表。
+  // 默认路径 = $HOME。不允许列出文件(只列目录,简化 picker UI)。
+  // 限制:返回最多 500 项;限制 . 隐藏目录默认隐藏(可 ?showHidden=1 开)
+  private handleBrowse = async (req: Request, res: Response): Promise<void> => {
+    let target = (req.query.path as string | undefined)?.trim() || homedir();
+    const showHidden = req.query.showHidden === '1' || req.query.showHidden === 'true';
+
+    // 安全:必须是绝对路径,且去掉 .. 这种相对元素后还要存在
+    if (!isAbsolute(target)) {
+      this.badRequest(res, 'path must be absolute');
+      return;
+    }
+    target = resolve(target);
+
+    if (!existsSync(target)) {
+      res.status(404).json({ error: 'Path does not exist', path: target });
+      return;
+    }
+    let stat;
+    try { stat = statSync(target); } catch (err) {
+      res.status(403).json({ error: `Cannot stat path: ${(err as Error).message}` });
+      return;
+    }
+    if (!stat.isDirectory()) {
+      this.badRequest(res, 'path is not a directory');
+      return;
+    }
+
+    let entries: Array<{ name: string; path: string; isDir: boolean; isLink: boolean }> = [];
+    try {
+      const dirents = readdirSync(target, { withFileTypes: true });
+      for (const d of dirents) {
+        if (!showHidden && d.name.startsWith('.')) continue;
+        // 只列目录(picker 用,文件无意义)
+        const fullPath = join(target, d.name);
+        let isDir = d.isDirectory();
+        const isLink = d.isSymbolicLink();
+        // 符号链接需要 stat 确认指向是否为目录
+        if (isLink) {
+          try { isDir = statSync(fullPath).isDirectory(); } catch { isDir = false; }
+        }
+        if (!isDir) continue;
+        entries.push({ name: d.name, path: fullPath, isDir: true, isLink });
+        if (entries.length >= 500) break;
+      }
+    } catch (err) {
+      res.status(403).json({ error: `Cannot read directory: ${(err as Error).message}` });
+      return;
+    }
+
+    entries.sort((a, b) => a.name.localeCompare(b.name));
+
+    res.json({
+      cwd: target,
+      parent: dirname(target) === target ? null : dirname(target),
+      entries,
+      truncated: entries.length >= 500,
+      home: homedir(),
+    });
+  };
 
   // ── handlers ─────────────────────────────────────────────────
 
