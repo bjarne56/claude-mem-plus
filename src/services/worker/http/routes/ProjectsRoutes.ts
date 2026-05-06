@@ -24,6 +24,17 @@ export class ProjectsRoutes extends BaseRouteHandler {
     return new ProjectStore(this.dbManager.getDatabase());
   }
 
+  // 解析 URL 路径里的 :id 参数为 8 位数字 ID;无效 → 给 res 回 400 并返 null
+  private parseProjectId(req: Request, res: Response): number | null {
+    const raw = req.params.id;
+    const n = parseInt(raw, 10);
+    if (!Number.isFinite(n) || !/^\d+$/.test(raw)) {
+      this.badRequest(res, `Invalid project id '${raw}' (expected 8-digit integer)`);
+      return null;
+    }
+    return n;
+  }
+
   setupRoutes(app: express.Application): void {
     // 列表 + stats
     app.get('/api/projects-v2', requireLocalhost, this.wrapHandler(this.handleList));
@@ -138,7 +149,7 @@ export class ProjectsRoutes extends BaseRouteHandler {
   };
 
   private handleGet = async (req: Request, res: Response): Promise<void> => {
-    const id = req.params.id;
+    const id = this.parseProjectId(req, res); if (id === null) return;
     const store = this.store();
     const project = store.getById(id);
     if (!project) { this.notFound(res, `Project ${id}`); return; }
@@ -161,7 +172,7 @@ export class ProjectsRoutes extends BaseRouteHandler {
   };
 
   private handleRename = async (req: Request, res: Response): Promise<void> => {
-    const id = req.params.id;
+    const id = this.parseProjectId(req, res); if (id === null) return;
     const newName = ((req.body as Record<string, unknown>)?.name as string | undefined)?.trim();
     if (!newName) { this.badRequest(res, 'name required'); return; }
     const store = this.store();
@@ -175,7 +186,7 @@ export class ProjectsRoutes extends BaseRouteHandler {
   };
 
   private handleDelete = async (req: Request, res: Response): Promise<void> => {
-    const id = req.params.id;
+    const id = this.parseProjectId(req, res); if (id === null) return;
     const store = this.store();
     const ok = store.delete(id);
     if (!ok) { this.notFound(res, `Project ${id}`); return; }
@@ -185,13 +196,14 @@ export class ProjectsRoutes extends BaseRouteHandler {
   // ── paths ────────────────────────────────────────────────────
 
   private handleListPaths = async (req: Request, res: Response): Promise<void> => {
+    const id = this.parseProjectId(req, res); if (id === null) return;
     const store = this.store();
-    if (!store.getById(req.params.id)) { this.notFound(res, `Project ${req.params.id}`); return; }
-    res.json({ paths: store.listPaths(req.params.id) });
+    if (!store.getById(id)) { this.notFound(res, `Project ${id}`); return; }
+    res.json({ paths: store.listPaths(id) });
   };
 
   private handleAddPath = async (req: Request, res: Response): Promise<void> => {
-    const id = req.params.id;
+    const id = this.parseProjectId(req, res); if (id === null) return;
     const rawPath = ((req.body as Record<string, unknown>)?.path as string | undefined)?.trim();
     if (!rawPath) { this.badRequest(res, 'path required'); return; }
     const store = this.store();
@@ -215,9 +227,10 @@ export class ProjectsRoutes extends BaseRouteHandler {
   // ── merge ────────────────────────────────────────────────────
 
   private handleMerge = async (req: Request, res: Response): Promise<void> => {
-    const fromId = req.params.id;
-    const targetId = ((req.body as Record<string, unknown>)?.targetId as string | undefined)?.trim();
-    if (!targetId) { this.badRequest(res, 'targetId required'); return; }
+    const fromId = this.parseProjectId(req, res); if (fromId === null) return;
+    const rawTarget = (req.body as Record<string, unknown>)?.targetId;
+    const targetId = typeof rawTarget === 'number' ? rawTarget : parseInt(String(rawTarget ?? ''), 10);
+    if (!Number.isInteger(targetId)) { this.badRequest(res, 'targetId required (number)'); return; }
     try {
       const result = this.store().merge(fromId, targetId);
       res.json({ result, mergedFrom: fromId, mergedInto: targetId });
@@ -229,7 +242,7 @@ export class ProjectsRoutes extends BaseRouteHandler {
   // ── 锚点文件 ────────────────────────────────────────────────
 
   private handleWriteAnchor = async (req: Request, res: Response): Promise<void> => {
-    const id = req.params.id;
+    const id = this.parseProjectId(req, res); if (id === null) return;
     const cwd = ((req.body as Record<string, unknown>)?.cwd as string | undefined)?.trim();
     if (!cwd) { this.badRequest(res, 'cwd required'); return; }
     const store = this.store();

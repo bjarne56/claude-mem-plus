@@ -15,10 +15,14 @@ import { logger } from '../../utils/logger.js';
 import { getProjectName } from '../../utils/project-name.js';
 
 export const ANCHOR_FILE_NAME = '.claude-mem';
-export const PROJECT_ID_PREFIX = 'p_';
+// 8 位数字 ID 范围(10000000-99999999,约 9000 万空间;
+// 碰撞由 INSERT UNIQUE + 重试解决,理论极低)
+export const PROJECT_ID_MIN = 10_000_000;
+export const PROJECT_ID_MAX = 99_999_999;
+export const PROJECT_ID_GEN_MAX_RETRIES = 100;
 
 export interface ProjectRecord {
-  id: string;
+  id: number;
   name: string;
   anchor_path: string | null;
   created_at: number;
@@ -27,7 +31,7 @@ export interface ProjectRecord {
 
 export interface ProjectPathRecord {
   id: number;
-  project_id: string;
+  project_id: number;
   path: string;
   added_at: number;
   last_seen_at: number;
@@ -39,14 +43,10 @@ export interface ResolveResult {
   source: 'env' | 'anchor' | 'exact-path' | 'parent-prefix' | 'created';
 }
 
-// ── 工具:生成 12 字符 base62 ID(碰撞概率足够低,不依赖外部 nanoid)
-const BASE62 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-export function generateProjectId(): string {
-  let s = PROJECT_ID_PREFIX;
-  for (let i = 0; i < 10; i++) {
-    s += BASE62.charAt(Math.floor(Math.random() * BASE62.length));
-  }
-  return s;
+// ── 工具:生成 8 位数字 ID(10000000-99999999,~9000 万空间)
+// 碰撞处理:create() 在 UNIQUE 冲突时重试(最多 PROJECT_ID_GEN_MAX_RETRIES 次)
+export function generateProjectId(): number {
+  return Math.floor(PROJECT_ID_MIN + Math.random() * (PROJECT_ID_MAX - PROJECT_ID_MIN + 1));
 }
 
 // ── 工具:规范化路径(realpath + 去末尾斜杠)
@@ -66,18 +66,21 @@ export function normalizePath(p: string): string {
 }
 
 // ── 工具:读 .claude-mem 锚点文件
-export function readAnchorFile(cwd: string): string | null {
+// 锚点文件格式:JSON {projectId: number, name?: string} 或裸 8 位数字字符串
+export function readAnchorFile(cwd: string): number | null {
   const anchorPath = join(cwd, ANCHOR_FILE_NAME);
   if (!existsSync(anchorPath)) return null;
   try {
     const content = readFileSync(anchorPath, 'utf-8').trim();
-    // 兼容两种格式:裸 project_id 或 JSON {projectId: "..."}
+    let raw: unknown;
     if (content.startsWith('{')) {
       const parsed = JSON.parse(content);
-      const id = parsed?.projectId || parsed?.project_id;
-      return typeof id === 'string' && id.startsWith(PROJECT_ID_PREFIX) ? id : null;
+      raw = parsed?.projectId ?? parsed?.project_id;
+    } else {
+      raw = content;
     }
-    return content.startsWith(PROJECT_ID_PREFIX) ? content : null;
+    const n = typeof raw === 'number' ? raw : parseInt(String(raw), 10);
+    return Number.isInteger(n) && n >= PROJECT_ID_MIN && n <= PROJECT_ID_MAX ? n : null;
   } catch (err) {
     logger.warn('PROJECT', 'Failed to read .claude-mem anchor file', { anchorPath }, err as Error);
     return null;
@@ -103,7 +106,7 @@ export class ProjectStore {
     return this.db.prepare('SELECT * FROM projects ORDER BY updated_at DESC').all() as ProjectRecord[];
   }
 
-  getById(id: string): ProjectRecord | null {
+  getById(id: number): ProjectRecord | null {
     return this.db.prepare('SELECT * FROM projects WHERE id = ?').get(id) as ProjectRecord | null;
   }
 
@@ -111,17 +114,33 @@ export class ProjectStore {
     return this.db.prepare('SELECT * FROM projects WHERE name = ?').get(name) as ProjectRecord | null;
   }
 
+  // 8 位数字 ID + UNIQUE 约束 + 重试,最多 PROJECT_ID_GEN_MAX_RETRIES 次
+  // 生产 9000 万空间,首次冲突概率 ~10项目时 = 10/9e7 ≈ 1e-7
   create(name: string, anchorPath: string | null = null): ProjectRecord {
-    const id = generateProjectId();
     const now = Date.now();
-    this.db.prepare(`
+    const insertStmt = this.db.prepare(`
       INSERT INTO projects (id, name, anchor_path, created_at, updated_at)
       VALUES (?, ?, ?, ?, ?)
-    `).run(id, name, anchorPath, now, now);
-    return { id, name, anchor_path: anchorPath, created_at: now, updated_at: now };
+    `);
+    let lastErr: Error | null = null;
+    for (let attempt = 0; attempt < PROJECT_ID_GEN_MAX_RETRIES; attempt++) {
+      const id = generateProjectId();
+      try {
+        insertStmt.run(id, name, anchorPath, now, now);
+        return { id, name, anchor_path: anchorPath, created_at: now, updated_at: now };
+      } catch (err) {
+        lastErr = err as Error;
+        const msg = String(lastErr.message || '');
+        // SQLite UNIQUE 冲突:projects.id 重复 → 重试新随机 ID
+        // projects.name 冲突 → 是 caller 的责任,直接抛
+        if (msg.includes('UNIQUE') && msg.includes('projects.id')) continue;
+        throw err;
+      }
+    }
+    throw new Error(`Failed to allocate unique 8-digit project ID after ${PROJECT_ID_GEN_MAX_RETRIES} retries: ${lastErr?.message}`);
   }
 
-  rename(id: string, newName: string): ProjectRecord | null {
+  rename(id: number, newName: string): ProjectRecord | null {
     const existing = this.getByName(newName);
     if (existing && existing.id !== id) {
       throw new Error(`Project name '${newName}' already taken by ${existing.id}`);
@@ -133,7 +152,7 @@ export class ProjectStore {
     return result.changes > 0 ? this.getById(id) : null;
   }
 
-  delete(id: string): boolean {
+  delete(id: number): boolean {
     // ON DELETE CASCADE 会清掉 project_paths;observations.project_id 走 SET NULL
     const result = this.db.prepare('DELETE FROM projects WHERE id = ?').run(id);
     return result.changes > 0;
@@ -141,13 +160,13 @@ export class ProjectStore {
 
   // ── CRUD: project_paths ───────────────────────────────────────
 
-  listPaths(projectId: string): ProjectPathRecord[] {
+  listPaths(projectId: number): ProjectPathRecord[] {
     return this.db.prepare(`
       SELECT * FROM project_paths WHERE project_id = ? ORDER BY last_seen_at DESC
     `).all(projectId) as ProjectPathRecord[];
   }
 
-  addPath(projectId: string, rawPath: string): ProjectPathRecord {
+  addPath(projectId: number, rawPath: string): ProjectPathRecord {
     const path = normalizePath(rawPath);
     const now = Date.now();
     // 同 path 已被别的项目占用?抛出错误(全局 UNIQUE)
@@ -174,14 +193,14 @@ export class ProjectStore {
     return result.changes > 0;
   }
 
-  touchPath(projectId: string, path: string): void {
+  touchPath(projectId: number, path: string): void {
     this.db.prepare(`
       UPDATE project_paths SET last_seen_at = ? WHERE project_id = ? AND path = ?
     `).run(Date.now(), projectId, path);
   }
 
   // ── merge: 把 fromProjectId 所有 observations/summaries 改 project_id 到 toProjectId,删 from
-  merge(fromProjectId: string, toProjectId: string): { observationsMoved: number; summariesMoved: number; pathsMoved: number } {
+  merge(fromProjectId: number, toProjectId: number): { observationsMoved: number; summariesMoved: number; pathsMoved: number } {
     if (fromProjectId === toProjectId) {
       throw new Error('Cannot merge a project into itself');
     }
@@ -218,11 +237,15 @@ export class ProjectStore {
   // ── 解析:cwd → project(核心,5 层优先级)──────────────────────
 
   resolveProject(cwd: string | null | undefined): ResolveResult {
-    // ── 1. CLAUDE_MEM_PROJECT env(支持 id 或 name)
+    // ── 1. CLAUDE_MEM_PROJECT env(支持 8 位数字 id 或 name)
     const envOverride = process.env.CLAUDE_MEM_PROJECT?.trim();
     if (envOverride) {
-      // 优先 id(以 p_ 前缀),否则当 name lookup
-      const byId = envOverride.startsWith(PROJECT_ID_PREFIX) ? this.getById(envOverride) : null;
+      // 优先尝试 id(8 位数字),否则当 name lookup
+      let byId: ProjectRecord | null = null;
+      if (/^\d{8}$/.test(envOverride)) {
+        const n = parseInt(envOverride, 10);
+        if (n >= PROJECT_ID_MIN && n <= PROJECT_ID_MAX) byId = this.getById(n);
+      }
       const project = byId || this.getByName(envOverride) || this.create(envOverride, null);
       return { project, path: cwd || '', source: 'env' };
     }
@@ -281,7 +304,7 @@ export class ProjectStore {
   }
 
   // ── 统计:用于 UI 显示项目卡片 ─────────────────────────────────
-  getStats(projectId: string): { observationCount: number; summaryCount: number; pathCount: number } {
+  getStats(projectId: number): { observationCount: number; summaryCount: number; pathCount: number } {
     const obsRow = this.db.prepare('SELECT COUNT(*) AS c FROM observations WHERE project_id = ?').get(projectId) as { c: number };
     const sumRow = this.db.prepare('SELECT COUNT(*) AS c FROM session_summaries WHERE project_id = ?').get(projectId) as { c: number };
     const pathRow = this.db.prepare('SELECT COUNT(*) AS c FROM project_paths WHERE project_id = ?').get(projectId) as { c: number };

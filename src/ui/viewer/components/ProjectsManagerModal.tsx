@@ -20,7 +20,7 @@ interface ProjectStats {
 }
 
 interface ProjectRecord {
-  id: string;
+  id: number;  // 8 位数字 ID(10000000-99999999)
   name: string;
   anchor_path: string | null;
   created_at: number;
@@ -30,7 +30,7 @@ interface ProjectRecord {
 
 interface ProjectPathRecord {
   id: number;
-  project_id: string;
+  project_id: number;
   path: string;
   added_at: number;
   last_seen_at: number;
@@ -169,7 +169,7 @@ function DirectoryPicker({ onPick, onCancel, initialPath }: {
 
 export function ProjectsManagerModal({ isOpen, onClose }: Props) {
   const [projects, setProjects] = useState<ProjectRecord[]>([]);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<number | null>(null);
   const [paths, setPaths] = useState<ProjectPathRecord[]>([]);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -197,7 +197,7 @@ export function ProjectsManagerModal({ isOpen, onClose }: Props) {
     }
   }, [selectedId]);
 
-  const loadPaths = useCallback(async (projectId: string) => {
+  const loadPaths = useCallback(async (projectId: number) => {
     try {
       const res = await authFetch(`/api/projects-v2/${projectId}/paths`);
       if (!res.ok) throw new Error(`paths 失败: ${res.status}`);
@@ -273,7 +273,7 @@ export function ProjectsManagerModal({ isOpen, onClose }: Props) {
   };
 
   // 共用提交(给两种入口用)
-  const submitAddPath = async (projectId: string, path: string) => {
+  const submitAddPath = async (projectId: number, path: string) => {
     const res = await authFetch(`/api/projects-v2/${projectId}/paths`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -288,7 +288,7 @@ export function ProjectsManagerModal({ isOpen, onClose }: Props) {
     await refresh();
   };
 
-  const submitWriteAnchor = async (projectId: string, cwd: string) => {
+  const submitWriteAnchor = async (projectId: number, cwd: string) => {
     const res = await authFetch(`/api/projects-v2/${projectId}/anchor`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

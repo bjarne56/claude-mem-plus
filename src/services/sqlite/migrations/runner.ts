@@ -36,6 +36,109 @@ export class MigrationRunner {
     this.addCmemSyncTables();
     this.addSyncAutoColumns();
     this.ensureProjectsTables();
+    this.migrateProjectIdToInt();
+  }
+
+  // v34: 把 projects.id 从 TEXT(p_xxx)迁到 INTEGER(8 位数字)
+  // 同步更新所有引用列(project_paths/observations/summaries/sessions.project_id)
+  // 风险:此 migration 改 schema + 改数据,不可回滚。SessionStore 启动时执行,
+  //       生产 db 升级前请人工备份(install-client.sh check 会提醒)
+  private migrateProjectIdToInt(): void {
+    const applied = this.db.prepare('SELECT version FROM schema_versions WHERE version = ?').get(34) as SchemaVersion | undefined;
+    if (applied) return;
+
+    // 没有 projects 表(全新装或 v33 没跑)→ 跳过
+    const projTables = this.db.query("SELECT name FROM sqlite_master WHERE type='table' AND name='projects'").all() as TableNameRow[];
+    if (projTables.length === 0) {
+      this.db.prepare('INSERT OR IGNORE INTO schema_versions (version, applied_at) VALUES (?, ?)').run(34, new Date().toISOString());
+      return;
+    }
+
+    // 检查 projects.id 当前类型;如果已是 INTEGER,标记完成跳过
+    const cols = this.db.query('PRAGMA table_info(projects)').all() as Array<{ name: string; type: string }>;
+    const idCol = cols.find(c => c.name === 'id');
+    if (idCol && idCol.type.toUpperCase().startsWith('INTEGER')) {
+      this.db.prepare('INSERT OR IGNORE INTO schema_versions (version, applied_at) VALUES (?, ?)').run(34, new Date().toISOString());
+      return;
+    }
+
+    logger.info('DB', '[migration v34] 项目 ID 从 TEXT(p_xxx)迁到 INTEGER(8 位数字)开始');
+
+    // 8 位数字 ID 生成 + 唯一性保证(在临时映射表里去重)
+    const PMIN = 10_000_000, PMAX = 99_999_999;
+    const used = new Set<number>();
+    const allocId = (): number => {
+      for (let i = 0; i < 1000; i++) {
+        const n = Math.floor(PMIN + Math.random() * (PMAX - PMIN + 1));
+        if (!used.has(n)) { used.add(n); return n; }
+      }
+      throw new Error('Failed to allocate 8-digit project ID after 1000 retries');
+    };
+
+    this.db.transaction(() => {
+      // 1) 临时映射表 (old TEXT, new INTEGER)
+      this.db.run(`CREATE TEMP TABLE _project_id_map (
+        old_id TEXT PRIMARY KEY,
+        new_id INTEGER NOT NULL UNIQUE
+      )`);
+      const oldRows = this.db.prepare('SELECT id FROM projects').all() as Array<{ id: string }>;
+      const insertMap = this.db.prepare('INSERT INTO _project_id_map (old_id, new_id) VALUES (?, ?)');
+      for (const r of oldRows) insertMap.run(r.id, allocId());
+
+      // 2) 重建 projects 表(INTEGER PK)
+      this.db.run(`CREATE TABLE projects_new (
+        id           INTEGER PRIMARY KEY,
+        name         TEXT    NOT NULL UNIQUE,
+        anchor_path  TEXT,
+        created_at   INTEGER NOT NULL,
+        updated_at   INTEGER NOT NULL
+      )`);
+      this.db.run(`INSERT INTO projects_new (id, name, anchor_path, created_at, updated_at)
+                   SELECT m.new_id, p.name, p.anchor_path, p.created_at, p.updated_at
+                   FROM projects p JOIN _project_id_map m ON m.old_id = p.id`);
+
+      // 3) 重建 project_paths(project_id INTEGER FK)
+      this.db.run(`CREATE TABLE project_paths_new (
+        id            INTEGER PRIMARY KEY AUTOINCREMENT,
+        project_id    INTEGER NOT NULL REFERENCES projects_new(id) ON DELETE CASCADE,
+        path          TEXT    NOT NULL UNIQUE,
+        added_at      INTEGER NOT NULL,
+        last_seen_at  INTEGER NOT NULL
+      )`);
+      this.db.run(`INSERT INTO project_paths_new (id, project_id, path, added_at, last_seen_at)
+                   SELECT pp.id, m.new_id, pp.path, pp.added_at, pp.last_seen_at
+                   FROM project_paths pp JOIN _project_id_map m ON m.old_id = pp.project_id`);
+
+      // 4) UPDATE 各引用表的 project_id 列(列类型保持 TEXT,但存数字字符串;
+      //    SQLite type affinity 允许 INTEGER 写到 TEXT 列,读取时按需转换)
+      //    注:之前 schema 加 project_id 时声明的是 TEXT,这里不重建大表,只更新值
+      const updateRefs = (table: string) => {
+        const cols = this.db.query(`PRAGMA table_info(${table})`).all() as Array<{ name: string }>;
+        if (cols.length === 0 || !cols.some(c => c.name === 'project_id')) return 0;
+        const result = this.db.prepare(`
+          UPDATE ${table} SET project_id = (SELECT new_id FROM _project_id_map WHERE old_id = ${table}.project_id)
+          WHERE project_id IS NOT NULL AND project_id IN (SELECT old_id FROM _project_id_map)
+        `).run();
+        return result.changes;
+      };
+      const obsCount = updateRefs('observations');
+      const sumCount = updateRefs('session_summaries');
+      const sessCount = updateRefs('sdk_sessions');
+
+      // 5) DROP 老表 + RENAME 新表 + 重建索引
+      this.db.run('DROP TABLE project_paths');
+      this.db.run('DROP TABLE projects');
+      this.db.run('ALTER TABLE projects_new RENAME TO projects');
+      this.db.run('ALTER TABLE project_paths_new RENAME TO project_paths');
+      this.db.run('CREATE INDEX IF NOT EXISTS idx_projects_name ON projects(name)');
+      this.db.run('CREATE INDEX IF NOT EXISTS idx_project_paths_project ON project_paths(project_id)');
+      this.db.run('CREATE INDEX IF NOT EXISTS idx_project_paths_path ON project_paths(path)');
+
+      this.db.run('DROP TABLE _project_id_map');
+      this.db.prepare('INSERT OR IGNORE INTO schema_versions (version, applied_at) VALUES (?, ?)').run(34, new Date().toISOString());
+
+      logger.info('DB', `[migration v34] 完成: ${oldRows.length} projects 重 ID,引用更新 obs=${obsCount} sum=${sumCount} sess=${sessCount}`);
+    })();
   }
 
   // 项目身份/路径解耦(claude-mem-改造需求.md):新增 projects + project_paths 表,
