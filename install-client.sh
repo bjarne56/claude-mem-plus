@@ -877,25 +877,33 @@ detect_and_remove_upstream() {
     _kill_stale_worker_processes
 
     # 6) 清旧版本 plugin cache(claude-code 缓存的多版本目录,留最新一个就够)
-    #    路径是 claude-code 自己生成的(基于 marketplace 名 bjarne56/claude-mem),
-    #    跟 fork 包名无关,保留 claude-mem 字面量
-    local cache_root="$HOME/.claude/plugins/cache/bjarne56/claude-mem"
-    if [[ -d "$cache_root" ]]; then
+    #    路径由 claude-code 按 <marketplace>/<plugin-name>/<version> 生成。
+    #    fork 的 plugin name 是 claude-mem-plus,不是 claude-mem
+    #    (上游 marketplace 也清一份,兼容 fork 改名前的旧用户)
+    local cache_root
+    for cache_root in \
+        "$HOME/.claude/plugins/cache/bjarne56/claude-mem-plus" \
+        "$HOME/.claude/plugins/cache/thedotmack/claude-mem-plus" \
+        "$HOME/.claude/plugins/cache/thedotmack/claude-mem"; do
+        [[ -d "$cache_root" ]] || continue
         local versions
-        versions=$(/bin/ls -1 "$cache_root" 2>/dev/null | command grep -E "^[0-9]+\.[0-9]+\.[0-9]+$" | sort -V)
+        # 兼容 semver pre-release 后缀(如 12.6.5-plus.1)
+        versions=$(/bin/ls -1 "$cache_root" 2>/dev/null \
+            | command grep -E "^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)?$" \
+            | sort -V)
         local count
-        count=$(echo "$versions" | command grep -c .)
+        count=$(echo "$versions" | command grep -c . 2>/dev/null || echo 0)
         if [[ "$count" -gt 1 ]]; then
             local latest
             latest=$(echo "$versions" | tail -1)
             local removed=0
             while IFS= read -r v; do
-                [[ "$v" == "$latest" ]] && continue
+                [[ -z "$v" || "$v" == "$latest" ]] && continue
                 rm -rf "$cache_root/$v" 2>/dev/null && ((removed++))
             done <<< "$versions"
-            info "  清旧版 plugin cache:删 $removed 个,留 $latest"
+            info "  清旧版 plugin cache @ $cache_root:删 $removed 个,留 $latest"
         fi
-    fi
+    done
 
     ok "完整卸载完成;数据保留(+ 备份目录)"
 }
