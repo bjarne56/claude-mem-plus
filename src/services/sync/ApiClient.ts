@@ -49,6 +49,17 @@ export interface PushObservationPayload {
   derivation_chain?: string | null;
 }
 
+// fork v12.7.2-plus.1 新增:把本机 project_paths 表同步推到 server
+// server 端按 (machine_id, path) UPSERT 进自己的 project_paths,
+// 并通过 project_name + marker_id 解析到 server.projects.id(server-side UUID)
+export interface PushPathPayload {
+  project_name: string;
+  project_marker_id: string | null;
+  path: string;
+  added_at: number;        // unix seconds
+  last_seen_at: number;    // unix seconds
+}
+
 export interface PushResponse {
   accepted: number;
   duplicates: number;
@@ -268,9 +279,11 @@ export class ApiClient {
   }
 
   // ===== sync =====
-  /** push 用 JSON `{observations:[...]}`(对齐 cmem-server M5 PushRequest schema) */
-  push(observations: PushObservationPayload[]): Promise<PushResponse> {
-    return this.request<PushResponse>('POST', '/api/sync/push', { observations });
+  /** push observations + 可选 paths(fork v12.7.2-plus.1 项目身份解耦同步) */
+  push(observations: PushObservationPayload[], paths: PushPathPayload[] = []): Promise<PushResponse> {
+    const body: Record<string, unknown> = { observations };
+    if (paths.length > 0) body.paths = paths;
+    return this.request<PushResponse>('POST', '/api/sync/push', body);
   }
 
   pull(opts: {

@@ -18,7 +18,7 @@
  */
 import type { Database } from 'bun:sqlite';
 import { logger } from '../../utils/logger.js';
-import { ApiClient, type PullResponse, type PushObservationPayload, type PushResponse, type SharedObservation } from './ApiClient.js';
+import { ApiClient, type PullResponse, type PushObservationPayload, type PushPathPayload, type PushResponse, type SharedObservation } from './ApiClient.js';
 import { SyncState, type AutoSyncDirection } from './SyncState.js';
 import { uuidV7 } from './uuid-v7.js';
 import { resolveProjectMarker, normalizeProjectName } from './ProjectMarker.js';
@@ -180,9 +180,13 @@ export class SyncManager {
         return this.buildPushPayload(row, opts.cwdHint);
       });
 
+      // fork v12.7.2-plus.1:每个 batch 顺手把本机 project_paths 同步推上去
+      // server 端按 (machine_id, path) UPSERT,旧 client 不发该字段也兼容
+      const pathsPayload = this.buildPathsPayload();
+
       let pushRes: PushResponse;
       try {
-        pushRes = await this.api.push(payloads);
+        pushRes = await this.api.push(payloads, pathsPayload);
       } catch (e) {
         logger.error('SYNC', 'push 失败', {
           batch: rows.length,
@@ -263,6 +267,39 @@ export class SyncManager {
       derived_from: null,
       derivation_chain: null,
     };
+  }
+
+  /**
+   * 把本机 project_paths 表全量 dump 成 server 期待的 PushPathPayload[]
+   * server 端通过 project_name + marker_id 解析 server-side UUID,然后
+   * 按 (machine_id, path) UPSERT 进 server.project_paths。
+   * 全量推目前是简化策略;数据量小(< 100 条),不分批不增量。
+   */
+  private buildPathsPayload(): PushPathPayload[] {
+    try {
+      const rows = this.db.query(`
+        SELECT pp.path, pp.added_at, pp.last_seen_at,
+               p.name AS project_name, p.anchor_path
+        FROM project_paths pp
+        JOIN projects p ON p.id = pp.project_id
+      `).all() as Array<{
+        path: string; added_at: number; last_seen_at: number;
+        project_name: string; anchor_path: string | null;
+      }>;
+      return rows.map(r => ({
+        project_name: r.project_name,
+        // anchor_path 用作 marker(server 端 resolve 优先用)
+        project_marker_id: r.anchor_path,
+        path: r.path,
+        // fork 用 ms,server 用 sec(转换)
+        added_at: Math.floor(r.added_at / 1000),
+        last_seen_at: Math.floor(r.last_seen_at / 1000),
+      }));
+    } catch (e) {
+      // projects 表不存在(没跑 v33 migration)→ 忽略,不阻塞 push
+      logger.debug('SYNC', 'paths payload skipped', { msg: e instanceof Error ? e.message : String(e) });
+      return [];
+    }
   }
 
   private recordProjectsResolved(resolved: Array<{ submitted_name: string; project_id: string }>): void {
