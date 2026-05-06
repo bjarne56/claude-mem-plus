@@ -1347,6 +1347,43 @@ sync_login_optional() {
 # check — 验证已装环境健康度;不改任何东西。
 #   非 0 退出 = 至少一项失败,便于自动化脚本判断。
 # ═══════════════════════════════════════════════════════════════
+# ── worker port 解析(单一权威源)──
+# 解析优先级(与 src/shared/SettingsDefaultsManager.ts + CLAUDE.md multi-account 约定一致):
+#   1. $CLAUDE_MEM_WORKER_PORT env(最高)
+#   2. $data_dir/settings.json 里的 CLAUDE_MEM_WORKER_PORT
+#   3. $data_dir/worker.port 文件(老路径,兼容)
+#   4. 计算默认 37700 + (uid % 100)
+# 用法:port=$(_resolve_worker_port "$data_dir")
+_resolve_worker_port() {
+    local data_dir="${1:-${CLAUDE_MEM_DATA_DIR:-$HOME/.claude-mem-plus}}"
+    if [[ -n "${CLAUDE_MEM_WORKER_PORT:-}" ]]; then
+        echo "$CLAUDE_MEM_WORKER_PORT"
+        return 0
+    fi
+    local settings="$data_dir/settings.json"
+    if [[ -f "$settings" ]]; then
+        # grep 取 "CLAUDE_MEM_WORKER_PORT": "37701" 的数字部分(兼容 string / number)
+        local p
+        p=$(command grep -oE '"CLAUDE_MEM_WORKER_PORT"[[:space:]]*:[[:space:]]*"?[0-9]+"?' "$settings" 2>/dev/null \
+            | command grep -oE '[0-9]+' | command head -1)
+        if [[ -n "$p" ]]; then
+            echo "$p"
+            return 0
+        fi
+    fi
+    local port_file="$data_dir/worker.port"
+    if [[ -f "$port_file" ]]; then
+        local p
+        p=$(command cat "$port_file" 2>/dev/null | command tr -d '[:space:]')
+        if [[ -n "$p" ]]; then
+            echo "$p"
+            return 0
+        fi
+    fi
+    # 最后兜底:与 fork 默认公式一致(避免 multi-user 同机端口冲突)
+    echo $((37700 + ($(id -u) % 100)))
+}
+
 cmd_check() {
     log "${BOLD}claude-mem-plus 健康检查${RESET}"
     local fails=0
@@ -1435,13 +1472,12 @@ cmd_check() {
         local pid=$(command cat "$pid_file" 2>/dev/null)
         if [[ -n "$pid" ]] && command kill -0 "$pid" 2>/dev/null; then
             ok "worker 运行中 (PID $pid)"
-            # 探活 /healthz(从 port 文件读 port)
-            local port_file="$data_dir/worker.port"
-            local port=37777
-            [[ -f "$port_file" ]] && port=$(command cat "$port_file" 2>/dev/null)
-            local h=$(command curl -s --max-time 2 "http://127.0.0.1:$port/api/sync/state" 2>/dev/null | command head -c 100)
+            # 探活:用 _resolve_worker_port 统一解析(env > settings.json > worker.port > 公式默认)
+            local port
+            port=$(_resolve_worker_port "$data_dir")
+            local h=$(command curl -s --max-time 2 "http://127.0.0.1:$port/health" 2>/dev/null | command head -c 100)
             if [[ -n "$h" ]]; then
-                ok "/api/sync/state 响应 ok (端口 $port)"
+                ok "/health 响应 ok (端口 $port)"
                 info "viewer: http://127.0.0.1:$port"
             else
                 warn "worker 在跑但端口 $port 不响应"
