@@ -6,6 +6,7 @@ import { LogsDrawer } from './components/LogsModal';
 import { WelcomeCard, getStoredWelcomeDismissed } from './components/WelcomeCard';
 import { TrashModal } from './components/TrashModal';
 import { SyncSettingsModal } from './components/SyncSettingsModal';
+import { ProjectsManagerModal } from './components/ProjectsManagerModal';
 import { useSSE } from './hooks/useSSE';
 import { useSettings } from './hooks/useSettings';
 import { useStats } from './hooks/useStats';
@@ -23,6 +24,7 @@ export function App() {
   const [logsModalOpen, setLogsModalOpen] = useState(false);
   const [trashModalOpen, setTrashModalOpen] = useState(false);
   const [syncModalOpen, setSyncModalOpen] = useState(false);
+  const [projectsModalOpen, setProjectsModalOpen] = useState(false);
   const [welcomeDismissed, setWelcomeDismissed] = useState<boolean>(getStoredWelcomeDismissed);
   const [paginatedObservations, setPaginatedObservations] = useState<Observation[]>([]);
   const [paginatedSummaries, setPaginatedSummaries] = useState<Summary[]>([]);
@@ -80,6 +82,11 @@ export function App() {
   // Toggle sync modal
   const toggleSyncModal = useCallback(() => {
     setSyncModalOpen(prev => !prev);
+  }, []);
+
+  // Toggle projects manager modal(claude-mem-改造需求.md)
+  const toggleProjectsModal = useCallback(() => {
+    setProjectsModalOpen(prev => !prev);
   }, []);
 
   // Handle loading more data
@@ -266,6 +273,20 @@ export function App() {
       </button>
 
       <SyncSettingsModal isOpen={syncModalOpen} onClose={toggleSyncModal} />
+      <ProjectsManagerModal isOpen={projectsModalOpen} onClose={toggleProjectsModal} />
+
+      {/* 项目管理浮动按钮(claude-mem-改造需求.md 整合点)*/}
+      <button
+        type="button"
+        className="floating-icon-button"
+        style={{ position: 'fixed', right: 16, bottom: 120, width: 40, height: 40, borderRadius: 20, background: 'var(--color-bg-secondary, #2a2a2a)', border: '1px solid var(--color-border-primary)', color: 'var(--color-text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}
+        onClick={toggleProjectsModal}
+        title="项目管理(身份/路径/合并)"
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="20" height="20">
+          <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+        </svg>
+      </button>
     </>
   );
 }
