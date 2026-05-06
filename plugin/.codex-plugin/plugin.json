@@ -4,7 +4,7 @@
   "description": "claude-mem-plus fork with cmem-sync (cross-machine sync via self-hosted cmem-server), 31-language UI, soft-delete + trash, public registration page, project identity + 8-digit ID. Pairs with bjarne56/cmem-server.",
   "author": {
     "name": "Alex Newman (upstream) + bjarne56 (fork)",
-    "url": "https://github.com/bjarne56"
+    "url": "https://github.com/thedotmack"
   },
   "homepage": "https://github.com/bjarne56/claude-mem-plus#readme",
   "repository": "https://github.com/bjarne56/claude-mem-plus",
@@ -28,13 +28,13 @@
     "self-hosted",
     "i18n"
   ],
-  "skills": "./plugin/skills/",
+  "skills": "./skills/",
   "mcpServers": "./.mcp.json",
-  "hooks": "./plugin/hooks/codex-hooks.json",
+  "hooks": "./hooks/codex-hooks.json",
   "interface": {
-    "displayName": "claude-mem-plus",
+    "displayName": "claude-mem",
     "shortDescription": "Persistent memory and context compression across coding sessions.",
-    "longDescription": "claude-mem-plus captures coding-session activity, compresses it into reusable observations, and injects relevant context back into future Claude Code and Codex-compatible sessions.",
+    "longDescription": "claude-mem captures coding-session activity, compresses it into reusable observations, and injects relevant context back into future Claude Code and Codex-compatible sessions.",
     "developerName": "Alex Newman (upstream) + bjarne56 (fork)",
     "category": "Productivity",
     "capabilities": [

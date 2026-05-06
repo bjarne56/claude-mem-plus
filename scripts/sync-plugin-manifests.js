@@ -9,11 +9,13 @@ const rootDir = path.resolve(__dirname, '..');
 
 const packageJsonPath = path.join(rootDir, 'package.json');
 const codexPluginPath = path.join(rootDir, '.codex-plugin', 'plugin.json');
+const bundledCodexPluginPath = path.join(rootDir, 'plugin', '.codex-plugin', 'plugin.json');
 const claudePluginPath = path.join(rootDir, '.claude-plugin', 'plugin.json');
-// fork: 也同步 plugin/.claude-plugin/plugin.json — readPluginVersion()
-// (npx-cli) 优先读这个文件,所以 version 必须保持和 root package.json 一致,
-// 否则 claude-mem-plus --version 显示旧值 + plugin tree 显示旧版。
+// fork: pluginTreeManifestPath = bundledClaudePluginPath(同 v12.7.2 上游名)
+// readPluginVersion() (npx-cli) 优先读这个文件,version 必须和 root package.json
+// 一致,否则 claude-mem-plus --version 显示旧值 + plugin tree 显示旧版。
 const pluginTreeManifestPath = path.join(rootDir, 'plugin', '.claude-plugin', 'plugin.json');
+const bundledClaudePluginPath = pluginTreeManifestPath;
 
 function readJson(filePath) {
   return JSON.parse(fs.readFileSync(filePath, 'utf8'));
@@ -79,7 +81,7 @@ function normalizeRepositoryUrl(repository) {
 }
 
 function main() {
-  for (const filePath of [packageJsonPath, codexPluginPath, claudePluginPath]) {
+  for (const filePath of [packageJsonPath, codexPluginPath, bundledCodexPluginPath, claudePluginPath, bundledClaudePluginPath]) {
     if (!fs.existsSync(filePath)) {
       console.error(`Missing required file: ${filePath}`);
       process.exit(1);
@@ -88,10 +90,14 @@ function main() {
 
   const pkg = readJson(packageJsonPath);
   const codexPlugin = readJson(codexPluginPath);
+  const bundledCodexPlugin = readJson(bundledCodexPluginPath);
   const claudePlugin = readJson(claudePluginPath);
+  const bundledClaudePlugin = readJson(bundledClaudePluginPath);
 
   writeJson(codexPluginPath, syncCodexPlugin(codexPlugin, pkg));
+  writeJson(bundledCodexPluginPath, syncCodexPlugin(bundledCodexPlugin, pkg));
   writeJson(claudePluginPath, syncClaudePlugin(claudePlugin, pkg));
+  writeJson(bundledClaudePluginPath, syncClaudePlugin(bundledClaudePlugin, pkg));
 
   // fork: 同步 plugin/.claude-plugin/plugin.json 的 version,但保留 upstream
   // 的 name / description / author / repository / license / keywords 不动
