@@ -53,3 +53,11 @@ docker/install-test/
 # bun-test sloc-guard cache (test-local, do not commit)
 **/.sloc-guard.toml
 **/.sloc-guard/
+
+
+# fork folder-claudemd hook 在各子目录自动生成 CLAUDE.md(占位 noise),不入版本
+# 仅保留项目根的 CLAUDE.md(真实编码约束文档)
+**/CLAUDE.md
+!/CLAUDE.md
+!/plugin/CLAUDE.md
+!/plugin/scripts/CLAUDE.md
