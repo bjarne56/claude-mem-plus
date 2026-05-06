@@ -1408,10 +1408,10 @@ cmd_check() {
         [[ -d "$nvm_bin" ]] && export PATH="$nvm_bin:$PATH"
     done
 
-    step "1/7 系统环境"
+    step "1/8 系统环境"
     info "OS:    $OS  Arch: $ARCH  Shell: $SHELL"
 
-    step "2/7 Node"
+    step "2/8 Node"
     if command -v node >/dev/null 2>&1; then
         local nv=$(node --version | sed 's/^v//')
         local major=${nv%%.*}
@@ -1421,11 +1421,11 @@ cmd_check() {
         fail_soft "node 未装"; fails=$((fails+1))
     fi
 
-    step "3/7 Bun"
+    step "3/8 Bun"
     if command -v bun >/dev/null 2>&1; then ok "bun $(bun --version)"
     else warn "bun 未装(worker 起不来)"; fails=$((fails+1)); fi
 
-    step "4/7 claude-mem-plus CLI"
+    step "4/8 claude-mem-plus CLI"
     if command -v claude-mem-plus >/dev/null 2>&1; then
         local cmv=$(claude-mem-plus --version 2>/dev/null | head -1 || echo "?")
         ok "claude-mem-plus $cmv"
@@ -1455,7 +1455,7 @@ cmd_check() {
         fails=$((fails+1))
     fi
 
-    step "5/7 数据目录"
+    step "5/8 数据目录"
     local data_dir="${CLAUDE_MEM_DATA_DIR:-$HOME/.claude-mem-plus}"
     if [[ -d "$data_dir" ]]; then
         ok "存在: $data_dir"
@@ -1474,7 +1474,7 @@ cmd_check() {
         warn "数据目录不存在(首次启动 worker 会自建)"
     fi
 
-    step "6/7 Worker daemon"
+    step "6/8 Worker daemon"
     local pid_file="$data_dir/worker.pid"
     if [[ -f "$pid_file" ]]; then
         # fork worker.pid 是 JSON({"pid":N,"port":P,...}),但老版本 / 手动写
@@ -1505,13 +1505,49 @@ cmd_check() {
         warn "worker 未启动(claude-mem-plus start)"
     fi
 
-    step "7/7 claude-code hook"
+    step "7/8 claude-code hook"
     local cc_settings="$HOME/.claude/settings.json"
     # hook 注册时命令名是 claude-mem-plus 或旧 claude-mem,任一存在即视为已注册
     if [[ -f "$cc_settings" ]] && command grep -qE "claude-mem(-plus)?" "$cc_settings" 2>/dev/null; then
         ok "claude-code 配置里看到 claude-mem(-plus) hook 引用"
     else
         warn "claude-code 没看到 hook 注册(claude-mem-plus install --ide claude-code)"
+    fi
+
+    # ── 项目身份系统(claude-mem-改造需求.md):v33 建表 + v34 INTEGER ID 迁移 + 历史 obs 回填覆盖率
+    step "8/8 项目身份系统(v33/v34)"
+    local db_file="$data_dir/claude-mem.db"
+    if [[ ! -f "$db_file" ]] || ! command -v sqlite3 >/dev/null 2>&1; then
+        warn "跳过(无 db 或 sqlite3 不可用)"
+    else
+        local v33 v34 proj_count obs_total obs_with_id
+        v33=$(command sqlite3 "$db_file" "SELECT version FROM schema_versions WHERE version=33" 2>/dev/null)
+        v34=$(command sqlite3 "$db_file" "SELECT version FROM schema_versions WHERE version=34" 2>/dev/null)
+        if [[ "$v33" != "33" ]]; then
+            warn "schema v33 未应用(项目表缺失,重启 worker 触发自动迁移)"
+            fails=$((fails+1))
+        else
+            ok "schema v33 已应用(projects/project_paths 表)"
+        fi
+        if [[ "$v34" != "34" ]]; then
+            warn "schema v34 未应用(项目 ID 还是 base62 格式,重启 worker 触发)"
+            fails=$((fails+1))
+        else
+            ok "schema v34 已应用(项目 ID = 8 位数字)"
+        fi
+        proj_count=$(command sqlite3 "$db_file" "SELECT COUNT(*) FROM projects" 2>/dev/null || echo 0)
+        info "projects 表:$proj_count 个项目"
+        obs_total=$(command sqlite3 "$db_file" "SELECT COUNT(*) FROM observations" 2>/dev/null || echo 0)
+        obs_with_id=$(command sqlite3 "$db_file" "SELECT COUNT(*) FROM observations WHERE project_id IS NOT NULL" 2>/dev/null || echo 0)
+        if [[ "$obs_total" -gt 0 ]]; then
+            local pct=$((obs_with_id * 100 / obs_total))
+            if [[ "$pct" -lt 80 ]]; then
+                warn "observations.project_id 回填率 ${pct}% ($obs_with_id/$obs_total) — 跑 'bun scripts/migrate-projects.ts --apply' 补全"
+                fails=$((fails+1))
+            else
+                ok "observations.project_id 回填率 ${pct}% ($obs_with_id/$obs_total)"
+            fi
+        fi
     fi
 
     echo
@@ -1755,41 +1791,84 @@ _ask_yn() {
 # ═══════════════════════════════════════════════════════════════
 # install — 主流程
 # ═══════════════════════════════════════════════════════════════
+# 项目身份回填:跑 scripts/migrate-projects.ts --apply
+# 仅当能找到脚本(本地源码安装场景)且 worker 起来后才有意义
+_backfill_project_ids() {
+    # 等 worker 完整起来,确保 schema v33/v34 已经应用
+    sleep 2
+
+    # 找脚本路径(优先 LOCAL_SRC,其次 SCRIPT_DIR 自身,最后跳过)
+    local migrate_script=""
+    for candidate in \
+        "${LOCAL_SRC:-}/scripts/migrate-projects.ts" \
+        "$SCRIPT_DIR/scripts/migrate-projects.ts"; do
+        if [[ -n "$candidate" && -f "$candidate" ]]; then
+            migrate_script="$candidate"
+            break
+        fi
+    done
+
+    if [[ -z "$migrate_script" ]]; then
+        warn "找不到 scripts/migrate-projects.ts(npm/tarball 安装场景),跳过"
+        info "  历史 observations 的 project_id 仍为 NULL;新写入会自动双写"
+        info "  手动:cd <fork 源码> && bun scripts/migrate-projects.ts --apply"
+        return 0
+    fi
+
+    if ! command -v bun >/dev/null 2>&1; then
+        warn "bun 不在 PATH,跳过回填(应该刚装过,看 step 3)"
+        return 0
+    fi
+
+    info "跑回填脚本(idempotent,只补 project_id IS NULL 的行)"
+    if bun "$migrate_script" --apply 2>&1 | command sed 's/^/    /'; then
+        ok "项目身份回填完成"
+    else
+        warn "回填脚本退出码非 0(已记录,可手动重跑)"
+    fi
+}
+
 cmd_install() {
     log "${BOLD}claude-mem-plus 客户端安装${RESET}"
     log "${DIM}  支持:macOS / Ubuntu / Debian / Rocky / Fedora / Arch / Alpine${RESET}"
 
     # 上游 claude-mem 残留预检(.zshenv 里的 CLAUDE_MEM_DATA_DIR 会让 plus
     # worker 写到错误数据目录;遗留 chroma-mcp 僵尸会让 vector 检索打到错位置)
-    step "0/7 上游 claude-mem 残留检查"
+    step "0/8 上游 claude-mem 残留检查"
     _handle_legacy_residue install
 
-    step "1/7 装 Node"
+    step "1/8 装 Node"
     ensure_node
 
-    step "2/7 装 Bun(worker 运行时)"
+    step "2/8 装 Bun(worker 运行时)"
     ensure_bun
 
     if [[ "$PACKAGE_SOURCE" == "local" ]]; then
-        step "3/7 装 claude-mem-plus(本地源码:$LOCAL_SRC)"
+        step "3/8 装 claude-mem-plus(本地源码:$LOCAL_SRC)"
     else
-        step "3/7 装 claude-mem-plus(源:$PACKAGE_SOURCE)"
+        step "3/8 装 claude-mem-plus(源:$PACKAGE_SOURCE)"
     fi
     install_claude_mem
 
-    step "4/7 注册 claude-code hook"
+    step "4/8 注册 claude-code hook"
     register_hooks
 
-    step "5/7 按系统语言本地化 SKILL.md description + CLAUDE_MEM_MODE"
+    step "5/8 按系统语言本地化 SKILL.md description + CLAUDE_MEM_MODE"
     apply_skill_locale
     apply_mode_locale
 
-    step "6/7 数据目录软链(可选)"
+    step "6/8 数据目录软链(可选)"
     setup_data_symlink
 
-    step "7/7 启动 worker + 可选 sync 配置"
+    step "7/8 启动 worker + 可选 sync 配置"
     start_worker
     sync_login_optional
+
+    # ── 项目身份系统 v33+v34 已由 worker 启动时自动应用(SessionStore.ensureProjectsTables /
+    #    migrateProjectIdToInt)。此 step 把"历史 observations 的 project_id 回填"自动跑一次,
+    #    无需用户手动 `bun scripts/migrate-projects.ts --apply`
+    step "8/8 项目身份回填(历史 observations.project_id)"
+    _backfill_project_ids
 
     echo
     log "${BOLD}${GREEN}━━━ 完成 ━━━${RESET}"
