@@ -74,7 +74,9 @@ function buildContextOutput(
 
   const economics = calculateTokenEconomics(observations);
 
-  output.push(...renderHeader(project, economics, config, forHuman));
+  // 把最新 obs/summary 传给 Header,用于在头部渲染"最新观察戳"行。
+  // 这样即便终端预览只显示前 2KB,也能立即确认数据新鲜度。
+  output.push(...renderHeader(project, economics, config, forHuman, observations[0], summaries[0]));
 
   const displaySummaries = summaries.slice(0, config.sessionCount);
   const summariesForTimeline = prepareSummariesForTimeline(displaySummaries, summaries);

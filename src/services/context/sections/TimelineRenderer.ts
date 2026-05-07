@@ -9,6 +9,9 @@ import { formatTime, formatDate, formatDateTime, extractFirstFile, parseJsonArra
 import * as Agent from '../formatters/AgentFormatter.js';
 import * as Human from '../formatters/HumanFormatter.js';
 
+// 按日期分组,日期降序(最新一天在前);每天内 items 也按 epoch 降序(最新条目在前)。
+// 这样输出顺序是 desc,Claude Code 终端的 2KB 预览能优先显示最新内容,
+// AI 上下文总量不变,只是顺序倒过来。
 export function groupTimelineByDay(timeline: TimelineItem[]): Map<string, TimelineItem[]> {
   const itemsByDay = new Map<string, TimelineItem[]>();
 
@@ -21,10 +24,20 @@ export function groupTimelineByDay(timeline: TimelineItem[]): Map<string, Timeli
     itemsByDay.get(day)!.push(item);
   }
 
+  // 每天内按 epoch 降序排
+  for (const [, dayItems] of itemsByDay) {
+    dayItems.sort((a, b) => {
+      const aEpoch = a.type === 'observation' ? a.data.created_at_epoch : a.data.displayEpoch;
+      const bEpoch = b.type === 'observation' ? b.data.created_at_epoch : b.data.displayEpoch;
+      return bEpoch - aEpoch;
+    });
+  }
+
+  // 日期降序
   const sortedEntries = Array.from(itemsByDay.entries()).sort((a, b) => {
     const aDate = new Date(a[0]).getTime();
     const bDate = new Date(b[0]).getTime();
-    return aDate - bDate;
+    return bDate - aDate;
   });
 
   return new Map(sortedEntries);
