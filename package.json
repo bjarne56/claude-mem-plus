@@ -1,11 +1,10 @@
 {
   "name": "claude-mem-plus",
-  "version": "12.7.2-plus.1",
+  "version": "12.7.5-plus.1",
   "description": "claude-mem-plus fork with cmem-sync (cross-machine sync via self-hosted cmem-server), 31-language UI, soft-delete + trash, public registration page, project identity + 8-digit ID. Pairs with bjarne56/cmem-server.",
   "keywords": [
     "claude",
     "claude-code",
-    "claude-mem-plus",
     "claude-agent-sdk",
     "mcp",
     "plugin",
@@ -21,19 +20,18 @@
     "self-hosted",
     "i18n"
   ],
-  "author": "Alex Newman (upstream) + bjarne56 (fork)",
-  "license": "AGPL-3.0",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/bjarne56/claude-mem-plus.git"
+  "author": {
+    "name": "Alex Newman (upstream) + bjarne56 (fork)"
   },
+  "license": "AGPL-3.0",
+  "repository": "https://github.com/bjarne56/claude-mem-plus",
   "homepage": "https://github.com/bjarne56/claude-mem-plus#readme",
   "bugs": {
-    "url": "https://github.com/bjarne56/claude-mem-plus/issues"
+    "url": "https://github.com/thedotmack/claude-mem/issues"
   },
   "type": "module",
   "bin": {
-    "claude-mem-plus": "./dist/npx-cli/index.js"
+    "claude-mem": "./dist/npx-cli/index.js"
   },
   "exports": {
     ".": {
@@ -72,15 +70,13 @@
   "scripts": {
     "dev": "npm run build-and-sync",
     "build": "node scripts/sync-plugin-manifests.js && node scripts/build-hooks.js",
-    "build-and-sync": "npm run build && npm run sync-marketplace && sleep 1 && (cd ~/.claude/plugins/marketplaces/bjarne56 && npm run worker:restart) && npm run queue:clear",
+    "build-and-sync": "npm run build && npm run sync-marketplace && sleep 1 && (cd ~/.claude/plugins/marketplaces/thedotmack && npm run worker:restart) && npm run queue:clear",
     "sync-marketplace": "node scripts/sync-marketplace.cjs",
     "sync-marketplace:force": "node scripts/sync-marketplace.cjs --force",
     "build:binaries": "node scripts/build-worker-binary.js",
-    "build:cli-binary": "bun build --compile --minify ./src/services/worker-service.ts --outfile plugin/scripts/claude-mem-plus",
-    "pack:release": "bash scripts/pack-release.sh",
-    "pack:release:dry": "bash scripts/pack-release.sh --dry-run",
-    "worker:logs": "tail -n 50 ~/.claude-mem-plus/logs/worker-$(date +%Y-%m-%d).log",
-    "worker:tail": "tail -f 50 ~/.claude-mem-plus/logs/worker-$(date +%Y-%m-%d).log",
+    "build:cli-binary": "bun build --compile --minify ./src/services/worker-service.ts --outfile plugin/scripts/claude-mem",
+    "worker:logs": "tail -n 50 ~/.claude-mem/logs/worker-$(date +%Y-%m-%d).log",
+    "worker:tail": "tail -f 50 ~/.claude-mem/logs/worker-$(date +%Y-%m-%d).log",
     "changelog:generate": "node scripts/generate-changelog.js",
     "discord:notify": "node scripts/discord-release-notify.js",
     "worker:start": "bun plugin/scripts/worker-service.cjs start",
@@ -90,6 +86,7 @@
     "queue": "bun scripts/check-pending-queue.ts",
     "queue:process": "bun scripts/check-pending-queue.ts --process",
     "queue:clear": "bun scripts/clear-failed-queue.ts --all --force",
+    "pr:status": "bun scripts/pr-babysit-status.ts",
     "claude-md:regenerate": "bun scripts/regenerate-claude-md.ts",
     "claude-md:dry-run": "bun scripts/regenerate-claude-md.ts --dry-run",
     "strip-comments": "bun scripts/strip-comments.ts",

@@ -1,6 +1,6 @@
 {
   "name": "claude-mem-plus",
-  "version": "12.7.2-plus.1",
+  "version": "12.7.5-plus.1",
   "description": "claude-mem-plus fork with cmem-sync (cross-machine sync via self-hosted cmem-server), 31-language UI, soft-delete + trash, public registration page, project identity + 8-digit ID. Pairs with bjarne56/cmem-server.",
   "author": {
     "name": "Alex Newman (upstream) + bjarne56 (fork)"
@@ -10,7 +10,6 @@
   "keywords": [
     "claude",
     "claude-code",
-    "claude-mem-plus",
     "claude-agent-sdk",
     "mcp",
     "plugin",

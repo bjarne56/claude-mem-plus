@@ -1,10 +1,9 @@
 {
   "name": "claude-mem-plus",
-  "version": "12.7.2-plus.1",
+  "version": "12.7.5-plus.1",
   "description": "claude-mem-plus fork with cmem-sync (cross-machine sync via self-hosted cmem-server), 31-language UI, soft-delete + trash, public registration page, project identity + 8-digit ID. Pairs with bjarne56/cmem-server.",
   "author": {
-    "name": "Alex Newman (upstream) + bjarne56 (fork)",
-    "url": "https://github.com/bjarne56"
+    "name": "Alex Newman (upstream) + bjarne56 (fork)"
   },
   "homepage": "https://github.com/bjarne56/claude-mem-plus#readme",
   "repository": "https://github.com/bjarne56/claude-mem-plus",
@@ -12,7 +11,6 @@
   "keywords": [
     "claude",
     "claude-code",
-    "claude-mem-plus",
     "claude-agent-sdk",
     "mcp",
     "plugin",
@@ -32,16 +30,16 @@
   "mcpServers": "./.mcp.json",
   "hooks": "./plugin/hooks/codex-hooks.json",
   "interface": {
-    "displayName": "claude-mem-plus",
+    "displayName": "claude-mem",
     "shortDescription": "Persistent memory and context compression across coding sessions.",
-    "longDescription": "claude-mem-plus captures coding-session activity, compresses it into reusable observations, and injects relevant context back into future Claude Code and Codex-compatible sessions.",
-    "developerName": "Alex Newman (upstream) + bjarne56 (fork)",
+    "longDescription": "claude-mem captures coding-session activity, compresses it into reusable observations, and injects relevant context back into future Claude Code and Codex-compatible sessions.",
+    "developerName": "Alex Newman",
     "category": "Productivity",
     "capabilities": [
       "Interactive",
       "Write"
     ],
-    "websiteURL": "https://github.com/bjarne56/claude-mem-plus",
+    "websiteURL": "https://github.com/thedotmack/claude-mem",
     "defaultPrompt": [
       "Find what I already learned about this codebase before I start a new task.",
       "Show recent observations related to the files I am editing right now.",
