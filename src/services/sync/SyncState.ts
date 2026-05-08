@@ -74,10 +74,12 @@ export class SyncState {
     return this.get();
   }
 
-  /** 是否已登录(有 access token 或 machine token) */
+  /** 是否已登录:有 access_token + user_id。
+   *  机器身份(machine_token)在 clearAuth 后保留(供下次 login idempotent 复用 createMachine),
+   *  不能作为登录态判定,否则 logout 后仍误判为已登录。 */
   isLoggedIn(): boolean {
     const row = this.get();
-    return Boolean(row.access_token || row.machine_token);
+    return Boolean(row.access_token && row.user_id);
   }
 
   /** 是否已配置 server URL */
@@ -85,17 +87,26 @@ export class SyncState {
     return Boolean(this.get().server_url);
   }
 
-  /** 清登录态(保留 server_url + last_pulled_seq) */
+  /** 清登录态(保留 server_url + last_pulled_seq + machine 身份)。
+   *  machine_id/name/token 是 client 的物理机器身份(server 端 (user_id, name) UNIQUE),
+   *  logout 不清:同 user re-login 直接复用,避免重复 createMachine 触发 409 conflict。
+   *  切换 user 由 SyncManager.login 检测后单独 clearMachine。 */
   clearAuth(): void {
     this.update({
       user_id: null,
       username: null,
-      machine_id: null,
-      machine_name: null,
-      machine_token: null,
       access_token: null,
       access_token_expires_at: null,
       refresh_token: null,
+    });
+  }
+
+  /** 清机器身份 — 仅在 user 切换时调用(机器在 server 端属于旧 user,新 user 必须重建)。 */
+  clearMachine(): void {
+    this.update({
+      machine_id: null,
+      machine_name: null,
+      machine_token: null,
     });
   }
 

@@ -98,12 +98,15 @@ export class SyncRoutes extends BaseRouteHandler {
     app.get('/api/sync/state', requireLocalhost, this.handleState.bind(this));
     app.get('/api/sync/me', requireLocalhost, this.handleMe.bind(this));
     app.get('/api/sync/projects', requireLocalhost, this.handleProjects.bind(this));
+    app.get('/api/sync/remote-projects', requireLocalhost, this.handleRemoteProjects.bind(this));
+    app.get('/api/sync/progress', requireLocalhost, this.handleProgress.bind(this));
 
     app.post('/api/sync/login', requireLocalhost, validateBody(loginSchema), this.handleLogin.bind(this));
     app.post('/api/sync/logout', requireLocalhost, this.handleLogout.bind(this));
     app.post('/api/sync/register', requireLocalhost, validateBody(registerSchema), this.handleRegister.bind(this));
     app.post('/api/sync/push', requireLocalhost, this.handlePush.bind(this));
     app.post('/api/sync/pull', requireLocalhost, this.handlePull.bind(this));
+    app.post('/api/sync/delete-remote-project', requireLocalhost, this.handleDeleteRemoteProject.bind(this));
     app.post('/api/sync/share-project', requireLocalhost, validateBody(shareSchema), this.handleShare.bind(this));
     app.post('/api/sync/unshare-project', requireLocalhost, validateBody(unshareSchema), this.handleUnshare.bind(this));
     app.post('/api/sync/fork-project', requireLocalhost, validateBody(forkSchema), this.handleFork.bind(this));
@@ -128,21 +131,98 @@ export class SyncRoutes extends BaseRouteHandler {
     });
   });
 
-  private handleProjects = this.wrapHandler((_req: Request, res: Response): void => {
-    // 本地视角:projects_sync 表 + observations 聚合
-    const rows = this.syncManager.db
+  /// 当前同步进度(push/pull 实时)。UI 启动同步后轮询此端点显示进度条。
+  /// idle = 没有同步在跑;phase=push/pull 时 current/total 反映行数进度。
+  /// total=0 + phase!=idle = indeterminate(已开始但还没拿到总数)。
+  private handleProgress = this.wrapHandler((_req: Request, res: Response): void => {
+    res.json(this.syncManager.getProgress());
+  });
 
+  /// 拉取远程 server 上当前 user 的项目 + 各项目的 obs 数。
+  /// 客户端用这个数据 vs 本地 projects_sync 数据做对比,展示"本地 N / 远程 M"。
+  /// 未登录时返回空数组(不抛错,UI 只显示本地数据)。
+  private handleRemoteProjects = this.wrapHandler(async (_req: Request, res: Response): Promise<void> => {
+    const s = this.syncManager.state.get();
+    if (!s.access_token || !s.server_url) {
+      res.json({ projects: [], loggedIn: false });
+      return;
+    }
+    try {
+      const apiClient = new ApiClient(this.syncManager.state);
+      const r = await apiClient.listProjects();
+      const projects = (r.projects ?? []).map((p: { id: string; name: string; observation_count?: number }) => ({
+        id: p.id,
+        name: p.name,
+        observation_count: p.observation_count ?? 0,
+      }));
+      res.json({ projects, loggedIn: true });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      logger.warn('SYNC', 'listRemoteProjects 失败', { message: msg });
+      res.status(502).json({ error: { code: 'REMOTE_LIST_FAILED', message: msg } });
+    }
+  });
+
+  /// 同步删:client 删项目时调用,把 server 上同名项目也软删进回收站。
+  /// body: { project_name: string }。
+  /// - 未登录:返回 { ok: false, reason: 'not_logged_in' }(不阻塞本地删除)
+  /// - 项目从未 push 过 server:返回 { ok: false, reason: 'no_server_id' }
+  /// - server 删除失败:静默 warn,返回 { ok: false, reason: 'remote_failed' }
+  /// - 成功:返回 { ok: true }
+  /// 调用方应忽略错误,不阻塞主流程(本地删除是权威操作)。
+  private handleDeleteRemoteProject = this.wrapHandler(async (req: Request, res: Response): Promise<void> => {
+    const projectName = (req.body as { project_name?: string })?.project_name?.trim();
+    if (!projectName) { res.status(400).json({ ok: false, reason: 'missing project_name' }); return; }
+
+    const s = this.syncManager.state.get();
+    if (!s.access_token || !s.server_url) {
+      res.json({ ok: false, reason: 'not_logged_in' });
+      return;
+    }
+
+    // 查 projects_sync 拿 server_project_id
+    const row = this.syncManager.db
+      .prepare('SELECT server_project_id FROM projects_sync WHERE project_name = ?')
+      .get(projectName) as { server_project_id: string | null } | undefined;
+    const serverId = row?.server_project_id;
+    if (!serverId || !/^[0-9a-f-]{32,}$/i.test(serverId)) {
+      // 项目从未 push 或 server_id 无效(老 path-bug 残留),无需远程删
+      res.json({ ok: false, reason: 'no_server_id' });
+      return;
+    }
+
+    try {
+      const apiClient = new ApiClient(this.syncManager.state);
+      await apiClient.deleteProject(serverId);
+      // 同时清掉 client 的 projects_sync 行(项目身份关系已断)
+      this.syncManager.db
+        .prepare('DELETE FROM projects_sync WHERE project_name = ?')
+        .run(projectName);
+      res.json({ ok: true });
+    } catch (e) {
+      logger.warn('SYNC', '远程删项目失败,本地继续', { projectName, serverId, message: e instanceof Error ? e.message : String(e) });
+      res.json({ ok: false, reason: 'remote_failed' });
+    }
+  });
+
+  private handleProjects = this.wrapHandler((_req: Request, res: Response): void => {
+    // 数据源以 projects v2 表为权威(与项目管理列表一致),LEFT JOIN projects_sync
+    // 拿共享/同步状态。让 viewer 各处的项目集合保持唯一来源,云同步对话框能列出
+    // 用户能管理的全部项目供选择"共享",不再因 projects_sync 孤儿(如已删项目残留)
+    // 与项目管理对不上。
+    const rows = this.syncManager.db
       .query(
-        `SELECT ps.project_name as name,
+        `SELECT p.name AS name,
                 ps.server_project_id,
                 ps.share_state,
-                ps.is_excluded,
-                ps.is_forked,
-                COUNT(o.id) as observation_count
-         FROM projects_sync ps
-         LEFT JOIN observations o ON o.project = ps.project_name AND o.deleted_at IS NULL
-         GROUP BY ps.project_name
-         ORDER BY ps.project_name`
+                COALESCE(ps.is_excluded, 0) AS is_excluded,
+                COALESCE(ps.is_forked, 0) AS is_forked,
+                COUNT(o.id) AS observation_count
+         FROM projects p
+         LEFT JOIN projects_sync ps ON ps.project_name = p.name
+         LEFT JOIN observations o ON o.project = p.name AND o.deleted_at IS NULL
+         GROUP BY p.name
+         ORDER BY p.name`
       )
       .all() as Array<{
       name: string;

@@ -103,9 +103,45 @@ export class SyncManager {
     const cleanUrl = serverUrl.replace(/\/$/, '');
     this.state.update({ server_url: cleanUrl });
 
+    // 用 last_synced_user_id (持久,clearAuth 不清) 检测 user 切换。
+    // 第一次登录:last_synced_user_id 为空,不重置(client obs 都是 server_seq=NULL)。
+    // 同 user re-login:相等,不重置(增量语义)。
+    // 切到不同 user(如 admin → bjarne):不等,重置 watermark 触发完整重 push。
+    const lastSyncedRow = this.db
+      .prepare('SELECT last_synced_user_id FROM sync_state WHERE id = 1')
+      .get() as { last_synced_user_id: string | null } | undefined;
+    const prevSyncedUserId = lastSyncedRow?.last_synced_user_id ?? null;
+
     const loginRes = await this.api.login(username, password);
+    const newUserId = loginRes.user.id;
+
+    const userChanged = prevSyncedUserId && prevSyncedUserId !== newUserId;
+    if (userChanged) {
+      logger.info('SYNC', '检测到 user 切换,重置 watermark + 清机器身份触发完整重 push', {
+        from: prevSyncedUserId,
+        to: newUserId,
+      });
+      const tx = this.db.transaction(() => {
+        // 所有 obs 标记 pending(下次 push 全量上传)
+        this.db.prepare('UPDATE observations SET server_seq = NULL').run();
+        // pull cursor 归零(从新 user 视角拉所有共享/自己的)
+        this.db.prepare('UPDATE sync_state SET last_pulled_seq = 0 WHERE id = 1').run();
+        // 清旧 user 的项目映射(server_project_id 是 per-user 的)
+        this.db.prepare('DELETE FROM projects_sync').run();
+      });
+      tx();
+      // 切换 user 必须清旧机器身份:机器在 server 端 (user_id, name) UNIQUE,
+      // 旧 machine_id 属于旧 user,新 user 名下要重建。同 user re-login 不走这分支
+      // (clearAuth 已不清 machine_*,直接复用,避免 409 冲突)。
+      this.state.clearMachine();
+    }
+    // 更新 last_synced_user_id 为当前 user(下次比较的基准)
+    this.db
+      .prepare('UPDATE sync_state SET last_synced_user_id = ? WHERE id = 1')
+      .run(newUserId);
+
     this.state.update({
-      user_id: loginRes.user.id,
+      user_id: newUserId,
       username: loginRes.user.username,
       access_token: loginRes.access_token,
       access_token_expires_at: Math.floor(Date.parse(loginRes.access_token_expires_at) / 1000),
@@ -143,6 +179,29 @@ export class SyncManager {
     this.state.clearAuth();
   }
 
+  // ===== 同步进度跟踪 =====
+  // 全局单例 progress(同时只能一次 push 或 pull,UI 通过 GET /api/sync/progress 轮询)。
+  // running=true 表示有正在进行的同步;phase 区分 push/pull;current/total 是行数进度。
+  private _progress: { phase: 'push' | 'pull' | 'idle'; current: number; total: number; startedAt: number } =
+    { phase: 'idle', current: 0, total: 0, startedAt: 0 };
+
+  getProgress(): { phase: 'push' | 'pull' | 'idle'; current: number; total: number; startedAt: number } {
+    return { ...this._progress };
+  }
+
+  private setProgress(phase: 'push' | 'pull' | 'idle', current: number, total: number): void {
+    if (phase === 'idle') {
+      this._progress = { phase: 'idle', current: 0, total: 0, startedAt: 0 };
+    } else {
+      this._progress = {
+        phase,
+        current,
+        total,
+        startedAt: this._progress.startedAt || Date.now(),
+      };
+    }
+  }
+
   // ===== push =====
 
   async push(opts: { batchSize?: number; cwdHint?: string } = {}): Promise<PushResult> {
@@ -152,6 +211,14 @@ export class SyncManager {
     }
 
     const result: PushResult = { pushed: 0, duplicates: 0, errors: 0, serverSeqMax: 0 };
+
+    // 估算总数(本次 push 开始前 pending 总条数)给进度条用。
+    const totalRow = this.db
+      .query('SELECT COUNT(*) AS n FROM observations WHERE server_seq IS NULL AND deleted_at IS NULL')
+      .get() as { n: number };
+    const totalPending = totalRow.n;
+    this._progress = { phase: 'push', current: 0, total: totalPending, startedAt: Date.now() };
+    try {
 
     // 循环 batch 直到没有 pending
     for (;;) {
@@ -222,6 +289,9 @@ export class SyncManager {
       result.errors += pushRes.errors.length;
       result.serverSeqMax = Math.max(result.serverSeqMax, pushRes.server_seq_max);
 
+      // 进度更新:current = 已处理(包括 accepted + duplicates + 当前 batch errors)
+      this.setProgress('push', Math.min(result.pushed + result.duplicates, totalPending), totalPending);
+
       if (rows.length < batchSize) break;
     }
 
@@ -230,6 +300,9 @@ export class SyncManager {
     }
     logger.info('SYNC', 'push 完成', result);
     return result;
+    } finally {
+      this.setProgress('idle', 0, 0);
+    }
   }
 
   /** 一行 observation → server push payload */
@@ -279,17 +352,20 @@ export class SyncManager {
     try {
       const rows = this.db.query(`
         SELECT pp.path, pp.added_at, pp.last_seen_at,
-               p.name AS project_name, p.anchor_path
+               p.name AS project_name
         FROM project_paths pp
         JOIN projects p ON p.id = pp.project_id
       `).all() as Array<{
         path: string; added_at: number; last_seen_at: number;
-        project_name: string; anchor_path: string | null;
+        project_name: string;
       }>;
       return rows.map(r => ({
         project_name: r.project_name,
-        // anchor_path 用作 marker(server 端 resolve 优先用)
-        project_marker_id: r.anchor_path,
+        // marker_id 跨 client 稳定标识(UUID),来自 .cmem-project.toml 的 project_id 字段。
+        // 历史代码曾误用 projects.anchor_path(本地路径)做 marker,导致 server 端把
+        // 本地路径当 project.id 存(rune-ime 案例)。改成 null 让 server 按 project_name
+        // 正常 resolve(observation push 路径里 marker 来自 .toml,语义对齐)。
+        project_marker_id: null,
         path: r.path,
         // fork 用 ms,server 用 sec(转换)
         added_at: Math.floor(r.added_at / 1000),
@@ -326,10 +402,20 @@ export class SyncManager {
       throw new Error('未登录,请先 claude-mem-plus sync login');
     }
 
+    // 进度:pull 是单次 API 调用,total 在请求前未知 → 标 indeterminate(total=0)。
+    // API 返回后用实际数量填进 current/total。
+    this._progress = { phase: 'pull', current: 0, total: 0, startedAt: Date.now() };
+    try {
+
     const since = this.state.get().last_pulled_seq;
     const res = await this.api.pull({ since_seq: since, limit: opts.limit ?? 500 });
 
+    const totalPulled = (res.own_observations?.length ?? 0) + (res.shared_observations?.length ?? 0);
+    this.setProgress('pull', 0, totalPulled);
+
     const result = this.applyPullResponse(res);
+
+    this.setProgress('pull', totalPulled, totalPulled);
 
     if (result.downgrades > 0 && res.pending_downgrades.length > 0) {
       try {
@@ -350,6 +436,9 @@ export class SyncManager {
     this.state.advancePullCursor(res.next_since_seq);
     logger.info('SYNC', 'pull 完成', result);
     return result;
+    } finally {
+      this.setProgress('idle', 0, 0);
+    }
   }
 
   /** 把 PullResponse 写入本地;独立方法便于测试 */

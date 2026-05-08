@@ -37,6 +37,20 @@ export class MigrationRunner {
     this.addSyncAutoColumns();
     this.ensureProjectsTables();
     this.migrateProjectIdToInt();
+    this.addSyncLastSyncedUserId();
+  }
+
+  /**
+   * 给 sync_state 加 last_synced_user_id 列。
+   * 用于 user 切换检测:logout → 不同 user re-login 时,
+   * 比此字段(持久,clearAuth 不清)与 new user_id 决定是否重置 watermark。
+   */
+  private addSyncLastSyncedUserId(): void {
+    const cols = this.db.query('PRAGMA table_info(sync_state)').all() as TableColumnInfo[];
+    const has = (name: string) => cols.some(c => c.name === name);
+    if (!has('last_synced_user_id')) {
+      this.db.run('ALTER TABLE sync_state ADD COLUMN last_synced_user_id TEXT');
+    }
   }
 
   // v34: 把 projects.id 从 TEXT(p_xxx)迁到 INTEGER(8 位数字)

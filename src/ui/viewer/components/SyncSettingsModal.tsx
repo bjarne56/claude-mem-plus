@@ -67,9 +67,14 @@ export function SyncSettingsModal({ isOpen, onClose }: Props) {
   const { t } = useI18n();
   const [status, setStatus] = useState<SyncStatusBlob | null>(null);
   const [projects, setProjects] = useState<SyncProject[]>([]);
+  /// 远程 server 上各项目 obs 数(name → count),由 /api/sync/remote-projects 拉取。
+  /// 未登录或失败时为空,UI 显示 "—"。
+  const [remoteCounts, setRemoteCounts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  /// 同步进度(push/pull 期间轮询 /api/sync/progress 拿)。idle 时不显示进度条。
+  const [syncProgress, setSyncProgress] = useState<{ phase: 'push' | 'pull' | 'idle'; current: number; total: number } | null>(null);
 
   // login form — machine_name 给个默认值,从浏览器 platform 推
   // navigator.platform 已 deprecated 但还能用,fallback 'this-machine'
@@ -142,6 +147,18 @@ export function SyncSettingsModal({ isOpen, onClose }: Props) {
         const p = (await pRes.json()) as { projects: SyncProject[] };
         setProjects(p.projects);
       }
+
+      // 拉远程项目 obs 数,合并到 remoteCounts(map: name → count)。
+      // 未登录或拉取失败 → 不影响本地视图。
+      try {
+        const rpRes = await fetch('/api/sync/remote-projects');
+        if (rpRes.ok) {
+          const rp = (await rpRes.json()) as { projects: Array<{ name: string; observation_count: number }>; loggedIn: boolean };
+          const m: Record<string, number> = {};
+          for (const r of rp.projects) m[r.name] = r.observation_count;
+          setRemoteCounts(m);
+        }
+      } catch { /* swallow */ }
 
       // 拉自动同步配置(独立失败不影响主流程)
       try {
@@ -252,7 +269,29 @@ export function SyncSettingsModal({ isOpen, onClose }: Props) {
     }
   }, [callAction, fetchStatus]);
 
+  /// 启动 progress 轮询(每 500ms 拉一次 /api/sync/progress);返回 stop 函数。
+  /// 同步结束(phase=idle)或 stop() 调用时停。
+  const startProgressPolling = useCallback((): (() => void) => {
+    let stopped = false;
+    const id = setInterval(async () => {
+      if (stopped) return;
+      try {
+        const r = await fetch('/api/sync/progress');
+        if (r.ok) {
+          const p = (await r.json()) as { phase: 'push' | 'pull' | 'idle'; current: number; total: number };
+          setSyncProgress(p);
+          if (p.phase === 'idle') {
+            stopped = true;
+            clearInterval(id);
+          }
+        }
+      } catch { /* swallow */ }
+    }, 500);
+    return () => { stopped = true; clearInterval(id); setSyncProgress(null); };
+  }, []);
+
   const handlePush = useCallback(async (): Promise<void> => {
+    const stopPoll = startProgressPolling();
     try {
       const r = (await callAction('/api/sync/push')) as { pushed: number; duplicates: number; errors: number } | null;
       if (r) {
@@ -261,10 +300,13 @@ export function SyncSettingsModal({ isOpen, onClose }: Props) {
       await fetchStatus();
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      stopPoll();
     }
-  }, [callAction, fetchStatus, t]);
+  }, [callAction, fetchStatus, t, startProgressPolling]);
 
   const handlePull = useCallback(async (): Promise<void> => {
+    const stopPoll = startProgressPolling();
     try {
       const r = (await callAction('/api/sync/pull')) as { ownReceived: number; sharedReadOnly: number; sharedAutoCopy: number } | null;
       if (r) {
@@ -273,8 +315,10 @@ export function SyncSettingsModal({ isOpen, onClose }: Props) {
       await fetchStatus();
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      stopPoll();
     }
-  }, [callAction, fetchStatus, t]);
+  }, [callAction, fetchStatus, t, startProgressPolling]);
 
   /**
    * Share UX 重构:不再用 window.prompt 链,改成项目卡内联 share panel。
@@ -657,6 +701,44 @@ export function SyncSettingsModal({ isOpen, onClose }: Props) {
                     </span>
                   )}
 
+                  {/* 同步进度条:push/pull 期间显示 */}
+                  {syncProgress && syncProgress.phase !== 'idle' && (
+                    <div style={{
+                      display: 'flex', alignItems: 'center', gap: 8,
+                      padding: '4px 10px',
+                      background: 'rgba(56, 139, 253, 0.08)',
+                      border: '1px solid #388bfd',
+                      borderRadius: 4,
+                      fontSize: 12,
+                    }}>
+                      <span>{syncProgress.phase === 'push' ? '⇧ Push' : '⇩ Pull'}</span>
+                      <div style={{
+                        width: 120, height: 6, borderRadius: 3,
+                        background: 'rgba(255,255,255,0.1)',
+                        overflow: 'hidden', position: 'relative',
+                      }}>
+                        {syncProgress.total > 0 ? (
+                          <div style={{
+                            width: `${Math.min(100, (syncProgress.current / syncProgress.total) * 100)}%`,
+                            height: '100%', background: '#388bfd',
+                            transition: 'width 0.3s',
+                          }} />
+                        ) : (
+                          // 进行中,total 未知 → 半透明铺满表示 indeterminate
+                          <div style={{
+                            width: '100%', height: '100%',
+                            background: 'linear-gradient(90deg, #388bfd 0%, rgba(56,139,253,0.3) 100%)',
+                          }} />
+                        )}
+                      </div>
+                      <span style={{ fontVariantNumeric: 'tabular-nums', color: '#999' }}>
+                        {syncProgress.total > 0
+                          ? `${syncProgress.current}/${syncProgress.total}`
+                          : '...'}
+                      </span>
+                    </div>
+                  )}
+
                   {/* 操作按钮 — 推到右侧 */}
                   <div style={{ marginLeft: 'auto', display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
                     <button onClick={handlePush} disabled={busy} style={{ padding: '3px 10px', fontSize: 12 }}>
@@ -988,7 +1070,9 @@ export function SyncSettingsModal({ isOpen, onClose }: Props) {
                       }}>
                         <tr style={{ fontSize: 11, textTransform: 'uppercase', color: '#999' }}>
                           <th style={{ textAlign: 'left', padding: '6px 12px' }}>{t('sync.colName')}</th>
-                          <th style={{ textAlign: 'right', padding: '6px 12px' }}>{t('sync.colObsCount')}</th>
+                          <th style={{ textAlign: 'right', padding: '6px 12px' }} title="本地 obs 数">本地</th>
+                          <th style={{ textAlign: 'right', padding: '6px 12px' }} title="远程 server 上的 obs 数">远程</th>
+                          <th style={{ textAlign: 'center', padding: '6px 12px' }} title="本地 vs 远程 差量">Δ</th>
                           <th style={{ textAlign: 'left', padding: '6px 12px' }}>{t('sync.colShare')}</th>
                           <th style={{ textAlign: 'left', padding: '6px 12px' }}>{t('sync.colFlags')}</th>
                           <th style={{ textAlign: 'right', padding: '6px 12px' }}>{t('sync.colActions')}</th>
@@ -1002,6 +1086,19 @@ export function SyncSettingsModal({ isOpen, onClose }: Props) {
                               <td style={{ padding: '6px 12px' }}>{p.name}</td>
                               <td style={{ padding: '6px 12px', textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
                                 {p.observation_count}
+                              </td>
+                              <td style={{ padding: '6px 12px', textAlign: 'right', fontVariantNumeric: 'tabular-nums', color: '#999' }}>
+                                {remoteCounts[p.name] !== undefined ? remoteCounts[p.name] : '—'}
+                              </td>
+                              <td style={{ padding: '6px 12px', textAlign: 'center', fontVariantNumeric: 'tabular-nums', fontSize: 11 }}>
+                                {(() => {
+                                  const r = remoteCounts[p.name];
+                                  if (r === undefined) return <span style={{ color: '#666' }}>—</span>;
+                                  const d = p.observation_count - r;
+                                  if (d === 0) return <span style={{ color: '#3fb950' }}>✓</span>;
+                                  if (d > 0) return <span style={{ color: '#d29922' }} title={`本地多 ${d} 条未推`}>+{d}</span>;
+                                  return <span style={{ color: '#9cf' }} title={`远程多 ${-d} 条`}>{d}</span>;
+                                })()}
                               </td>
                               <td style={{ padding: '6px 12px', color: isShared ? '#3fb950' : '#999' }}>
                                 {p.share_state ?? '-'}
