@@ -383,7 +383,9 @@ export class SearchRoutes extends BaseRouteHandler {
           });
         }
       }
-      // 路径未注册或解析异常 → 用 basename(等价于老 hook 的项目身份)
+      // 路径未注册或解析异常 → 用 basename(等价于老 hook 的项目身份)。
+      // 不在此处自动 addPath:避免同名跨项目误合并(如 ~/work/Foo 与 ~/personal/Foo)。
+      // 路径登记由 storeObservation 的 resolveProject 第 5 层(仅新建项目)统一处理。
       if (projects.length === 0) {
         projects = [getProjectName(cwdParam)];
       }

@@ -213,6 +213,18 @@ export class ProjectsRoutes extends BaseRouteHandler {
     // obs/sess 已清理(或本来就空) → 删项目身份行(CASCADE 清 project_paths)
     const ok = store.delete(id);
     if (!ok) { this.notFound(res, `Project ${id}`); return; }
+
+    // 同步通知 cmem-sync server 把同名项目软删到回收站(fire-and-forget)。
+    // 失败不阻塞:本地删除是权威操作,远程 sync 是 best-effort。
+    const remoteUrl = `http://127.0.0.1:${port}/api/sync/delete-remote-project`;
+    fetch(remoteUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ project_name: project.name }),
+    }).catch(err => {
+      logger.warn('SYSTEM', 'sync-delete fetch failed (本地删除已成功)', { name: project.name, err: err instanceof Error ? err.message : String(err) });
+    });
+
     res.status(204).send();
   };
 

@@ -8,6 +8,12 @@ import type { ObservationInput, StoreObservationResult } from './types.js';
 
 // 双写过渡:写 observation 时同步把 cwd 解析到稳定 project_id,与原 .project name 字段并行
 // 不抛异常(任何 ProjectStore 错误都退化到 NULL,保留现有 .project name 行为完全不变)
+//
+// 注:name 命中已存在项目时直接返回 id,不主动 addPath(cwd)。原因:
+// 同名跨项目场景(如 ~/work/Foo 与 ~/personal/Foo)会被错误合并到同一 v2 项目。
+// 只有 resolveProject 第 5 层"新建项目"才会自动登记 cwd 为路径,这是安全语义:
+// 新项目身份与首次出现的 cwd 一一绑定,后续路径登记由用户主动管理(web 后台 /
+// .claude-mem 锚点文件)。
 function resolveProjectIdSafely(db: Database, projectName: string): string | null {
   try {
     const ps = new ProjectStore(db);

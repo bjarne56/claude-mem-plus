@@ -416,7 +416,7 @@ export function ProjectsManagerModal({ isOpen, onClose }: Props) {
               <div key={p.id} style={C.listItem(p.id === selectedId)} onClick={() => setSelectedId(p.id)}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <strong style={{ fontSize: 13 }}>{p.name}</strong>
-                  <span style={{ fontSize: 10, color: 'var(--color-text-secondary)', fontFamily: 'monospace' }}>{p.id}</span>
+                  <span style={{ fontSize: 10, color: 'var(--color-text-secondary)', fontFamily: 'monospace' }}>ID: {p.id}</span>
                 </div>
                 <div style={{ marginTop: 4 }}>
                   <span style={C.chip}>📝 {p.stats?.observationCount ?? '?'}</span>
@@ -437,7 +437,7 @@ export function ProjectsManagerModal({ isOpen, onClose }: Props) {
               <>
                 <h2 style={{ marginTop: 0, fontSize: 18 }}>{selected.name}</h2>
                 <div style={{ fontSize: 11, color: 'var(--color-text-secondary)', fontFamily: 'monospace' }}>
-                  {selected.id} · 创建于 {fmtTime(selected.created_at)} · 上次更新 {fmtTime(selected.updated_at)}
+                  ID: {selected.id} · 创建于 {fmtTime(selected.created_at)} · 上次更新 {fmtTime(selected.updated_at)}
                 </div>
 
                 <div style={{ marginTop: 12, marginBottom: 16 }}>
