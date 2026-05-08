@@ -124,7 +124,11 @@ export function ObservationCard({ observation, onDelete }: ObservationCardProps)
       </div>
 
       <div className="card-meta">
-        <span className="meta-date">#{observation.id} • {date}</span>
+        <span className="meta-date">
+          #{observation.id}
+          {observation.session_summary_id != null && ` • S${observation.session_summary_id}`}
+          {' • '}{date}
+        </span>
         {showFacts && (concepts.length > 0 || filesRead.length > 0 || filesModified.length > 0) && (
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center' }}>
             {concepts.map((concept: string, i: number) => (

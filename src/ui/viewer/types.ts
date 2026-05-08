@@ -16,6 +16,7 @@ export interface Observation {
   prompt_number: number | null;
   created_at: string;
   created_at_epoch: number;
+  session_summary_id?: number | null;
 }
 
 export interface Summary {

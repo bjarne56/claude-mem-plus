@@ -96,7 +96,7 @@ export interface ViewerSettings {
 
 export interface Observation {
   id: number;
-  memory_session_id: string;  
+  memory_session_id: string;
   project: string;
   merged_into_project: string | null;
   platform_source: string;
@@ -112,6 +112,7 @@ export interface Observation {
   prompt_number: number;
   created_at: string;
   created_at_epoch: number;
+  session_summary_id: number | null;
 }
 
 export interface Summary {
