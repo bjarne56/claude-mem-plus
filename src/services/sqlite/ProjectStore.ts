@@ -234,6 +234,62 @@ export class ProjectStore {
     })();
   }
 
+  // ── 解析:cwd → project,只读模式(只跑前 4 层,不创建副作用)
+  // 适用于查询场景:SessionStart inject、UI 浏览等。如果路径未被任何项目登记,
+  // 返回 null,由调用方决定回退策略(例如 fallback 到 cwd basename)。
+  tryResolveProject(cwd: string | null | undefined): ResolveResult | null {
+    // 1. CLAUDE_MEM_PROJECT env(只读语义下也尊重显式 override,不创建)
+    const envOverride = process.env.CLAUDE_MEM_PROJECT?.trim();
+    if (envOverride) {
+      let byId: ProjectRecord | null = null;
+      if (/^\d{8}$/.test(envOverride)) {
+        const n = parseInt(envOverride, 10);
+        if (n >= PROJECT_ID_MIN && n <= PROJECT_ID_MAX) byId = this.getById(n);
+      }
+      const project = byId || this.getByName(envOverride);
+      if (project) return { project, path: cwd || '', source: 'env' };
+      // env 指向不存在的项目 → 不创建,继续走路径解析
+    }
+
+    const safeCwd = cwd && cwd.trim() !== '' ? normalizePath(cwd) : null;
+    if (!safeCwd) return null;
+
+    // 2. .claude-mem 锚点
+    const anchorId = readAnchorFile(safeCwd);
+    if (anchorId) {
+      const project = this.getById(anchorId);
+      if (project) {
+        try { this.addPath(project.id, safeCwd); } catch { /* 忽略 UNIQUE 冲突 */ }
+        return { project, path: safeCwd, source: 'anchor' };
+      }
+    }
+
+    // 3. 精确路径匹配
+    const exact = this.db.prepare('SELECT * FROM project_paths WHERE path = ?').get(safeCwd) as ProjectPathRecord | null;
+    if (exact) {
+      const project = this.getById(exact.project_id)!;
+      this.touchPath(project.id, safeCwd);
+      return { project, path: safeCwd, source: 'exact-path' };
+    }
+
+    // 4. 父目录最长前缀匹配
+    const candidates = this.db.prepare(`
+      SELECT * FROM project_paths
+      WHERE ? = path OR ? LIKE path || '/%'
+      ORDER BY length(path) DESC
+      LIMIT 1
+    `).all(safeCwd, safeCwd) as ProjectPathRecord[];
+    if (candidates.length > 0) {
+      const match = candidates[0];
+      const project = this.getById(match.project_id)!;
+      this.touchPath(project.id, match.path);
+      return { project, path: match.path, source: 'parent-prefix' };
+    }
+
+    // 5. 不创建,直接 null
+    return null;
+  }
+
   // ── 解析:cwd → project(核心,5 层优先级)──────────────────────
 
   resolveProject(cwd: string | null | undefined): ResolveResult {

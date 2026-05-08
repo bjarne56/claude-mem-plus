@@ -11,6 +11,9 @@ import { groupByDate } from '../../../../shared/timeline-formatting.js';
 import { countObservationsByProjects } from '../../../context/ObservationCompiler.js';
 import { SettingsDefaultsManager } from '../../../../shared/SettingsDefaultsManager.js';
 import { USER_SETTINGS_PATH } from '../../../../shared/paths.js';
+import { ProjectStore } from '../../../sqlite/ProjectStore.js';
+import { getProjectName } from '../../../../utils/project-name.js';
+import type { DatabaseManager } from '../../DatabaseManager.js';
 import type { ObservationSearchResult, SessionSummarySearchResult } from '../../../sqlite/types.js';
 
 const ONBOARDING_EXPLAINER_PATH: string = path.resolve(__dirname, '../skills/how-it-works/onboarding-explainer.md');
@@ -94,7 +97,8 @@ const semanticContextSchema = z.object({
 
 export class SearchRoutes extends BaseRouteHandler {
   constructor(
-    private searchManager: SearchManager
+    private searchManager: SearchManager,
+    private dbManager?: DatabaseManager
   ) {
     super();
   }
@@ -356,19 +360,40 @@ export class SearchRoutes extends BaseRouteHandler {
   });
 
   private handleContextInject = this.wrapHandler(async (req: Request, res: Response): Promise<void> => {
+    const cwdParam = (req.query.cwd as string)?.trim();
     const projectsParam = (req.query.projects as string) || (req.query.project as string);
     const forHuman = req.query.colors === 'true';
     const full = req.query.full === 'true';
 
-    if (!projectsParam) {
-      this.badRequest(res, 'Project(s) parameter is required');
-      return;
+    // 优先 cwd:走 ProjectStore.tryResolveProject(只读,不创建项目)
+    // 拿到路径绑定的真实项目名,避免 hook 端用 cwd basename 做项目身份导致跨项目串扰。
+    // 路径未注册 → 回落 cwd basename(老行为,不污染 projects 表)。
+    // 回落 projects= query:第三方 installer / 老 hook 仍走基于 name 字符串的过滤。
+    let projects: string[] = [];
+    if (cwdParam) {
+      if (this.dbManager) {
+        try {
+          const store = new ProjectStore(this.dbManager.getDatabase());
+          const resolved = store.tryResolveProject(cwdParam);
+          if (resolved) projects = [resolved.project.name];
+        } catch (err) {
+          logger.warn('HTTP', 'tryResolveProject failed, falling back to basename', {
+            cwd: cwdParam,
+            message: err instanceof Error ? err.message : String(err),
+          });
+        }
+      }
+      // 路径未注册或解析异常 → 用 basename(等价于老 hook 的项目身份)
+      if (projects.length === 0) {
+        projects = [getProjectName(cwdParam)];
+      }
+    }
+    if (projects.length === 0 && projectsParam) {
+      projects = projectsParam.split(',').map(p => p.trim()).filter(Boolean);
     }
 
-    const projects = projectsParam.split(',').map(p => p.trim()).filter(Boolean);
-
     if (projects.length === 0) {
-      this.badRequest(res, 'At least one project is required');
+      this.badRequest(res, 'cwd or project(s) parameter is required');
       return;
     }
 
