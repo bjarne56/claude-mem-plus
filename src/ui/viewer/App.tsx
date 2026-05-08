@@ -202,6 +202,8 @@ export function App() {
         onContextPreviewToggle={toggleContextPreview}
         onDeleteProject={handleDeleteProject}
         onTrashOpen={toggleTrashModal}
+        onSyncOpen={toggleSyncModal}
+        onProjectsOpen={toggleProjectsModal}
       />
 
       <Feed
@@ -254,36 +256,9 @@ export function App() {
         }}
       />
 
-      {/* Sync 浮动按钮 + Modal — cmem-sync client */}
-      <button
-        className="console-toggle-btn"
-        style={{ bottom: 64 }}
-        onClick={toggleSyncModal}
-        title={t('sync.title')}
-      >
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <polyline points="23 4 23 10 17 10"></polyline>
-          <polyline points="1 20 1 14 7 14"></polyline>
-          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10"></path>
-          <path d="M20.49 15a9 9 0 0 1-14.85 3.36L1 14"></path>
-        </svg>
-      </button>
-
+      {/* 云同步 / 项目管理 modal — 触发按钮已移到 Header 右上 */}
       <SyncSettingsModal isOpen={syncModalOpen} onClose={toggleSyncModal} />
       <ProjectsManagerModal isOpen={projectsModalOpen} onClose={toggleProjectsModal} />
-
-      {/* 项目管理浮动按钮(claude-mem-改造需求.md 整合点)*/}
-      <button
-        type="button"
-        className="floating-icon-button"
-        style={{ position: 'fixed', right: 16, bottom: 120, width: 40, height: 40, borderRadius: 20, background: 'var(--color-bg-secondary, #2a2a2a)', border: '1px solid var(--color-border-primary)', color: 'var(--color-text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}
-        onClick={toggleProjectsModal}
-        title="项目管理(身份/路径/合并)"
-      >
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="20" height="20">
-          <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
-        </svg>
-      </button>
     </>
   );
 }
