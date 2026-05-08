@@ -155,15 +155,28 @@ export function App() {
 
   // 项目重命名/删除已迁移到 ProjectsManagerModal(右下角浮动按钮)
   // 这里只保留 Header 那个"删当前 filter 项目"的快捷入口
+  // 走 v2 接口:按 name 查 id,然后 DELETE /api/projects-v2/:id
+  // 这样 v2 表 + sdk_sessions/obs/sess 一气清理,与 ProjectsManagerModal 删除语义一致
   const handleDeleteProject = useCallback(async (project: string) => {
     const total = allObservations.length + allSummaries.length;
     if (!window.confirm(t('delete.confirmProject', { name: project, n: total }))) return;
     try {
-      const res = await authFetch(`/api/projects/${encodeURIComponent(project)}`, { method: 'DELETE' });
+      // 1. 找 v2 id
+      const listRes = await authFetch('/api/projects-v2');
+      if (!listRes.ok) throw new Error(listRes.statusText);
+      const listBody = await listRes.json() as { projects: Array<{ id: number; name: string }> };
+      const target = listBody.projects.find(p => p.name === project);
+
+      // 2. 如果在 v2 里 → 走 v2 删(会顺带清 obs/sess);否则回退老接口清字符串残留
+      const url = target
+        ? `/api/projects-v2/${target.id}`
+        : `/api/projects/${encodeURIComponent(project)}`;
+      const res = await authFetch(url, { method: 'DELETE' });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         throw new Error(body.error || res.statusText);
       }
+
       setPaginatedObservations([]);
       setPaginatedSummaries([]);
       setPaginatedPrompts([]);

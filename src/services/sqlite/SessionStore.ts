@@ -1443,17 +1443,34 @@ export class SessionStore {
     sources: string[];
     projectsBySource: Record<string, string[]>;
   } {
+    // 数据源:sdk_sessions distinct + projects v2 表名 union。
+    // 这样在 v2 注册但 sdk_sessions 无行的项目(历史孤儿:有 obs/sess 无 sdk_session)
+    // 也会出现在"全部项目"选择器里,与"项目管理"列表保持一致。
+    // ProjectsRoutes.handleDelete 已保证删项目时清 sdk_sessions/v2 两边。
     const rows = this.db.prepare(`
-      SELECT
-        COALESCE(platform_source, '${DEFAULT_PLATFORM_SOURCE}') as platform_source,
-        project,
-        MAX(started_at_epoch) as latest_epoch
-      FROM sdk_sessions
-      WHERE project IS NOT NULL AND project != ''
-        AND project != ?
-      GROUP BY COALESCE(platform_source, '${DEFAULT_PLATFORM_SOURCE}'), project
-      ORDER BY latest_epoch DESC
-    `).all(OBSERVER_SESSIONS_PROJECT) as Array<{ platform_source: string; project: string; latest_epoch: number }>;
+      SELECT platform_source, project, MAX(latest_epoch) AS latest_epoch
+      FROM (
+        SELECT
+          COALESCE(platform_source, '${DEFAULT_PLATFORM_SOURCE}') AS platform_source,
+          project,
+          MAX(started_at_epoch) AS latest_epoch
+        FROM sdk_sessions
+        WHERE project IS NOT NULL AND project != ''
+          AND project != ?
+        GROUP BY COALESCE(platform_source, '${DEFAULT_PLATFORM_SOURCE}'), project
+
+        UNION ALL
+
+        SELECT
+          '${DEFAULT_PLATFORM_SOURCE}' AS platform_source,
+          name AS project,
+          0 AS latest_epoch
+        FROM projects
+        WHERE name != ?
+      )
+      GROUP BY platform_source, project
+      ORDER BY latest_epoch DESC, project ASC
+    `).all(OBSERVER_SESSIONS_PROJECT, OBSERVER_SESSIONS_PROJECT) as Array<{ platform_source: string; project: string; latest_epoch: number }>;
 
     const projects: string[] = [];
     const seenProjects = new Set<string>();

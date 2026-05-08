@@ -188,6 +188,29 @@ export class ProjectsRoutes extends BaseRouteHandler {
   private handleDelete = async (req: Request, res: Response): Promise<void> => {
     const id = this.parseProjectId(req, res); if (id === null) return;
     const store = this.store();
+    const project = store.getById(id);
+    if (!project) { this.notFound(res, `Project ${id}`); return; }
+
+    // 先按 name 走老 trash 流程清理 obs/sess(与 Header 删除按钮语义一致),
+    // 否则 obs/sess 的 project 字符串会残留成"孤儿",下次 distinct 视图又冒出来。
+    // 老接口 404 = 该项目下没 session,无需清理,可直接删身份。
+    const port = process.env.CLAUDE_MEM_WORKER_PORT || '37700';
+    const oldUrl = `http://127.0.0.1:${port}/api/projects/${encodeURIComponent(project.name)}`;
+    try {
+      const r = await fetch(oldUrl, { method: 'DELETE' });
+      if (!r.ok && r.status !== 404) {
+        const body = await r.json().catch(() => ({}));
+        logger.warn('SYSTEM', 'project v2 delete: old soft-delete failed', { id, name: project.name, status: r.status, body });
+        res.status(500).json({ error: 'soft-delete obs/sess failed', detail: body });
+        return;
+      }
+    } catch (err) {
+      logger.warn('SYSTEM', 'project v2 delete: old soft-delete fetch failed', { id, name: project.name, err: err instanceof Error ? err.message : String(err) });
+      res.status(500).json({ error: 'soft-delete fetch failed' });
+      return;
+    }
+
+    // obs/sess 已清理(或本来就空) → 删项目身份行(CASCADE 清 project_paths)
     const ok = store.delete(id);
     if (!ok) { this.notFound(res, `Project ${id}`); return; }
     res.status(204).send();

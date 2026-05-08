@@ -259,12 +259,41 @@ export class DeleteRoutes extends BaseRouteHandler {
 
     const db = this.dbManager.getDatabase();
     const sessionRows = db.query('SELECT * FROM sdk_sessions WHERE project = ?').all(project) as Record<string, unknown>[];
-    if (sessionRows.length === 0) {
-      this.notFound(res, `No sessions for project "${project}"`);
+
+    // sdk_sessions 没行不代表项目空 — observations / session_summaries / projects v2
+    // 三表都可能有残留(历史 FK 未启用、人为清表等)。先扫一圈,真的全空才返回 404。
+    const orphanSummaries = db.query('SELECT COUNT(*) AS n FROM session_summaries WHERE project = ?').get(project) as { n: number };
+    const orphanObs = db.query('SELECT COUNT(*) AS n FROM observations WHERE project = ?').get(project) as { n: number };
+    const v2Project = db.query('SELECT id FROM projects WHERE name = ?').get(project) as { id: number } | undefined;
+
+    if (sessionRows.length === 0 && orphanSummaries.n === 0 && orphanObs.n === 0 && !v2Project) {
+      this.notFound(res, `No data for project "${project}"`);
       return;
     }
 
-    const counts = this.softDeleteSessions(db, sessionRows, 'project');
+    const counts = sessionRows.length > 0
+      ? this.softDeleteSessions(db, sessionRows, 'project')
+      : { observations: 0, summaries: 0, observationIds: [] as number[] };
+
+    // 清 session_summaries 字符串残留(softDeleteSessions 走 sdk_session 关联,
+    // 漏掉 sdk_sessions 已不存在但 sess 还在的孤儿场景)
+    if (orphanSummaries.n > 0) {
+      const now = Date.now();
+      const sumRows = db.query('SELECT * FROM session_summaries WHERE project = ?').all(project) as Record<string, unknown>[];
+      const tx = db.transaction(() => {
+        const ins = db.prepare(`
+          INSERT INTO trash_summaries
+            (original_id, memory_session_id, project, payload, deleted_at_epoch, reason)
+          VALUES (?, ?, ?, ?, ?, ?)
+        `);
+        for (const row of sumRows) {
+          ins.run(row.id, row.memory_session_id ?? null, row.project ?? null, JSON.stringify(row), now, 'project');
+        }
+        db.prepare('DELETE FROM session_summaries WHERE project = ?').run(project);
+      });
+      tx();
+      counts.summaries += sumRows.length;
+    }
 
     // 项目下还可能有不属于任何 session 的孤立 observation(理论上不应该,但兜底)
     const orphanRows = db.query('SELECT * FROM observations WHERE project = ?').all(project) as ObservationRow[];
